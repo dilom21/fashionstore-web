@@ -1,0 +1,46 @@
+<section class="vm-section newsletter" id="newsletter">
+  <div class="vm-container">
+    <div class="newsletter__card">
+      <div class="newsletter__content">
+        <span class="vm-eyebrow">Newsletter</span>
+        <h2 class="vm-title">Únete a VANTER</h2>
+        <p class="vm-lede">
+          Recibe novedades, colecciones y ofertas directamente en tu correo.
+        </p>
+      </div>
+
+      <div class="newsletter__form">
+        @if (state() === 'ok') {
+          <p class="newsletter__ok" role="status">
+            ¡Gracias por unirte! Te avisaremos de las próximas novedades.
+            <small>(Demostración: el envío real se conectará más adelante).</small>
+          </p>
+        } @else {
+          <form class="newsletter__row" (submit)="onSubmit($event)" novalidate>
+            <input
+              #emailInput
+              class="newsletter__input"
+              type="email"
+              name="email"
+              placeholder="Tu correo electrónico"
+              aria-label="Tu correo electrónico"
+              (input)="state.set('idle')"
+              autocomplete="email"
+            />
+            <button type="submit" class="vm-btn vm-btn--primary newsletter__btn">
+              SUSCRIBIRME
+            </button>
+          </form>
+          @if (state() === 'error') {
+            <p class="newsletter__error" role="alert">
+              Ingresa un correo electrónico válido.
+            </p>
+          }
+          <p class="newsletter__fine">
+            Demo visual: todavía no se envía información a ningún servidor.
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+</section>

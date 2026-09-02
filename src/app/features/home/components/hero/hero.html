@@ -1,0 +1,48 @@
+<section class="hero" id="inicio">
+  <!-- Fondo oscuro premium de base -->
+  <div class="hero__bg" aria-hidden="true">
+    <span class="hero__glow hero__glow--one"></span>
+    <span class="hero__glow hero__glow--two"></span>
+    <span class="hero__sheen"></span>
+  </div>
+
+  @if (heroImage) {
+    <!-- Modelo masculino anclado a la derecha (sin recorte agresivo) -->
+    <div class="hero__media" aria-hidden="true">
+      <img
+        class="hero__photo"
+        [src]="heroImage"
+        alt=""
+        fetchpriority="high"
+      />
+    </div>
+  }
+
+  <!-- Overlay inteligente: oscuro a la izquierda (texto), claro a la derecha (modelo) -->
+  <div class="hero__overlay" aria-hidden="true"></div>
+
+  <div class="vm-container hero__container">
+    <div class="hero__content">
+      <span class="hero__badge">Nueva colección</span>
+
+      <h1 class="hero__title">
+        ELEVA TU
+        <span class="hero__line">ESTILO <em>CADA DÍA</em></span>
+      </h1>
+
+      <p class="hero__sub">
+        Descubre una selección de prendas masculinas pensadas para
+        combinar estilo, comodidad y personalidad.
+      </p>
+
+      <div class="hero__cta">
+        <a class="vm-btn vm-btn--primary" href="#destacados">VER COLECCIÓN</a>
+        <a class="vm-btn vm-btn--outline" href="#categorias">EXPLORAR CATEGORÍAS</a>
+      </div>
+    </div>
+  </div>
+
+  <a class="hero__scroll" href="#beneficios" aria-label="Bajar a beneficios">
+    <span class="hero__scroll-line"></span>
+  </a>
+</section>

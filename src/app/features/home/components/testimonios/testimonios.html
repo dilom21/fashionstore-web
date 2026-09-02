@@ -1,0 +1,38 @@
+<section class="vm-section testimonios" id="testimonios">
+  <div class="vm-container">
+    <header class="vm-head">
+      <div>
+        <span class="vm-eyebrow">Clientes</span>
+        <h2 class="vm-title">Lo que dicen nuestros clientes</h2>
+        <p class="vm-lede">Experiencias reales de quienes ya compran en VANTER MEN.</p>
+      </div>
+    </header>
+
+    <div class="testimonios__grid">
+      @for (testimonial of testimonials; track testimonial.name) {
+        <figure class="testimonio">
+          <div class="testimonio__stars" aria-label="5 de 5 estrellas">
+            @for (star of stars; track $index) {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.5l-5.8 3 1.1-6.5L2.6 9.4l6.5-.9L12 2.6z"/>
+              </svg>
+            }
+          </div>
+          <blockquote class="testimonio__quote">“{{ testimonial.text }}”</blockquote>
+          <figcaption class="testimonio__author">
+            <span class="testimonio__avatar" aria-hidden="true">{{ testimonial.initials }}</span>
+            <span class="testimonio__meta">
+              <span class="testimonio__name">{{ testimonial.name }}</span>
+              <span class="testimonio__verified">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true">
+                  <path d="M4.5 12.5l5 5 10-11"/>
+                </svg>
+                Compra verificada
+              </span>
+            </span>
+          </figcaption>
+        </figure>
+      }
+    </div>
+  </div>
+</section>

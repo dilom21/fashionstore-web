@@ -1,0 +1,356 @@
+:host {
+  display: block;
+}
+
+/* ===== Contenedor del Hero ===== */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: calc(100svh - var(--nav-h));
+  padding-block: clamp(3rem, 8vw, 5.5rem);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(1000px 640px at 78% 10%, rgb(168 85 247 / 13%), transparent 62%),
+    radial-gradient(880px 620px at 6% 98%, rgb(37 99 235 / 10%), transparent 60%),
+    linear-gradient(112deg, #060b16 0%, #0a1220 52%, #0d1829 100%);
+}
+
+/* ===== Fondo decorativo base ===== */
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.4;
+}
+
+.hero__glow--one {
+  width: 46vw;
+  height: 46vw;
+  min-width: 420px;
+  min-height: 420px;
+  top: -20%;
+  right: -6%;
+  background: radial-gradient(circle, rgb(168 85 247 / 30%), transparent 68%);
+  animation: hero-glow 9s ease-in-out infinite alternate;
+}
+
+.hero__glow--two {
+  width: 34vw;
+  height: 34vw;
+  min-width: 300px;
+  min-height: 300px;
+  bottom: -16%;
+  left: -8%;
+  background: radial-gradient(circle, rgb(217 70 239 / 11%), transparent 68%);
+  animation: hero-glow 12s ease-in-out infinite alternate-reverse;
+}
+
+.hero__sheen {
+  position: absolute;
+  inset: -30% -10%;
+  background: linear-gradient(
+    115deg,
+    transparent 44%,
+    rgb(255 255 255 / 2.4%) 50%,
+    transparent 56%
+  );
+}
+
+/* ===== Imagen del modelo: a sangre completa, ocupa todo el Hero ===== */
+.hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Encaje centrado con leve predominio superior para conservar
+     rostro + torso + parte del outfit sin cortar la cara */
+  object-position: center 26%;
+  /* Nitidez sin blur: refuerzo suave de contraste/saturación */
+  filter: saturate(1.05) contrast(1.05);
+  animation: hero-fade 1.1s ease both;
+}
+
+/* ===== Overlay inteligente (oscuro premium, sin tapar al modelo) ===== */
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    /* Sombreado ambiental sutil y parejo: atmósfera negra sin lavar la foto */
+    linear-gradient(
+      90deg,
+      rgb(3 6 14 / 0.16) 0%,
+      rgb(3 6 14 / 0.11) 45%,
+      rgb(3 6 14 / 0.05) 100%
+    ),
+    /* Lado del texto: oscuro fuerte que se disuelve hacia el modelo */
+    linear-gradient(
+      90deg,
+      rgb(3 6 14 / 0.96) 0%,
+      rgb(3 6 14 / 0.82) 20%,
+      rgb(3 6 14 / 0.38) 46%,
+      rgb(3 6 14 / 0.05) 64%,
+      rgb(3 6 14 / 0) 74%
+    ),
+    /* Encuadre cinematográfico: techo y base más oscuros */
+    linear-gradient(
+      180deg,
+      rgb(3 6 14 / 0.5) 0%,
+      rgb(3 6 14 / 0) 22%,
+      rgb(3 6 14 / 0) 74%,
+      rgb(3 6 14 / 0.5) 100%
+    ),
+    /* Viñeta sutil en los bordes */
+    radial-gradient(
+      120% 96% at 50% 44%,
+      rgb(3 6 14 / 0) 44%,
+      rgb(3 6 14 / 0.32) 100%
+    );
+}
+
+/* ===== Contenido ===== */
+.hero__container {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+}
+
+.hero__content {
+  max-width: min(100%, 34.5rem);
+}
+
+.hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgb(192 38 211 / 45%);
+  border-radius: 999px;
+  background: rgb(5 9 20 / 45%);
+  color: var(--accent-text);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  animation: hero-fade-up 0.9s ease both 0.05s;
+}
+
+.hero__badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--grad-accent);
+  box-shadow: 0 0 10px rgb(192 38 211 / 80%);
+}
+
+.hero__title {
+  margin-top: 1.5rem;
+  font-size: clamp(2.4rem, 5.4vw, 4.1rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  font-weight: 800;
+  text-wrap: balance;
+  animation: hero-fade-up 0.9s ease both 0.16s;
+}
+
+.hero__line {
+  display: block;
+  /* Si la línea se parte, evita que "DÍA" quede sola */
+  text-wrap: balance;
+}
+
+.hero__line em {
+  font-style: normal;
+  background: linear-gradient(92deg, #d946ef 0%, #c026d3 45%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero__sub {
+  margin-top: 1.5rem;
+  max-width: 46ch;
+  font-size: clamp(1rem, 1.3vw, 1.13rem);
+  color: var(--text-2);
+  animation: hero-fade-up 0.9s ease both 0.3s;
+}
+
+.hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 2.1rem;
+  animation: hero-fade-up 0.9s ease both 0.44s;
+}
+
+/* ===== Indicador de scroll ===== */
+.hero__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: 1.5rem;
+  z-index: 4;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 44px;
+  animation: hero-fade 1s ease both 0.9s;
+}
+
+.hero__scroll-line {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, var(--text-3));
+  animation: hero-scroll 2s ease-in-out infinite;
+}
+
+/* ===== Animaciones ===== */
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero-media-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-glow {
+  from {
+    opacity: 0.28;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+
+@keyframes hero-scroll {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  51% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 980px) {
+  /* En pantallas medianas la imagen sigue a sangre completa */
+}
+
+@media (max-width: 760px) {
+  .hero {
+    align-items: flex-end;
+    min-height: calc(94svh - var(--nav-h));
+  }
+
+  /* La imagen pasa a cubrir de fondo, suavizada para legibilidad */
+  .hero__media {
+    align-items: stretch;
+  }
+
+  .hero__photo {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 24%;
+    opacity: 0.62;
+    filter: saturate(0.98) contrast(1.04);
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+  }
+
+  .hero__overlay {
+    background:
+      linear-gradient(
+        180deg,
+        rgb(4 7 14 / 0.5) 0%,
+        rgb(4 7 14 / 0.34) 34%,
+        rgb(4 7 14 / 0.86) 100%
+      ),
+      linear-gradient(90deg, rgb(4 7 14 / 0.5), transparent 80%);
+  }
+
+  .hero__content {
+    padding-bottom: 0.75rem;
+  }
+
+  .hero__sub {
+    font-size: 0.97rem;
+  }
+
+  .hero__cta {
+    gap: 0.7rem;
+    margin-top: 1.6rem;
+  }
+
+  .hero__cta .vm-btn {
+    flex: 1 1 auto;
+    min-width: 150px;
+    padding-inline: 1.1rem;
+  }
+
+  .hero__glow--two,
+  .hero__scroll {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero__title {
+    font-size: clamp(2.15rem, 12.5vw, 2.8rem);
+  }
+}
+

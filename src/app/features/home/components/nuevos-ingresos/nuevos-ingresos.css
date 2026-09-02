@@ -1,0 +1,66 @@
+.nuevos {
+  border-top: 1px solid var(--line);
+  background:
+    radial-gradient(900px 420px at 85% 0%, rgb(168 85 247 / 7%), transparent 65%),
+    color-mix(in srgb, var(--bg-2) 55%, transparent);
+}
+
+.vm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgb(192 38 211 / 30%);
+  color: var(--accent-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nuevos__head {
+  align-items: center;
+}
+
+.nuevos__track {
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+  padding-block: 0.3rem 0.75rem;
+}
+
+.nuevos__item {
+  width: min(64vw, 240px);
+}
+
+.nuevos__nav {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.rail-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  color: var(--text-2);
+  transition:
+    color 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+.rail-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 720px) {
+  .nuevos__item {
+    width: min(62vw, 216px);
+  }
+}

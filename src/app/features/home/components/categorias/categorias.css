@@ -1,0 +1,118 @@
+.categorias__masonry {
+  columns: 240px;
+  column-gap: 1.3rem;
+}
+
+.cat {
+  position: relative;
+  display: block;
+  margin: 0 0 1.3rem;
+  break-inside: avoid;
+  border-radius: var(--radius-l);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(130% 100% at 82% 0%, rgb(168 85 247 / 20%), transparent 56%),
+    linear-gradient(165deg, var(--surface-3), var(--surface) 74%);
+  cursor: pointer;
+  transition:
+    border-color 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.cat:hover {
+  border-color: rgb(192 38 211 / 40%);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.cat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(3 6 13 / 0.05) 30%, rgb(3 6 13 / 0.78) 100%);
+  transition: opacity 0.3s ease;
+}
+
+.cat:hover::after {
+  opacity: 0.92;
+}
+
+.cat__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s ease;
+}
+
+.cat:hover .cat__img {
+  transform: scale(1.06);
+}
+
+/* Placeholder tipográfico mientras no hay imagen */
+.cat__ph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.cat__ph-letter {
+  font-size: clamp(5rem, 14vw, 8rem);
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(200deg, var(--surface-3), var(--surface-2) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transform: scale(1);
+  transition: transform 0.8s ease;
+}
+
+.cat:hover .cat__ph-letter {
+  transform: scale(1.08);
+}
+
+.cat__cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.2rem 1.3rem 1.3rem;
+}
+
+.cat__name {
+  font-size: clamp(1.2rem, 1.6vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 2px 14px rgb(0 0 0 / 45%);
+}
+
+.cat__tag {
+  max-width: 26ch;
+  font-size: 0.85rem;
+  color: rgb(226 232 244 / 78%);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.cat:hover .cat__tag {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 720px) {
+  .cat__tag {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,59 @@
+<section class="vm-section appmovil" id="app">
+  <div class="vm-container">
+    <div class="appmovil__grid">
+      <div class="appmovil__content">
+        <span class="vm-eyebrow">VANTER MEN App</span>
+        <h2 class="vm-title">VANTER MEN, también en tu móvil.</h2>
+        <p class="vm-lede">
+          Descubre una experiencia de compra más completa desde nuestra
+          aplicación y accede a funcionalidades exclusivas desde tu
+          dispositivo.
+        </p>
+        <p class="appmovil__note">
+          Experiencia de prueba virtual disponible exclusivamente en la
+          app móvil.
+        </p>
+
+        <div class="appmovil__actions">
+          <button type="button" class="vm-btn vm-btn--primary" (click)="conocerApp()">
+            CONOCER LA APP
+          </button>
+          @if (showInfo()) {
+            <p class="appmovil__info" role="status">
+              La app estará disponible próximamente en las tiendas de aplicaciones.
+            </p>
+          }
+        </div>
+      </div>
+
+      <!-- Mockup de teléfono hecho 100% con CSS -->
+      <div class="appmovil__visual" aria-hidden="true">
+        <div class="phone">
+          <div class="phone__body">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="phone__top">
+                <span class="phone__logo">VANTER MEN</span>
+                <span class="phone__dot"></span>
+              </div>
+              <div class="phone__banner">
+                <span class="phone__chip">Nueva colección</span>
+                <strong>Estilo que<br />te representa</strong>
+              </div>
+              <div class="phone__row">
+                <span class="phone__card"></span>
+                <span class="phone__card"></span>
+              </div>
+              <div class="phone__lines">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="phone__tabs">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

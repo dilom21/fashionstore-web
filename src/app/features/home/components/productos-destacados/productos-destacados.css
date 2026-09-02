@@ -1,0 +1,42 @@
+.destacados__track {
+  margin-inline: calc(var(--gutter) * -1);
+  padding-inline: var(--gutter);
+  padding-bottom: 0.75rem;
+}
+
+.destacados__item {
+  width: min(72vw, 278px);
+}
+
+.destacados__nav {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.rail-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  color: var(--text-2);
+  transition:
+    color 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.rail-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+  .destacados__item {
+    width: min(68vw, 240px);
+  }
+}

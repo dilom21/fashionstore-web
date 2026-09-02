@@ -1,0 +1,134 @@
+.reserva {
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-2) 70%, transparent);
+}
+
+.reserva__grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.reserva__title {
+  margin-top: 1rem;
+  font-size: clamp(1.9rem, 3.6vw, 3.1rem);
+  letter-spacing: -0.02em;
+}
+
+.reserva__text {
+  margin-top: 1.2rem;
+  max-width: 52ch;
+  color: var(--text-2);
+  font-size: 1.05rem;
+}
+
+.reserva__steps {
+  margin-top: 1.8rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.reserva__steps li {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-weight: 600;
+}
+
+.reserva__steps span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid rgb(192 38 211 / 30%);
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.reserva__cta {
+  margin-top: 2.1rem;
+}
+
+.reserva__media {
+  position: relative;
+  min-height: clamp(360px, 46vw, 520px);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  background:
+    radial-gradient(120% 90% at 20% 0%, rgb(168 85 247 / 22%), transparent 55%),
+    linear-gradient(200deg, var(--surface-3), var(--surface) 72%);
+}
+
+.reserva__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reserva__ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.reserva__ph-frame {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--accent-text);
+}
+
+.reserva__ph-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  color: var(--text-3);
+}
+
+.reserva__chip {
+  position: absolute;
+  left: 1.3rem;
+  bottom: 1.3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  background: rgb(4 7 15 / 55%);
+  border: 1px solid var(--line-strong);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+}
+
+.reserva__chip svg {
+  color: var(--accent-text);
+}
+
+@media (max-width: 900px) {
+  .reserva__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reserva__media {
+    min-height: 320px;
+    order: -1;
+  }
+}

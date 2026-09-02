@@ -1,0 +1,152 @@
+<header class="nav">
+  <div class="nav__inner vm-container">
+    <a routerLink="/" class="nav__brand" aria-label="VANTER MEN — ir al inicio">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M4 6h24L17 27h-2L4 6z" fill="url(#vm-grad)" />
+        <path d="M11 6l5 9 5-9" stroke="rgba(255,255,255,.85)" stroke-width="1.6" />
+        <defs>
+          <linearGradient id="vm-grad" x1="4" y1="6" x2="28" y2="27" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#a855f7" />
+            <stop offset="1" stop-color="#d946ef" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="nav__brand-name">VANTER&nbsp;<em>MEN</em></span>
+    </a>
+
+    <nav class="nav__links" [class.is-open]="menuOpen()" aria-label="Navegación principal">
+      @for (link of navLinks; track link.label) {
+        <a class="nav__link" [href]="link.href" (click)="closeMenu()">{{ link.label }}</a>
+      }
+    </nav>
+
+    <div class="nav__actions">
+      <button
+        type="button"
+        class="nav__icon"
+        aria-label="Abrir buscador"
+        (click)="openSearch()"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M20 20l-3.2-3.2"></path>
+        </svg>
+      </button>
+
+      <button
+        type="button"
+        class="nav__icon"
+        (click)="toggleTheme()"
+        [attr.aria-label]="themeService.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+      >
+        @if (themeService.theme() === 'dark') {
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.4"></circle>
+            <path d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.4 5.4l1.5 1.5M17.1 17.1l1.5 1.5M18.6 5.4l-1.5 1.5M6.9 17.1l-1.5 1.5"></path>
+          </svg>
+        } @else {
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path d="M20.4 14.5A8.4 8.4 0 019.5 3.6a8.4 8.4 0 1010.9 10.9z"></path>
+          </svg>
+        }
+      </button>
+
+      <a routerLink="/login" class="nav__icon" aria-label="Iniciar sesión">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"></circle>
+          <path d="M4.5 20.5a7.5 7.5 0 0115 0"></path>
+        </svg>
+      </a>
+
+      <button type="button" class="nav__icon" aria-label="Carrito de compras" (click)="cartCount.set(cartCount())">
+        <span class="nav__icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path d="M5 8h14l-1.2 11.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 8z"></path>
+            <path d="M9 8V6a3 3 0 016 0v2"></path>
+          </svg>
+          @if (cartCount() > 0) {
+            <span class="nav__cart-badge">{{ cartCount() }}</span>
+          }
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="nav__burger"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen()"
+        [attr.aria-label]="menuOpen() ? 'Cerrar menú' : 'Abrir menú'"
+      >
+        @if (menuOpen()) {
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        } @else {
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16"></path>
+          </svg>
+        }
+      </button>
+    </div>
+  </div>
+</header>
+@if (searchOpen()) {
+  <div
+    class="search"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Buscar prendas"
+    (click)="closeOnBackdrop($event)"
+  >
+    <div class="search__panel">
+      <div class="search__field">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M20 20l-3.2-3.2"></path>
+        </svg>
+        <input
+          #searchInput
+          type="search"
+          class="search__input"
+          [value]="query()"
+          (input)="onSearchInput($event)"
+          placeholder="Buscar prendas…"
+          aria-label="Buscar prendas"
+          autocomplete="off"
+        />
+        <button type="button" class="search__close" aria-label="Cerrar buscador" (click)="closeSearch()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 5l14 14M19 5L5 19"></path>
+          </svg>
+        </button>
+      </div>
+
+      @if (query().trim().length > 0) {
+        <div class="search__results">
+          @if (results().length > 0) {
+            <p class="search__hint">Resultados para “{{ query() }}”</p>
+            <ul class="search__list">
+              @for (item of results(); track item.id) {
+                <li>
+                  <button type="button" class="search__item" (click)="selectProduct()">
+                    <span class="search__thumb" aria-hidden="true">{{ item.name.charAt(0) }}</span>
+                    <span class="search__info">
+                      <span class="search__name">{{ item.name }}</span>
+                      <span class="search__cat">{{ item.category }}</span>
+                    </span>
+                    <span class="search__price">Bs {{ item.price }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="search__empty">Sin resultados para “{{ query() }}”.</p>
+          }
+        </div>
+      } @else {
+        <p class="search__empty">Escribe el nombre de una prenda o una categoría.</p>
+      }
+    </div>
+  </div>
+}
+

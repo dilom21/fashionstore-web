@@ -1,0 +1,8 @@
+.home {
+  display: block;
+}
+
+/* Los componentes de sección se muestran en bloque dentro de su wrapper. */
+.home__reveal {
+  display: block;
+}

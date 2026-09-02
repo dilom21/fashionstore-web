@@ -1,1 +1,381 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   VANTER MEN — Tokens de diseño, base y utilidades globales
+   ========================================================================== */
+
+/* Tema oscuro (predeterminado) */
+:root {
+  color-scheme: dark;
+
+  /* Superficies */
+  --bg: #050914;
+  --bg-2: #0b1322;
+  --bg-3: #101a2e;
+  --surface: #0d1626;
+  --surface-2: #111d33;
+  --surface-3: #17233c;
+
+  /* Líneas */
+  --line: rgb(148 163 184 / 14%);
+  --line-strong: rgb(148 163 184 / 28%);
+
+  /* Texto */
+  --text: #f3f6fc;
+  --text-2: #9fabc0;
+  --text-3: #64708a;
+
+  /* Acento (fucsia / púrpura) */
+  --accent: #c026d3;
+  --accent-2: #d946ef;
+  --accent-3: #a855f7;
+  --accent-text: #e14ff0;
+  --accent-soft: rgb(192 38 211 / 13%);
+  --accent-strong: rgb(192 38 211 / 30%);
+  --grad-accent: linear-gradient(100deg, #a855f7 0%, #c026d3 55%, #d946ef 100%);
+  --on-accent: #ffffff;
+  --shadow-accent: 0 14px 34px -16px rgb(192 38 211 / 55%);
+
+  /* Forma y espacio */
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+  --radius-xl: 26px;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --container: 1200px;
+  --nav-h: 74px;
+  --section-y: clamp(4.25rem, 9vw, 7.5rem);
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 35%);
+  --shadow-md: 0 24px 60px -28px rgb(1 3 10 / 80%);
+
+  --font:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Tema claro */
+html[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #eef1f8;
+  --bg-2: #ffffff;
+  --bg-3: #e4e9f3;
+  --surface: #ffffff;
+  --surface-2: #f5f7fc;
+  --surface-3: #eaedf6;
+
+  --line: rgb(15 23 42 / 12%);
+  --line-strong: rgb(15 23 42 / 24%);
+
+  --text: #0b1220;
+  --text-2: #44506a;
+  --text-3: #6a7590;
+
+  --accent-text: #a21caf;
+  --accent-soft: rgb(168 85 247 / 12%);
+  --accent-strong: rgb(168 85 247 / 22%);
+  --shadow-accent: 0 14px 30px -16px rgb(168 85 247 / 55%);
+  --shadow-md: 0 24px 50px -30px rgb(15 23 42 / 28%);
+}
+
+/* ============================== BASE ============================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 14px);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+input,
+textarea {
+  font: inherit;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Transición suave de tema (solo mientras dura el cambio) */
+html.vm-theme-anim,
+html.vm-theme-anim body {
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+html.vm-theme-anim *,
+html.vm-theme-anim *::before,
+html.vm-theme-anim *::after {
+  transition:
+    background-color 0.45s ease,
+    border-color 0.45s ease,
+    color 0.45s ease,
+    box-shadow 0.45s ease,
+    fill 0.45s ease,
+    stroke 0.45s ease !important;
+}
+
+/* ============================ LAYOUT ============================== */
+.vm-container {
+  width: 100%;
+  max-width: calc(var(--container) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.vm-section {
+  position: relative;
+  padding-block: var(--section-y);
+}
+
+/* ===================== TIPOGRAFÍA DE SECCIÓN ====================== */
+.vm-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.vm-eyebrow::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--grad-accent);
+}
+
+.vm-title {
+  margin-top: 0.8rem;
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+  letter-spacing: -0.025em;
+}
+
+.vm-lede {
+  margin-top: 0.9rem;
+  max-width: 60ch;
+  color: var(--text-2);
+  font-size: 1.05rem;
+}
+
+.vm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  margin-bottom: clamp(1.8rem, 3.5vw, 3rem);
+}
+
+/* ============================ BOTONES ============================= */
+.vm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0.7rem 1.7rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.vm-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.vm-btn--primary {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.vm-btn--primary:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 18px 42px -16px rgb(192 38 211 / 65%);
+}
+
+.vm-btn--outline {
+  border-color: var(--line-strong);
+  color: var(--text);
+  background: transparent;
+}
+
+.vm-btn--outline:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  transform: translateY(-2px);
+}
+
+.vm-btn--ghost {
+  color: var(--text-2);
+}
+
+.vm-btn--ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+/* ====================== REVEAL EN SCROLL ========================== */
+.vm-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.75s ease,
+    transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.vm-reveal.vm-is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==================== SCROLL HORIZONTAL SIN BARRA ================= */
+.vm-hscroll {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.vm-hscroll::-webkit-scrollbar {
+  display: none;
+}
+
+.vm-hscroll > * {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+}
+
+/* ========================= ACCESIBILIDAD ========================== */
+.vm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .vm-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ====================== HOSTS DE COMPONENTES ====================== */
+app-navbar,
+app-hero,
+app-beneficios,
+app-categorias,
+app-productos-destacados,
+app-lookbook,
+app-nuevos-ingresos,
+app-reserva-sucursal,
+app-ofertas,
+app-testimonios,
+app-app-movil,
+app-newsletter,
+app-footer,
+app-home,
+app-login {
+  display: block;
+}
+
+

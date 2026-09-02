@@ -1,0 +1,29 @@
+<section class="vm-section categorias" id="categorias">
+  <div class="vm-container">
+    <header class="vm-head">
+      <div>
+        <span class="vm-eyebrow">Categorías</span>
+        <h2 class="vm-title">Compra por categoría</h2>
+        <p class="vm-lede">Prendas esenciales y de temporada para el hombre moderno.</p>
+      </div>
+    </header>
+
+    <div class="categorias__masonry">
+      @for (cat of categories; track cat.id) {
+        <figure class="cat" [style.aspect-ratio]="cat.aspect">
+          @if (cat.image) {
+            <img class="cat__img" [src]="cat.image" [alt]="cat.name" loading="lazy" width="800" height="1000" />
+          } @else {
+            <span class="cat__ph" aria-hidden="true">
+              <span class="cat__ph-letter">{{ cat.initial }}</span>
+            </span>
+          }
+          <figcaption class="cat__cap">
+            <span class="cat__name">{{ cat.name }}</span>
+            <span class="cat__tag">{{ cat.tagline }}</span>
+          </figcaption>
+        </figure>
+      }
+    </div>
+  </div>
+</section>

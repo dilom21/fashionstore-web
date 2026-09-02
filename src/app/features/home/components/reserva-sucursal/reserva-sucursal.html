@@ -1,0 +1,48 @@
+<section class="vm-section reserva" id="reserva">
+  <div class="vm-container">
+    <div class="reserva__grid">
+      <div class="reserva__content">
+        <span class="vm-eyebrow">Reserva en sucursal</span>
+        <h2 class="reserva__title">
+          RESERVA ONLINE.<br />
+          PRUÉBATELO EN TIENDA.
+        </h2>
+        <p class="reserva__text">
+          Selecciona tus prendas favoritas y reserva en la sucursal que
+          prefieras para conocerlas antes de decidir.
+        </p>
+
+        <ol class="reserva__steps">
+          <li><span>1</span> Elige tus prendas favoritas</li>
+          <li><span>2</span> Selecciona la sucursal más cercana</li>
+          <li><span>3</span> Pasa a probártelas sin compromiso</li>
+        </ol>
+
+        <div class="reserva__cta">
+          <a class="vm-btn vm-btn--primary" href="#destacados">EXPLORAR PRENDAS</a>
+        </div>
+      </div>
+
+      <div class="reserva__media">
+        @if (image) {
+          <img class="reserva__img" [src]="image" alt="Interior de una sucursal VANTER MEN" loading="lazy" width="900" height="1100" />
+        } @else {
+          <div class="reserva__ph" aria-hidden="true">
+            <span class="reserva__ph-frame">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9.5V19a1 1 0 001 1h11a1 1 0 001-1V9.5"/><path d="M10 20v-5h4v5"/>
+              </svg>
+            </span>
+            <span class="reserva__ph-label">VANTER MEN / SUCURSAL</span>
+          </div>
+        }
+        <div class="reserva__chip">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 3 4.5 6v5.5c0 4.7 3.2 8 7.5 9.5 4.3-1.5 7.5-4.8 7.5-9.5V6L12 3z"/>
+          </svg>
+          <span>Reserva y prueba en tienda</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

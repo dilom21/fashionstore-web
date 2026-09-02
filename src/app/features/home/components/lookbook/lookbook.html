@@ -1,0 +1,47 @@
+<section class="vm-section lookbook" id="inspiracion">
+  <div class="vm-container">
+    <header class="vm-head">
+      <div>
+        <span class="vm-eyebrow">Lookbook</span>
+        <h2 class="vm-title">INSPIRACIÓN VANTER</h2>
+        <p class="vm-lede">Una curaduría visual para encontrar tu estilo.</p>
+      </div>
+      <div class="lookbook__nav">
+        <button type="button" class="rail-btn" aria-label="Anterior en el lookbook" (click)="scroll(-1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M14.5 5 8 12l6.5 7"></path>
+          </svg>
+        </button>
+        <button type="button" class="rail-btn" aria-label="Siguiente en el lookbook" (click)="scroll(1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9.5 5 16 12l-6.5 7"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+  </div>
+
+  <div class="vm-container lookbook__wrap">
+    <div class="lookbook__track" #track aria-label="Inspiración de estilo, desplazamiento horizontal">
+      @for (slide of slides; track slide.id) {
+        <article class="look" [class]="'look--' + slide.style">
+          @if (slide.image) {
+            <img class="look__img" [src]="slide.image" [alt]="slide.title" loading="lazy" width="900" height="1100" />
+          } @else {
+            <div class="look__ph" aria-hidden="true">
+              <span class="look__ph-tag">VANTER / {{ slide.num }}</span>
+              <span class="look__ph-mark">V</span>
+            </div>
+          }
+          <div class="look__shade" aria-hidden="true"></div>
+          <div class="look__cap">
+            <span class="look__num">LOOK {{ slide.num }}</span>
+            <h3 class="look__title">{{ slide.title }}</h3>
+            <p class="look__text">{{ slide.caption }}</p>
+          </div>
+        </article>
+      }
+    </div>
+    <p class="lookbook__hint">Desliza para explorar la inspiración.</p>
+  </div>
+</section>

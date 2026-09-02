@@ -1,0 +1,19 @@
+<section class="vm-section ofertas" id="ofertas">
+  <div class="vm-container">
+    <div class="ofertas__panel">
+      <header class="vm-head">
+        <div>
+          <span class="vm-eyebrow">Descuentos por tiempo limitado</span>
+          <h2 class="vm-title">Ofertas de temporada</h2>
+          <p class="vm-lede">Precios especiales en una selección de prendas seleccionadas.</p>
+        </div>
+      </header>
+
+      <div class="ofertas__grid">
+        @for (product of products; track product.id) {
+          <app-product-card [product]="product" />
+        }
+      </div>
+    </div>
+  </div>
+</section>

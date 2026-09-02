@@ -1,0 +1,29 @@
+<section class="vm-section destacados" id="destacados">
+  <div class="vm-container">
+    <header class="vm-head">
+      <div>
+        <span class="vm-eyebrow">Selección</span>
+        <h2 class="vm-title">Productos destacados</h2>
+        <p class="vm-lede">Una selección pensada para elevar tu estilo.</p>
+      </div>
+      <div class="destacados__nav">
+        <button type="button" class="rail-btn" aria-label="Productos anteriores" (click)="scroll(-1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M14.5 5 8 12l6.5 7"></path>
+          </svg>
+        </button>
+        <button type="button" class="rail-btn" aria-label="Productos siguientes" (click)="scroll(1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9.5 5 16 12l-6.5 7"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="vm-hscroll destacados__track" #track>
+      @for (product of products; track product.id) {
+        <app-product-card class="destacados__item" [product]="product" />
+      }
+    </div>
+  </div>
+</section>

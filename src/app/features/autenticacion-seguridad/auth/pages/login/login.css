@@ -1,0 +1,45 @@
+.login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--gutter);
+}
+
+.login__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 420px;
+  width: 100%;
+  padding: clamp(2rem, 5vw, 3rem);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.login__brand {
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.login__brand em {
+  font-style: normal;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.login__title {
+  font-size: 1.6rem;
+}
+
+.login__text {
+  color: var(--text-2);
+  margin-bottom: 0.5rem;
+}

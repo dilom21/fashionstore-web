@@ -1,0 +1,29 @@
+<section class="vm-section nuevos" id="novedades">
+  <div class="vm-container">
+    <header class="vm-head nuevos__head">
+      <div>
+        <span class="vm-chip">Recién llegados</span>
+        <h2 class="vm-title">Nuevos ingresos</h2>
+        <p class="vm-lede">Lo último que se suma a la colección VANTER.</p>
+      </div>
+      <div class="nuevos__nav">
+        <button type="button" class="rail-btn rail-btn--ghost" aria-label="Ingresos anteriores" (click)="scroll(-1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M14.5 5 8 12l6.5 7"></path>
+          </svg>
+        </button>
+        <button type="button" class="rail-btn rail-btn--ghost" aria-label="Ingresos siguientes" (click)="scroll(1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9.5 5 16 12l-6.5 7"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="vm-hscroll nuevos__track" #track>
+      @for (product of products; track product.id) {
+        <app-product-card class="nuevos__item" [product]="product" />
+      }
+    </div>
+  </div>
+</section>
