@@ -1,10 +1,14 @@
 /**
- * Entorno por defecto de la aplicación.
+ * Entorno de la aplicación.
  *
- * Esqueleto de arquitectura: todavía no está conectado mediante
- * 'fileReplacements' en angular.json. Aquí se definirán más adelante
- * valores como la URL base de la API de FastAPI.
+ * La URL base de la API (backend FastAPI de FashionStore / VANTER MEN) queda
+ * centralizada aquí. Ningún servicio debe escribir esta URL directamente.
+ *
+ * Por ahora existe un único archivo de entorno y no hay 'fileReplacements'
+ * configurado en angular.json, por lo que este valor se usa tanto en desarrollo
+ * como en cualquier build actual. Cuando se configuren entornos adicionales
+ * (p. ej. producción en Render), los valores se separarán por entorno.
  */
 export const environment = {
-  apiUrl: '',
+  apiUrl: 'http://127.0.0.1:8000',
 };

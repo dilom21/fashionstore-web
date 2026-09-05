@@ -374,7 +374,9 @@ app-app-movil,
 app-newsletter,
 app-footer,
 app-home,
-app-login {
+app-login,
+app-personal-login,
+app-dashboard {
   display: block;
 }
 

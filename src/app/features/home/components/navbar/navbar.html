@@ -51,12 +51,69 @@
         }
       </button>
 
-      <a routerLink="/login" class="nav__icon" aria-label="Iniciar sesión">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-          <circle cx="12" cy="8" r="4"></circle>
-          <path d="M4.5 20.5a7.5 7.5 0 0115 0"></path>
-        </svg>
-      </a>
+      <div class="nav__account-wrap" #accountWrap>
+        @if (authService.autenticado()) {
+          <button
+            type="button"
+            class="nav__account"
+            [attr.aria-expanded]="accountOpen()"
+            aria-haspopup="menu"
+            [attr.aria-label]="'Abrir menú de cuenta'"
+            (click)="toggleAccount()"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4.5 20.5a7.5 7.5 0 0115 0"></path>
+            </svg>
+            <span class="nav__account-text">{{ cuentaTexto() }}</span>
+            <svg class="nav__account-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M6 9l6 6 6-6"></path>
+            </svg>
+          </button>
+
+          @if (accountOpen()) {
+            <div class="nav__account-menu" role="menu" aria-label="Menú de cuenta">
+              <button
+                type="button"
+                class="nav__account-item"
+                role="menuitem"
+                (click)="elegirMiCuenta()"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                  <circle cx="12" cy="8" r="4"></circle>
+                  <path d="M4.5 20.5a7.5 7.5 0 0115 0"></path>
+                </svg>
+                Mi cuenta
+              </button>
+              <button
+                type="button"
+                class="nav__account-item nav__account-item--danger"
+                role="menuitem"
+                (click)="cerrarSesion()"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                  <path d="M15 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4"></path>
+                  <path d="M10 8l-4 4 4 4M6 12h9"></path>
+                </svg>
+                Cerrar sesión
+              </button>
+            </div>
+          }
+        } @else {
+          <button
+            type="button"
+            class="nav__account"
+            aria-label="Identifícate"
+            (click)="irAlLogin()"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4.5 20.5a7.5 7.5 0 0115 0"></path>
+            </svg>
+            <span class="nav__account-text">Identifícate</span>
+          </button>
+        }
+      </div>
 
       <button type="button" class="nav__icon" aria-label="Carrito de compras" (click)="cartCount.set(cartCount())">
         <span class="nav__icon-wrap">

@@ -1,9 +1,19 @@
 import { Routes } from '@angular/router';
 
 /**
- * Rutas del feature de autenticación y seguridad.
+ * Rutas internas del feature de autenticación y seguridad.
  *
- * Esqueleto de arquitectura: este archivo todavía NO está montado en
- * app.routes.ts. La ruta pública futura del login será '/login'.
+ * Se montan bajo el prefijo 'auth' en app.routes.ts:
+ *  - personal/login -> Acceso del personal (VANTER MEN).
+ *
+ * La ruta pública de clientes ('/login') se mantiene en app.routes.ts.
  */
-export const autenticacionSeguridadRoutes: Routes = [];
+export const autenticacionSeguridadRoutes: Routes = [
+  {
+    path: 'personal/login',
+    loadComponent: () =>
+      import('./auth/pages/personal-login/personal-login').then(
+        (m) => m.PersonalLogin,
+      ),
+  },
+];

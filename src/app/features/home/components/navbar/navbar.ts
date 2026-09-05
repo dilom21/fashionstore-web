@@ -10,9 +10,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Product } from '../../../../shared/models/product';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { AuthService } from '../../../../features/autenticacion-seguridad/auth/services/auth.service';
 import {
   FEATURED_PRODUCTS,
   NEW_ARRIVALS,
@@ -44,6 +45,8 @@ const NAV_LINKS: NavLink[] = [
 })
 export class Navbar implements OnDestroy {
   readonly themeService = inject(ThemeService);
+  readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly navLinks = NAV_LINKS;
@@ -51,8 +54,30 @@ export class Navbar implements OnDestroy {
   readonly searchOpen = signal(false);
   readonly query = signal('');
   readonly cartCount = signal(0);
+  readonly accountOpen = signal(false);
 
   readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  readonly accountWrap = viewChild<ElementRef<HTMLElement>>('accountWrap');
+
+  /**
+   * Texto de la zona de cuenta cuando hay sesión iniciada.
+   * Tras un login reciente se dispone del nombre (ClienteAuth) -> "Hola, Juan".
+   * Tras restaurar con /auth/me solo hay UsuarioAuth -> "Mi cuenta".
+   */
+  readonly cuentaTexto = computed(() => {
+    const usuario = this.authService.usuarioActual();
+    if (usuario === null) {
+      return 'Mi cuenta';
+    }
+    if (
+      usuario.contexto === 'cliente' &&
+      'nombre' in usuario &&
+      usuario.nombre
+    ) {
+      return `Hola, ${usuario.nombre}`;
+    }
+    return 'Mi cuenta';
+  });
 
   private readonly allProducts: Product[] = [
     ...FEATURED_PRODUCTS,
@@ -75,17 +100,36 @@ export class Navbar implements OnDestroy {
   });
 
   private keyHandler: ((event: KeyboardEvent) => void) | null = null;
+  private outsideHandler: ((event: PointerEvent) => void) | null = null;
   private lastFocused: HTMLElement | null = null;
 
   constructor() {
-    // Listener global para cerrar el buscador con Escape (solo navegador).
+    // Listener global para cerrar buscador / menú de cuenta / menú móvil con
+    // Escape, y para cerrar el menú de cuenta al hacer clic fuera. Solo browser.
     afterNextRender(() => {
       this.keyHandler = (event: KeyboardEvent) => {
-        if (event.key === 'Escape' && this.searchOpen()) {
-          this.closeSearch();
+        if (event.key === 'Escape') {
+          if (this.searchOpen()) {
+            this.closeSearch();
+          } else if (this.accountOpen()) {
+            this.closeAccount();
+          } else if (this.menuOpen()) {
+            this.closeMenu();
+          }
+        }
+      };
+      this.outsideHandler = (event: PointerEvent) => {
+        const wrap = this.accountWrap()?.nativeElement;
+        if (
+          this.accountOpen() &&
+          wrap &&
+          !wrap.contains(event.target as Node)
+        ) {
+          this.accountOpen.set(false);
         }
       };
       document.addEventListener('keydown', this.keyHandler);
+      document.addEventListener('pointerdown', this.outsideHandler);
     });
   }
 
@@ -93,6 +137,10 @@ export class Navbar implements OnDestroy {
     if (this.keyHandler) {
       document.removeEventListener('keydown', this.keyHandler);
       this.keyHandler = null;
+    }
+    if (this.outsideHandler) {
+      document.removeEventListener('pointerdown', this.outsideHandler);
+      this.outsideHandler = null;
     }
     this.setBodyScrollLock(false);
   }
@@ -103,6 +151,36 @@ export class Navbar implements OnDestroy {
 
   closeMenu(): void {
     this.menuOpen.set(false);
+  }
+
+  /** Va al login de clientes conservando la URL actual como returnUrl. */
+  irAlLogin(): void {
+    this.closeMenu();
+    this.accountOpen.set(false);
+    const urlActual = this.router.url || '/';
+    void this.router.navigate(['/login'], {
+      queryParams: { returnUrl: urlActual },
+    });
+  }
+
+  toggleAccount(): void {
+    this.accountOpen.update((open) => !open);
+  }
+
+  closeAccount(): void {
+    this.accountOpen.set(false);
+  }
+
+  /** "Mi cuenta" queda preparado sin navegar a un perfil inexistente. */
+  elegirMiCuenta(): void {
+    this.accountOpen.set(false);
+  }
+
+  /** Cierra la sesión local y vuelve al inicio. */
+  cerrarSesion(): void {
+    this.accountOpen.set(false);
+    this.authService.cerrarSesion();
+    void this.router.navigateByUrl('/');
   }
 
   toggleTheme(): void {

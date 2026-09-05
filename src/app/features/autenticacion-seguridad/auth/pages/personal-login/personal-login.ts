@@ -13,32 +13,32 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
 
 const MENSAJE_CREDENCIALES =
   'No pudimos iniciar sesión. Verifica tus datos e inténtalo nuevamente.';
 const MENSAJE_CONEXION =
-  'No pudimos conectarnos con el servicio. Inténtalo nuevamente en unos momentos.';
+  'No pudimos conectarnos con el servicio. Inténtalo nuevamente.';
 
 /**
- * Página de inicio de sesión de CLIENTES (VANTER MEN).
+ * Página de acceso del PERSONAL (VANTER MEN).
  *
- * - Usa exclusivamente AuthService.loginCliente() (POST /auth/clientes/login).
- * - No implementa todavía registro ni recuperación de contraseña.
- * - Si el cliente ya está autenticado, redirige a returnUrl válido o a "/".
+ * Ruta interna: /auth/personal/login.
+ * - Usa exclusivamente AuthService.loginPersonal() (POST /auth/personal/login).
+ * - No aparece en la tienda pública: el personal conoce la dirección.
+ * - Si ya hay un usuario de personal autenticado, redirige a /dashboard.
  */
 @Component({
-  selector: 'app-login',
+  selector: 'app-personal-login',
   imports: [ReactiveFormsModule, RouterLink],
-  styleUrl: './login.css',
-  templateUrl: './login.html',
+  styleUrl: './personal-login.css',
+  templateUrl: './personal-login.html',
 })
-export class Login {
+export class PersonalLogin {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly form = new FormGroup({
@@ -55,6 +55,7 @@ export class Login {
   readonly enviando = signal(false);
   readonly mensajeError = signal<string | null>(null);
   readonly mostrarPassword = signal(false);
+  readonly avisoRecuperacion = signal(false);
 
   constructor() {
     // Al editar cualquier campo se limpia el error general mostrado.
@@ -62,15 +63,13 @@ export class Login {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.mensajeError.set(null));
 
-    // Si ya existe un cliente autenticado (p. ej. tras restaurar sesión o
-    // justo después de un login correcto), esta página no debe mostrarse:
-    // se redirige a returnUrl válido o a "/".
+    // Personal ya autenticado (o sesión restaurada): va directo al dashboard.
     effect(() => {
       if (
-        this.authService.contexto() === 'cliente' &&
+        this.authService.contexto() === 'personal' &&
         this.authService.autenticado()
       ) {
-        this.redirigirTrasLogin();
+        void this.router.navigateByUrl('/dashboard');
       }
     });
   }
@@ -91,13 +90,13 @@ export class Login {
     const { correo, password } = this.form.getRawValue();
 
     this.authService
-      .loginCliente({ correo, password })
+      .loginPersonal({ correo, password })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.enviando.set(false);
-          // La redirección la realiza el effect: usuarioActual/contexto ya
-          // reflejan al cliente autenticado.
+          // El effect anterior redirige a /dashboard en cuanto la sesión
+          // queda marcada como contexto "personal".
         },
         error: (error: unknown) => {
           this.enviando.set(false);
@@ -108,6 +107,12 @@ export class Login {
 
   toggleMostrarPassword(): void {
     this.mostrarPassword.update((visible) => !visible);
+  }
+
+  /** Recuperación de contraseña aún no disponible: solo feedback visual. */
+  avisoDeRecuperacion(): void {
+    this.avisoRecuperacion.set(true);
+    window.setTimeout(() => this.avisoRecuperacion.set(false), 4000);
   }
 
   /** Mensaje de validación del correo, o null si no corresponde mostrarlo. */
@@ -135,24 +140,6 @@ export class Login {
       return 'Ingresa tu contraseña.';
     }
     return null;
-  }
-
-  /**
-   * Destino tras el login. Solo acepta rutas internas que empiecen por "/" y
-   * no por "//", para evitar open redirect hacia dominios externos.
-   */
-  private destinoTrasLogin(): string {
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
-      return returnUrl;
-    }
-    return '/';
-  }
-
-  private redirigirTrasLogin(): void {
-    void this.router.navigateByUrl(this.destinoTrasLogin(), {
-      replaceUrl: true,
-    });
   }
 
   private mensajeParaError(error: unknown): string {
