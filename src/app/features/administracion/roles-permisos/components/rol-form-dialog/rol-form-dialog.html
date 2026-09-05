@@ -1,0 +1,98 @@
+<div class="rfd" (click)="cancelar()">
+  <div
+    class="rfd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="esCreacion() ? 'Nuevo rol' : 'Editar rol'"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="rfd__close" (click)="cancelar()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <div class="rfd__icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+        <circle cx="7.5" cy="15.5" r="4.5"></circle>
+        <path d="M11 12 21 2"></path>
+        <path d="m17.5 5.5 2.5 2.5"></path>
+      </svg>
+    </div>
+
+    <h2 class="rfd__title">{{ esCreacion() ? 'Nuevo rol' : 'Editar rol' }}</h2>
+    <p class="rfd__text">
+      {{ esCreacion()
+          ? 'Registra un rol personalizado y luego configura su matriz de permisos.'
+          : 'Actualiza la descripción del rol. Los roles base no pueden renombrarse.' }}
+    </p>
+
+    @if (mensajeError(); as error) {
+      <p class="rfd__alert" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        {{ error }}
+      </p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      @if (esCreacion() || !nombreBloqueado()) {
+        <div class="rfd__field">
+          <label class="rfd__label" for="rfd-nombre">Nombre del rol</label>
+          <input
+            class="rfd__input"
+            [class.rfd__input--error]="mensajeCampoNombre() !== null"
+            id="rfd-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="off"
+            placeholder="Ej. GERENTE_REGIONAL"
+            [attr.aria-describedby]="mensajeCampoNombre() ? 'rfd-nombre-error' : null"
+          />
+          @if (mensajeCampoNombre(); as msg) {
+            <p class="rfd__field-error" id="rfd-nombre-error">{{ msg }}</p>
+          }
+        </div>
+      } @else {
+        <div class="rfd__field">
+          <span class="rfd__label" id="rfd-nombre-fijo-label">Nombre del rol</span>
+          <p class="rfd__readonly" id="rfd-nombre-fijo">{{ rol()?.nombre }}</p>
+          <p class="rfd__hint">Los roles base no pueden renombrarse.</p>
+        </div>
+      }
+
+      <div class="rfd__field">
+        <label class="rfd__label" for="rfd-descripcion">Descripción</label>
+        <textarea
+          class="rfd__input rfd__textarea"
+          id="rfd-descripcion"
+          rows="3"
+          formControlName="descripcion"
+          autocomplete="off"
+          placeholder="¿Para qué se usará este rol? (opcional)"
+        ></textarea>
+      </div>
+
+      <div class="rfd__actions">
+        <button type="button" class="rfd__btn rfd__btn--ghost" (click)="cancelar()">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="rfd__btn rfd__btn--primary"
+          [disabled]="guardando()"
+          [attr.aria-busy]="guardando()"
+        >
+          @if (guardando()) {
+            <span class="rfd__spinner" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            {{ esCreacion() ? 'Crear rol' : 'Guardar cambios' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

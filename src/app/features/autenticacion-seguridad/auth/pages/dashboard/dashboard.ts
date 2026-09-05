@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
 
@@ -11,6 +11,7 @@ import { AuthService } from '../../services/auth.service';
  */
 @Component({
   selector: 'app-dashboard',
+  imports: [RouterLink],
   styleUrl: './dashboard.css',
   templateUrl: './dashboard.html',
 })
@@ -22,6 +23,7 @@ export class Dashboard {
   readonly correo = computed(
     () => this.authService.usuarioActual()?.correo ?? null,
   );
+  readonly esAdministrador = computed(() => this.authService.esAdministrador());
   readonly nombreCompleto = computed(() => {
     const usuario = this.authService.usuarioActual();
     if (usuario === null || !('nombre' in usuario) || !usuario.nombre) {

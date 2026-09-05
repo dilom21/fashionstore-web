@@ -63,13 +63,18 @@ export class PersonalLogin {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.mensajeError.set(null));
 
-    // Personal ya autenticado (o sesión restaurada): va directo al dashboard.
+    // Personal ya autenticado (o sesión restaurada): va al panel. Un
+    // ADMINISTRADOR entra directo a Gestión de Usuarios; el resto al dashboard.
     effect(() => {
       if (
         this.authService.contexto() === 'personal' &&
         this.authService.autenticado()
       ) {
-        void this.router.navigateByUrl('/dashboard');
+        void this.router.navigateByUrl(
+          this.authService.esAdministrador()
+            ? '/admin/usuarios'
+            : '/dashboard',
+        );
       }
     });
   }

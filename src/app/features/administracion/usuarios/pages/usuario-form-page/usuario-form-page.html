@@ -1,0 +1,255 @@
+<div class="usf">
+  <header class="usf__head">
+    <div>
+      <span class="usf__eyebrow">Administración · Usuarios</span>
+      <h1 class="usf__title">{{ esEdicion() ? 'Editar usuario' : 'Nuevo usuario' }}</h1>
+      <p class="usf__subtitle">
+        {{ esEdicion()
+            ? 'Actualiza los datos de la cuenta y del empleado. Los campos modificados se guardan al confirmar.'
+            : 'Registra una cuenta para un usuario interno y vincúlala con su empleado.' }}
+      </p>
+    </div>
+    <a [routerLink]="rutaVolver()" class="usf__back">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M19 12H5M11 6l-6 6 6 6"></path>
+      </svg>
+      Volver
+    </a>
+  </header>
+
+  @if (cargandoUsuario()) {
+    <div class="usf__loading" role="status">
+      <span class="usf__spinner" aria-hidden="true"></span>
+      <span>Cargando datos del usuario…</span>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      @if (mensajeError(); as error) {
+        <p class="usf__alert" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 8v4.5M12 15.6v.1"></path>
+          </svg>
+          {{ error }}
+        </p>
+      }
+
+      @if (mensajeExito(); as exito) {
+        <p class="usf__success" role="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+          </svg>
+          {{ exito }}
+        </p>
+      }
+
+      <section class="usf__card" formGroupName="cuenta" aria-label="Datos de la cuenta">
+        <h2 class="usf__card-title">Cuenta</h2>
+
+        <div class="usf__grid">
+          <div class="usf__field usf__field--wide">
+            <label class="usf__label" for="usf-correo">Correo electrónico</label>
+            <input
+              class="usf__input"
+              [class.usf__input--error]="mensajeCampo(cuentaCorreo) !== null"
+              id="usf-correo"
+              type="email"
+              formControlName="correo"
+              autocomplete="off"
+              placeholder="nombre@fashionstore.test"
+              aria-describedby="usf-correo-error"
+            />
+            @if (mensajeCampo(cuentaCorreo); as msg) {
+              <p class="usf__field-error" id="usf-correo-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="usf__field usf__field--wide">
+            <label class="usf__label" for="usf-password">
+              {{ esEdicion() ? 'Nueva contraseña (opcional)' : 'Contraseña temporal' }}
+            </label>
+            <input
+              class="usf__input"
+              [class.usf__input--error]="mensajeCampo(cuentaPassword) !== null"
+              id="usf-password"
+              type="password"
+              formControlName="password"
+              autocomplete="new-password"
+              placeholder="{{ esEdicion() ? '••••••••' : 'Mínimo 8 caracteres' }}"
+              aria-describedby="usf-password-error"
+            />
+            @if (esEdicion()) {
+              <p class="usf__hint">Déjala en blanco para conservar la contraseña actual.</p>
+            }
+            @if (mensajeCampo(cuentaPassword); as msg) {
+              <p class="usf__field-error" id="usf-password-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="usf__field">
+            <label class="usf__label" for="usf-rol">Rol</label>
+            <select
+              class="usf__input"
+              [class.usf__input--error]="mensajeCampo(cuentaRol) !== null"
+              id="usf-rol"
+              formControlName="rolId"
+              [disabled]="roles().length === 0"
+              aria-describedby="usf-rol-error"
+            >
+              <option [ngValue]="null">Selecciona un rol…</option>
+              @for (rol of roles(); track rol.id) {
+                <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+              }
+            </select>
+            @if (mensajeCampo(cuentaRol); as msg) {
+              <p class="usf__field-error" id="usf-rol-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      @if (sinEmpleado()) {
+        <section class="usf__card" aria-label="Empleado">
+          <h2 class="usf__card-title">Empleado</h2>
+          <p class="usf__notice">
+            Este usuario no tiene un empleado asociado, por lo que solo puedes modificar los
+            datos de la cuenta.
+          </p>
+        </section>
+      } @else {
+        <section class="usf__card" formGroupName="empleado" aria-label="Datos del empleado">
+          <h2 class="usf__card-title">Empleado</h2>
+
+          <div class="usf__grid">
+            <div class="usf__field">
+              <label class="usf__label" for="usf-nombres">Nombres</label>
+              <input
+                class="usf__input"
+                [class.usf__input--error]="mensajeCampo(empleadoNombres) !== null"
+                id="usf-nombres"
+                type="text"
+                formControlName="nombres"
+                autocomplete="off"
+                placeholder="Nombres"
+                aria-describedby="usf-nombres-error"
+              />
+              @if (mensajeCampo(empleadoNombres); as msg) {
+                <p class="usf__field-error" id="usf-nombres-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="usf__field">
+              <label class="usf__label" for="usf-apellidos">Apellidos</label>
+              <input
+                class="usf__input"
+                [class.usf__input--error]="mensajeCampo(empleadoApellidos) !== null"
+                id="usf-apellidos"
+                type="text"
+                formControlName="apellidos"
+                autocomplete="off"
+                placeholder="Apellidos"
+                aria-describedby="usf-apellidos-error"
+              />
+              @if (mensajeCampo(empleadoApellidos); as msg) {
+                <p class="usf__field-error" id="usf-apellidos-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="usf__field">
+              <label class="usf__label" for="usf-ci">Documento de identidad (CI)</label>
+              <input
+                class="usf__input"
+                [class.usf__input--error]="mensajeCampo(empleadoCi) !== null"
+                id="usf-ci"
+                type="text"
+                formControlName="ci"
+                autocomplete="off"
+                placeholder="Número de CI"
+                aria-describedby="usf-ci-error"
+              />
+              @if (mensajeCampo(empleadoCi); as msg) {
+                <p class="usf__field-error" id="usf-ci-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="usf__field">
+              <label class="usf__label" for="usf-telefono">Teléfono</label>
+              <input
+                class="usf__input"
+                [class.usf__input--error]="mensajeCampo(empleadoTelefono) !== null"
+                id="usf-telefono"
+                type="tel"
+                formControlName="telefono"
+                autocomplete="off"
+                placeholder="Opcional"
+                aria-describedby="usf-telefono-error"
+              />
+              @if (mensajeCampo(empleadoTelefono); as msg) {
+                <p class="usf__field-error" id="usf-telefono-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="usf__field">
+              <label class="usf__label" for="usf-sucursal">Sucursal</label>
+              <select
+                class="usf__input"
+                [class.usf__input--error]="mensajeCampo(empleadoSucursal) !== null"
+                id="usf-sucursal"
+                formControlName="sucursalId"
+                [disabled]="sucursales().length === 0"
+                aria-describedby="usf-sucursal-error"
+              >
+                <option [ngValue]="null">Selecciona una sucursal…</option>
+                @for (sucursal of sucursales(); track sucursal.id) {
+                  <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+                }
+              </select>
+              @if (mensajeCampo(empleadoSucursal); as msg) {
+                <p class="usf__field-error" id="usf-sucursal-error">{{ msg }}</p>
+              }
+            </div>
+
+            <div class="usf__field">
+              <label class="usf__label" for="usf-fecha">Fecha de contratación</label>
+              <input
+                class="usf__input"
+                [class.usf__input--error]="mensajeCampo(empleadoFecha) !== null"
+                id="usf-fecha"
+                type="date"
+                formControlName="fechaContratacion"
+                aria-describedby="usf-fecha-error"
+              />
+              @if (mensajeCampo(empleadoFecha); as msg) {
+                <p class="usf__field-error" id="usf-fecha-error">{{ msg }}</p>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      <div class="usf__actions">
+        <a [routerLink]="rutaVolver()" class="usf__btn-cancel" [attr.aria-disabled]="guardando()">
+          Cancelar
+        </a>
+        <button
+          type="submit"
+          class="usf__btn-save"
+          [disabled]="guardando()"
+          [attr.aria-busy]="guardando()"
+        >
+          @if (guardando()) {
+            <span class="usf__spinner usf__spinner--btn" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+              <path d="M17 21v-8H7v8M7 3v5h8"></path>
+            </svg>
+            <span>{{ guardarLabel() }}</span>
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

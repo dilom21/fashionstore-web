@@ -1,0 +1,92 @@
+<div class="bdd" (click)="cerrar()">
+  <div
+    class="bdd__card"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bdd-titulo"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="bdd__close" (click)="cerrar()" aria-label="Cerrar detalle del evento">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <div class="bdd__head">
+      <div class="bdd__icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+          <path d="M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+          <path d="M8 3v4M16 3v4M3 11h18"></path>
+        </svg>
+      </div>
+      <div>
+        <h2 class="bdd__title" id="bdd-titulo">Detalle del evento</h2>
+        <p class="bdd__text">Consulta en solo lectura de la bitácora del sistema.</p>
+      </div>
+    </div>
+
+    @if (error(); as error) {
+      <div class="bdd__notice" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        <p>{{ error }}</p>
+        <button type="button" class="bdd__retry" (click)="cargar()">Reintentar</button>
+      </div>
+    }
+
+    @if (cargando()) {
+      <div class="bdd__loading" role="status">
+        <span class="bdd__spinner" aria-hidden="true"></span>
+        <span>Cargando evento…</span>
+      </div>
+    } @else if (evento(); as evento) {
+      <dl class="bdd__ficha">
+        <div class="bdd__campo bdd__campo--corto">
+          <dt>ID</dt>
+          <dd class="bdd__mono">#{{ evento.id }}</dd>
+        </div>
+        <div class="bdd__campo bdd__campo--corto">
+          <dt>Fecha y hora</dt>
+          <dd>{{ evento.fecha_hora | date : 'dd/MM/yyyy HH:mm:ss' }}</dd>
+        </div>
+        <div class="bdd__campo">
+          <dt>Usuario</dt>
+          <dd>
+            {{ textoUsuario(evento) }}
+            @if (esSistema(evento)) {
+              <span class="bdd__chip bdd__chip--sistema">Sistema</span>
+            }
+          </dd>
+        </div>
+        <div class="bdd__campo">
+          <dt>Rol</dt>
+          <dd>{{ textoRol(evento) }}</dd>
+        </div>
+        <div class="bdd__campo">
+          <dt>Acción</dt>
+          <dd>{{ humanizar(evento.accion) }}</dd>
+        </div>
+        <div class="bdd__campo">
+          <dt>Entidad afectada</dt>
+          <dd>{{ humanizar(evento.entidad_afectada) }}</dd>
+        </div>
+        <div class="bdd__campo">
+          <dt>Dirección IP</dt>
+          <dd class="bdd__mono">{{ textoIp(evento) }}</dd>
+        </div>
+        <div class="bdd__campo bdd__campo--completo">
+          <dt>Descripción</dt>
+          <dd class="bdd__desc">{{ textoDescripcion(evento) }}</dd>
+        </div>
+      </dl>
+    }
+
+    <div class="bdd__actions">
+      <button type="button" class="bdd__btn bdd__btn--primary" (click)="cerrar()">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>

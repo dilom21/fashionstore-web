@@ -1,0 +1,39 @@
+<div class="en-construccion">
+  <header class="en-construccion__head">
+    <span class="en-construccion__eyebrow">Panel Administrativo</span>
+    <h1 class="en-construccion__title">Módulo en construcción</h1>
+    <p class="en-construccion__subtitle">
+      Estamos preparando esta sección del panel.
+    </p>
+  </header>
+
+  <section class="en-construccion__card">
+    <span class="en-construccion__icon" aria-hidden="true">
+      <app-admin-icon [icono]="icono()" />
+    </span>
+
+    @if (modulo(); as nombreModulo) {
+      <span class="en-construccion__modulo">{{ nombreModulo }}</span>
+    }
+
+    <h2 class="en-construccion__nombre">{{ titulo() }}</h2>
+
+    @if (descripcion(); as texto) {
+      <p class="en-construccion__texto">{{ texto }}</p>
+    }
+
+    <span class="en-construccion__pill">
+      <app-admin-icon icono="tool" />
+      Próximamente
+    </span>
+
+    <div class="en-construccion__acciones">
+      <a routerLink="/admin/inicio" class="en-construccion__btn en-construccion__btn--primary">
+        Volver al inicio
+      </a>
+      <a routerLink="/admin/usuarios" class="en-construccion__btn en-construccion__btn--ghost">
+        Gestionar Usuarios
+      </a>
+    </div>
+  </section>
+</div>

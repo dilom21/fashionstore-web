@@ -1,0 +1,139 @@
+<aside
+  class="adm-sidebar"
+  [class.adm-sidebar--colapsada]="colapsada()"
+  [class.adm-sidebar--movil-abierta]="abiertaMovil()"
+  aria-label="Menú del panel administrativo"
+>
+  <!-- Cabecera: identidad de la marca -->
+  <div class="adm-sidebar__top">
+    <div class="adm-sidebar__brand">
+      <svg
+        class="adm-sidebar__logo"
+        width="30"
+        height="30"
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d="M4 6h24L17 27h-2L4 6z" fill="url(#adm-sb-grad)" />
+        <path d="M11 6l5 9 5-9" stroke="rgba(255,255,255,.85)" stroke-width="1.6" />
+        <defs>
+          <linearGradient
+            id="adm-sb-grad"
+            x1="4"
+            y1="6"
+            x2="28"
+            y2="27"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stop-color="#a855f7" />
+            <stop offset="1" stop-color="#d946ef" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="adm-sidebar__brand-text">
+        <span class="adm-sidebar__brand-name">VANTER&nbsp;<em>MEN</em></span>
+        <span class="adm-sidebar__brand-tag">Panel Administrativo</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="adm-sidebar__btn adm-sidebar__close-movil"
+      (click)="cerrarMovil.emit()"
+      aria-label="Cerrar menú"
+      title="Cerrar menú"
+    >
+      <app-admin-icon icono="close" />
+    </button>
+
+    <button
+      type="button"
+      class="adm-sidebar__btn adm-sidebar__colapso"
+      (click)="toggleColapso.emit()"
+      [attr.aria-label]="colapsada() ? 'Expandir barra lateral' : 'Colapsar barra lateral'"
+      [attr.title]="colapsada() ? 'Expandir barra lateral' : 'Colapsar barra lateral'"
+    >
+      <app-admin-icon [icono]="colapsada() ? 'chevron-right' : 'chevron-left'" />
+    </button>
+  </div>
+
+  <!-- Navegación -->
+  <nav class="adm-sidebar__nav">
+    @for (item of itemsVisibles(); track item.id) {
+      @if (hijosVisibles(item).length > 0) {
+        <div class="adm-sidebar__grupo">
+          <button
+            type="button"
+            class="adm-sidebar__link adm-sidebar__grupo-boton"
+            [class.adm-sidebar__grupo-boton--activo]="grupoActivo(item)"
+            (click)="alternarGrupo(item)"
+            [attr.aria-expanded]="grupoExpandido(item)"
+            [attr.title]="colapsada() ? item.label : null"
+          >
+            <app-admin-icon class="adm-sidebar__link-icon" [icono]="item.icon" />
+            <span class="adm-sidebar__link-label">{{ item.label }}</span>
+            <app-admin-icon
+              class="adm-sidebar__chevron"
+              [class.adm-sidebar__chevron--abierto]="grupoExpandido(item)"
+              icono="chevron"
+            />
+          </button>
+
+          @if (grupoExpandido(item) && !colapsada()) {
+            <div class="adm-sidebar__sub">
+              @for (hijo of hijosVisibles(item); track hijo.id) {
+                <a
+                  class="adm-sidebar__sub-link"
+                  [routerLink]="hijo.route"
+                  routerLinkActive="adm-sidebar__sub-link--activo"
+                  (click)="alSeleccionar()"
+                  [attr.aria-label]="hijo.label"
+                >
+                  <app-admin-icon class="adm-sidebar__sub-icon" [icono]="hijo.icon" />
+                  <span class="adm-sidebar__link-label">{{ hijo.label }}</span>
+                  @if (hijo.estado === 'proximamente') {
+                    <span class="adm-sidebar__prox">Próx.</span>
+                  }
+                </a>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <a
+          class="adm-sidebar__link"
+          [routerLink]="item.route"
+          routerLinkActive="adm-sidebar__link--activo"
+          (click)="alSeleccionar()"
+          [attr.aria-label]="item.label"
+          [attr.title]="colapsada() ? item.label : null"
+        >
+          <app-admin-icon class="adm-sidebar__link-icon" [icono]="item.icon" />
+          <span class="adm-sidebar__link-label">{{ item.label }}</span>
+        </a>
+      }
+    }
+  </nav>
+
+  <!-- Sesión -->
+  <div class="adm-sidebar__foot">
+    <div class="adm-sidebar__session">
+      <span class="adm-sidebar__avatar" aria-hidden="true">{{ iniciales() }}</span>
+      <span class="adm-sidebar__who">
+        <span class="adm-sidebar__who-name">{{ nombre() ?? correo() ?? 'Administrador' }}</span>
+        <span class="adm-sidebar__who-rol">{{ rol() ?? 'ADMINISTRADOR' }}</span>
+      </span>
+    </div>
+    <button
+      type="button"
+      class="adm-sidebar__btn adm-sidebar__logout"
+      (click)="solicitarLogout.emit()"
+      aria-label="Cerrar sesión"
+      title="Cerrar sesión"
+    >
+      <app-admin-icon icono="logout" />
+      <span class="adm-sidebar__logout-label">Cerrar sesión</span>
+    </button>
+  </div>
+</aside>

@@ -227,6 +227,31 @@
   overflow-wrap: anywhere;
 }
 
+/* Acceso al módulo de Gestión de Usuarios (solo ADMINISTRADOR) */
+.dash__admin-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3.1rem;
+  margin-top: 1.8rem;
+  padding: 0.7rem 1.8rem;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-size: 0.95rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-accent);
+  transition:
+    transform 0.22s ease,
+    filter 0.22s ease;
+}
+
+.dash__admin-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 620px) {
   .dash__brand-tag {

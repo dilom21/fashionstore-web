@@ -1,0 +1,445 @@
+:host {
+  display: block;
+}
+
+.bit {
+  width: 100%;
+  max-width: calc(var(--container) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding: clamp(1.6rem, 4vw, 2.6rem) var(--gutter) clamp(3rem, 6vw, 5rem);
+}
+
+.bit__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.bit__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.bit__eyebrow::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--grad-accent);
+}
+
+.bit__title {
+  margin-top: 0.6rem;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  letter-spacing: -0.025em;
+}
+
+.bit__subtitle {
+  margin-top: 0.45rem;
+  max-width: 62ch;
+  color: var(--text-2);
+  font-size: 0.98rem;
+}
+
+.bit__solo-lectura {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-3);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bit__filtros {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: clamp(1.6rem, 3vw, 2.2rem);
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.bit__busqueda {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1 1 250px;
+  min-height: 2.9rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+  color: var(--text-3);
+  transition: border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.bit__busqueda:focus-within {
+  border-color: var(--accent-3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.bit__busqueda input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.94rem;
+}
+
+.bit__busqueda input:focus {
+  outline: none;
+}
+
+.bit__busqueda input::placeholder {
+  color: var(--text-3);
+}
+
+.bit__buscar-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--text-3);
+  transition: color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.bit__buscar-btn:hover:not(:disabled) {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
+.bit__buscar-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bit__select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 150px;
+}
+
+.bit__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.bit__select select,
+.bit__select input[type='date'] {
+  min-height: 2.9rem;
+  padding: 0 2.2rem 0 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.bit__select input[type='date'] {
+  padding: 0 0.9rem;
+  cursor: text;
+}
+
+.bit__select select:focus,
+.bit__select input[type='date']:focus {
+  outline: none;
+  border-color: var(--accent-3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.bit__select select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bit__select select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.bit__fechas {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.bit__fechas .bit__select {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.bit__fechas .bit__label {
+  min-width: 3.4rem;
+}
+
+.bit__fechas .bit__select input[type='date'] {
+  min-width: 145px;
+  padding: 0 0.7rem;
+}
+
+.bit__fecha-error {
+  flex-basis: 100%;
+  color: #fda4af;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+html[data-theme='light'] .bit__fecha-error {
+  color: #be123c;
+}
+
+.bit__fechas--error input[type='date'] {
+  border-color: rgb(248 113 113 / 65%);
+}
+
+.bit__limpiar {
+  min-height: 2.9rem;
+  padding: 0 1.15rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.bit__limpiar:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bit__limpiar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bit__aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.bit__aviso svg {
+  flex-shrink: 0;
+}
+
+.bit__aviso p {
+  flex: 1;
+}
+
+.bit__aviso--warn {
+  border-color: rgb(251 191 36 / 35%);
+  background: rgb(120 53 15 / 14%);
+  color: var(--text-2);
+}
+
+.bit__aviso--warn svg {
+  color: #fbbf24;
+}
+
+.bit__reintentar {
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bit__reintentar:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.bit__panel {
+  margin-top: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.bit__carga {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 3.2rem 1rem;
+  color: var(--text-2);
+  font-size: 0.95rem;
+}
+
+.bit__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--accent-strong);
+  border-top-color: var(--accent-3);
+  border-radius: 50%;
+  animation: bit-spin 0.7s linear infinite;
+}
+
+.bit__spinner--mini {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.bit__vacio {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.bit__vacio-btn {
+  min-height: 2.6rem;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-weight: 600;
+  transition: color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.bit__vacio-btn:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.bit__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem 1rem;
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.bit__pie-tamano {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.bit__pie-tamano select {
+  min-height: 2.3rem;
+  padding: 0 1.8rem 0 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.bit__pie-tamano select:focus {
+  outline: none;
+  border-color: var(--accent-3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.bit__pagina {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.bit__pagina-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.3rem;
+  padding: 0.25rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition: color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.bit__pagina-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bit__pagina-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.bit__pagina-info {
+  color: var(--text-3);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bit__pagina-info strong {
+  color: var(--text);
+}
+
+.bit__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes bit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

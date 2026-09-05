@@ -1,0 +1,41 @@
+<div class="confirm" (click)="cancelar()">
+  <div
+    class="confirm__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="titulo()"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="confirm__icon" [class.confirm__icon--danger]="peligro()" aria-hidden="true">
+      @if (peligro()) {
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+          <path d="M12 8v4.5M12 15.8v.1"></path>
+          <path d="M10.3 4.2L2.9 17a2 2 0 001.7 3h14.8a2 2 0 001.7-3L13.7 4.2a2 2 0 00-3.4 0z"></path>
+        </svg>
+      } @else {
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+        </svg>
+      }
+    </div>
+
+    <h2 class="confirm__title">{{ titulo() }}</h2>
+    <p class="confirm__text">{{ mensaje() }}</p>
+
+    <div class="confirm__actions">
+      <button type="button" class="confirm__btn confirm__btn--ghost" (click)="cancelar()">
+        {{ cancelarLabel() }}
+      </button>
+      <button
+        type="button"
+        class="confirm__btn"
+        [class.confirm__btn--danger]="peligro()"
+        [class.confirm__btn--primary]="!peligro()"
+        (click)="confirmar()"
+      >
+        {{ confirmarLabel() }}
+      </button>
+    </div>
+  </div>
+</div>

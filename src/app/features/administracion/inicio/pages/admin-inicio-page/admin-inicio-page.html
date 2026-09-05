@@ -1,0 +1,56 @@
+<div class="admin-inicio">
+  <header class="admin-inicio__head">
+    <div>
+      <span class="admin-inicio__eyebrow">Panel Administrativo · Inicio</span>
+      <h1 class="admin-inicio__title">Bienvenido{{ nombre() ? ', ' + nombre() : '' }}</h1>
+      <p class="admin-inicio__subtitle">
+        Panel administrativo de VANTER MEN. Selecciona un módulo para comenzar.
+      </p>
+    </div>
+  </header>
+
+  @if (principal; as principalDest) {
+    <section class="admin-inicio__primario" aria-labelledby="admin-inicio-principal">
+      <a class="admin-inicio__card admin-inicio__card--featured" [routerLink]="principalDest.route">
+        <span class="admin-inicio__card-icon" aria-hidden="true">
+          <app-admin-icon icono="usuarios" />
+        </span>
+        <span class="admin-inicio__card-body">
+          <span class="admin-inicio__card-tag">Seguridad · Disponible</span>
+          <span class="admin-inicio__card-title" id="admin-inicio-principal">
+            {{ principalDest.label }}
+          </span>
+          <span class="admin-inicio__card-text">{{ principalDest.descripcion }}</span>
+        </span>
+        <span class="admin-inicio__card-arrow" aria-hidden="true">
+          <app-admin-icon icono="arrow-right" />
+        </span>
+      </a>
+    </section>
+  }
+
+  <section class="admin-inicio__secundario" aria-labelledby="admin-inicio-secciones">
+    <h2 class="admin-inicio__sec-title" id="admin-inicio-secciones">Módulos</h2>
+
+    <div class="admin-inicio__grid">
+      @for (destino of secundarios(); track destino.id) {
+        <a class="admin-inicio__card" [routerLink]="destino.route">
+          <span class="admin-inicio__card-icon" aria-hidden="true">
+            <app-admin-icon [icono]="destino.icon" />
+          </span>
+          <span class="admin-inicio__card-body">
+            <span class="admin-inicio__card-title">{{ destino.label }}</span>
+            <span class="admin-inicio__card-text">{{ destino.descripcion }}</span>
+          </span>
+          <span
+            class="admin-inicio__estado"
+            [class.admin-inicio__estado--ok]="destino.estado === 'funcional'"
+            [class.admin-inicio__estado--prox]="destino.estado !== 'funcional'"
+          >
+            {{ destino.estado === 'funcional' ? 'Disponible' : 'Próximamente' }}
+          </span>
+        </a>
+      }
+    </div>
+  </section>
+</div>

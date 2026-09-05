@@ -39,5 +39,12 @@ export const routes: Routes = [
         './features/autenticacion-seguridad/auth/pages/dashboard/dashboard'
       ).then((m) => m.Dashboard),
   },
+  {
+    path: 'admin',
+    loadChildren: () =>
+      import('./features/administracion/administracion.routes').then(
+        (m) => m.administracionRoutes,
+      ),
+  },
   { path: '**', redirectTo: '' },
 ];

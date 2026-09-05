@@ -1,0 +1,203 @@
+<div class="usuarios">
+  <header class="usuarios__head">
+    <div>
+      <span class="usuarios__eyebrow">Administración · Usuarios</span>
+      <h1 class="usuarios__title">Gestión de usuarios</h1>
+      <p class="usuarios__subtitle">
+        Registra, consulta y administra las cuentas del personal de la marca.
+      </p>
+    </div>
+    <a routerLink="/admin/usuarios/nuevo" class="usuarios__btn-new">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 5v14M5 12h14"></path>
+      </svg>
+      Nuevo usuario
+    </a>
+  </header>
+
+  <form
+    class="usuarios__filters"
+    [formGroup]="filtros"
+    (ngSubmit)="buscar()"
+    novalidate
+    aria-label="Filtros de usuarios"
+  >
+    <div class="usuarios__search">
+      <input
+        type="search"
+        formControlName="buscar"
+        placeholder="Buscar por correo, nombre, CI…"
+        aria-label="Buscar usuarios"
+      />
+      <button type="submit" class="usuarios__search-btn" aria-label="Buscar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M21 21l-4.3-4.3"></path>
+        </svg>
+      </button>
+    </div>
+
+    <label class="usuarios__select">
+      <span class="usuarios__select-label">Rol</span>
+      <select formControlName="rolId" [disabled]="cargandoCatalogos() || roles().length === 0">
+        <option [ngValue]="null">Todos los roles</option>
+        @for (rol of roles(); track rol.id) {
+          <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="usuarios__select">
+      <span class="usuarios__select-label">Estado</span>
+      <select formControlName="estado">
+        <option value="">Todos los estados</option>
+        <option value="activos">Habilitados</option>
+        <option value="inactivos">Deshabilitados</option>
+      </select>
+    </label>
+
+    <label class="usuarios__select">
+      <span class="usuarios__select-label">Sucursal</span>
+      <select
+        formControlName="sucursalId"
+        [disabled]="cargandoCatalogos() || sucursales().length === 0"
+      >
+        <option [ngValue]="null">Todas las sucursales</option>
+        @for (sucursal of sucursales(); track sucursal.id) {
+          <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <button
+      type="button"
+      class="usuarios__clear"
+      [disabled]="!tieneFiltrosActivos()"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar
+    </button>
+  </form>
+
+  @if (errorCatalogos(); as error) {
+    <p class="usuarios__notice usuarios__notice--warn" role="alert">
+      {{ error }}
+    </p>
+  }
+
+  @if (mensajeExito(); as exito) {
+    <p class="usuarios__notice usuarios__notice--ok" role="status">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+      </svg>
+      {{ exito }}
+    </p>
+  }
+
+  @if (errorLista(); as error) {
+    <p class="usuarios__notice usuarios__notice--error" role="alert">
+      {{ error }}
+    </p>
+  }
+
+  <section class="usuarios__panel">
+    @if (cargando()) {
+      <div class="usuarios__loading" role="status">
+        <span class="usuarios__spinner" aria-hidden="true"></span>
+        <span>Cargando usuarios…</span>
+      </div>
+    } @else if (usuarios().length === 0) {
+      <div class="usuarios__empty">
+        @if (tieneFiltrosActivos()) {
+          <p>No hay usuarios que coincidan con los filtros aplicados.</p>
+          <button type="button" class="usuarios__empty-btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        } @else {
+          <p>Todavía no hay usuarios registrados.</p>
+        }
+      </div>
+    } @else {
+      <div class="usuarios__table-wrap">
+        <table class="usuarios__table">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Correo</th>
+              <th scope="col">Empleado</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="usuarios__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of usuarios(); track usuario.id) {
+              <tr>
+                <td class="usuarios__id">#{{ usuario.id }}</td>
+                <td class="usuarios__correo">{{ usuario.correo }}</td>
+                <td>{{ nombreEmpleado(usuario) }}</td>
+                <td><span class="usuarios__rol">{{ usuario.rol.nombre }}</span></td>
+                <td>{{ sucursalEmpleado(usuario) }}</td>
+                <td>
+                  @if (usuario.estado) {
+                    <span class="usuarios__badge usuarios__badge--on">Habilitado</span>
+                  } @else {
+                    <span class="usuarios__badge usuarios__badge--off">Deshabilitado</span>
+                  }
+                </td>
+                <td>
+                  <div class="usuarios__actions">
+                    <a
+                      routerLink="/admin/usuarios/{{ usuario.id }}"
+                      class="usuarios__action usuarios__action--view"
+                      title="Ver detalle"
+                      aria-label="Ver detalle de {{ usuario.correo }}"
+                    >Ver</a>
+                    <a
+                      routerLink="/admin/usuarios/{{ usuario.id }}/editar"
+                      class="usuarios__action usuarios__action--edit"
+                      title="Editar"
+                      aria-label="Editar a {{ usuario.correo }}"
+                    >Editar</a>
+                    @if (usuario.estado) {
+                      <button
+                        type="button"
+                        class="usuarios__action usuarios__action--off"
+                        [disabled]="procesandoId() !== null || esMiCuenta(usuario)"
+                        [title]="esMiCuenta(usuario) ? 'No puedes deshabilitar tu propia cuenta' : 'Deshabilitar'"
+                        (click)="solicitarCambioEstado(usuario)"
+                      >Deshabilitar</button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="usuarios__action usuarios__action--on"
+                        [disabled]="procesandoId() !== null"
+                        (click)="solicitarCambioEstado(usuario)"
+                      >Habilitar</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="usuarios__count">{{ usuarios().length }} usuario(s)</p>
+    }
+  </section>
+</div>
+
+@if (confirmacion(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar usuario' : 'Deshabilitar usuario'"
+    [mensaje]="pendiente.habilitar
+      ? '¿Deseas habilitar la cuenta de ' + pendiente.usuario.correo + '? Podrá volver a iniciar sesión.'
+      : '¿Deseas deshabilitar la cuenta de ' + pendiente.usuario.correo + '? Dejará de poder acceder al sistema.'"
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstado()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}

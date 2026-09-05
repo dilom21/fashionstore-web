@@ -1,0 +1,236 @@
+/* Resumen del listado */
+.bit__resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bit__resumen strong {
+  color: var(--text);
+}
+
+.bit__resumen-actualizando {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-3);
+  font-size: 0.8rem;
+}
+
+/* ===== Tabla ===== */
+.bit__tabla-wrap {
+  overflow-x: auto;
+}
+
+.bit__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.bit__tabla th {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bit__tabla td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.bit__tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.bit__tabla tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+
+.bit__fecha {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bit__usuario {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bit__chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.12em;
+  white-space: nowrap;
+}
+
+.bit__chip--sistema {
+  border: 1px solid rgb(217 70 239 / 40%);
+  background: rgb(217 70 239 / 12%);
+  color: var(--accent-text);
+}
+
+.bit__accion {
+  display: inline-flex;
+  padding: 0.22rem 0.7rem;
+  border: 1px solid var(--accent-strong);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.bit__ip {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bit__desc-cell {
+  max-width: 300px;
+}
+
+.bit__desc {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bit__ver {
+  min-height: 30px;
+  padding: 0.2rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.bit__ver:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ===== Responsive: tabla apilada como tarjetas ===== */
+@media (max-width: 900px) {
+  .bit__tabla-wrap {
+    overflow: visible;
+  }
+
+  .bit__tabla thead {
+    display: none;
+  }
+
+  .bit__tabla,
+  .bit__tabla tbody,
+  .bit__tabla tr,
+  .bit__tabla td {
+    display: block;
+    width: 100%;
+  }
+
+  .bit__tabla tr {
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .bit__tabla tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .bit__tabla td {
+    padding: 0.4rem 0;
+    border-bottom: 0;
+    max-width: none;
+  }
+
+  .bit__tabla td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--text-3);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .bit__tabla td[data-label='']::before {
+    content: none;
+  }
+
+  .bit__desc {
+    white-space: normal;
+  }
+
+  .bit__ver {
+    margin-top: 0.25rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .bit__fechas .bit__select {
+    flex: 1 1 100%;
+  }
+
+  .bit__fechas .bit__select input[type='date'] {
+    flex: 1;
+    width: auto;
+  }
+
+  .bit__fechas .bit__label {
+    min-width: 3.2rem;
+  }
+
+  .bit__pie {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bit__pie-tamano,
+  .bit__pagina {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .bit__pagina-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

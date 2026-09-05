@@ -1,0 +1,415 @@
+:host {
+  display: block;
+}
+
+/* ===== Paleta propia de la sidebar (azul marino oscuro) =====
+   Se mantiene fija aunque la app use tema claro, como una consola
+   administrativa premium. El contenido usa los tokens globales. */
+.adm-sidebar {
+  --sb-fondo-1: #0b1426;
+  --sb-fondo-2: #081022;
+  --sb-borde: rgb(148 163 184 / 12%);
+  --sb-texto: #eef2fb;
+  --sb-texto-2: #a5b4cf;
+  --sb-texto-3: #62738f;
+  --sb-hover: rgb(148 163 184 / 10%);
+  --sb-azul-1: #1d4ed8;
+  --sb-azul-2: #2563eb;
+  --sb-azul-3: #3b82f6;
+  --sb-grad-activo: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
+
+  position: fixed;
+  inset-block: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: var(--adm-sb-w);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgb(37 99 235 / 12%), transparent 55%),
+    linear-gradient(180deg, var(--sb-fondo-1) 0%, var(--sb-fondo-2) 100%);
+  border-right: 1px solid var(--sb-borde);
+  color: var(--sb-texto);
+  transition:
+    width 0.28s ease,
+    transform 0.28s ease;
+}
+
+.adm-sidebar--colapsada {
+  width: var(--adm-sb-wc);
+}
+
+/* ===== Cabecera / marca ===== */
+.adm-sidebar__top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  min-height: 84px;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--sb-borde);
+}
+
+.adm-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-sidebar__logo {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px rgb(192 38 211 / 35%));
+}
+
+.adm-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.adm-sidebar__brand-name {
+  font-size: 0.98rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 96%);
+}
+
+.adm-sidebar__brand-name em {
+  font-style: normal;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.adm-sidebar__brand-tag {
+  margin-top: 0.14rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sb-texto-3);
+  white-space: nowrap;
+}
+
+/* Botones circulares de acción */
+.adm-sidebar__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  color: var(--sb-texto-2);
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.adm-sidebar__btn app-admin-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.adm-sidebar__btn:hover {
+  color: #ffffff;
+  background: var(--sb-hover);
+}
+
+.adm-sidebar__close-movil {
+  display: none;
+}
+
+/* Colapsada: columna centrada y se oculta el texto */
+.adm-sidebar--colapsada .adm-sidebar__top {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  padding-block: 1.1rem;
+}
+
+.adm-sidebar--colapsada .adm-sidebar__brand-text {
+  display: none;
+}
+
+/* ===== Navegación ===== */
+.adm-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-height: 0;
+  padding: 1rem 0.8rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.adm-sidebar__grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.adm-sidebar__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 12px;
+  color: var(--sb-texto-2);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.adm-sidebar__link:hover {
+  color: #ffffff;
+  background: var(--sb-hover);
+}
+
+.adm-sidebar__link-icon,
+.adm-sidebar__sub-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.adm-sidebar__link-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-sidebar__link--activo,
+.adm-sidebar__grupo-boton--activo {
+  background: var(--sb-grad-activo);
+  color: #ffffff;
+  box-shadow: 0 10px 24px -14px rgb(37 99 235 / 90%);
+}
+
+.adm-sidebar__chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--sb-texto-3);
+  transition: transform 0.22s ease;
+}
+
+.adm-sidebar__chevron--abierto {
+  transform: rotate(180deg);
+}
+
+.adm-sidebar__grupo-boton--activo .adm-sidebar__chevron {
+  color: rgb(255 255 255 / 80%);
+}
+
+/* Submenú indentado */
+.adm-sidebar__sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.2rem 0 0.35rem;
+  padding-left: 0.85rem;
+}
+
+.adm-sidebar__sub-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 40px;
+  padding: 0.42rem 0.8rem;
+  border-left: 1px solid var(--sb-borde);
+  border-radius: 10px;
+  color: var(--sb-texto-2);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.adm-sidebar__sub-link:hover {
+  color: #ffffff;
+  background: var(--sb-hover);
+}
+
+.adm-sidebar__sub-link--activo {
+  background: var(--sb-grad-activo);
+  border-left-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 8px 20px -14px rgb(37 99 235 / 90%);
+}
+
+.adm-sidebar__sub-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.adm-sidebar__prox {
+  flex-shrink: 0;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: rgb(148 163 184 / 14%);
+  color: var(--sb-texto-3);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Colapsada: solo iconos centrados */
+.adm-sidebar--colapsada .adm-sidebar__link {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.adm-sidebar--colapsada .adm-sidebar__link-label,
+.adm-sidebar--colapsada .adm-sidebar__chevron,
+.adm-sidebar--colapsada .adm-sidebar__sub,
+.adm-sidebar--colapsada .adm-sidebar__prox {
+  display: none;
+}
+
+/* ===== Sesión / pie ===== */
+.adm-sidebar__foot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  padding: 0.9rem 1rem;
+  border-top: 1px solid var(--sb-borde);
+}
+
+.adm-sidebar__session {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-sidebar__avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%);
+}
+
+.adm-sidebar__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.adm-sidebar__who-name {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-sidebar__who-rol {
+  margin-top: 0.12rem;
+  color: var(--sb-azul-3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.adm-sidebar__logout {
+  width: auto;
+  padding-inline: 0.55rem;
+  border-radius: 999px;
+  color: var(--sb-texto-2);
+}
+
+.adm-sidebar__logout:hover {
+  color: #ffffff;
+  background: rgb(248 113 113 / 16%);
+}
+
+.adm-sidebar__logout-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Colapsada: pie con solo el botón de salir */
+.adm-sidebar--colapsada .adm-sidebar__foot {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.adm-sidebar--colapsada .adm-sidebar__session,
+.adm-sidebar--colapsada .adm-sidebar__logout-label {
+  display: none;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .adm-sidebar {
+    transform: translateX(-100%);
+    box-shadow: 0 0 60px rgb(2 6 16 / 55%);
+  }
+
+  .adm-sidebar--movil-abierta {
+    transform: translateX(0);
+  }
+
+  .adm-sidebar__close-movil {
+    display: inline-flex;
+  }
+
+  .adm-sidebar__colapso {
+    display: none;
+  }
+
+  /* En el drawer móvil siempre se muestra expandido el contenido */
+  .adm-sidebar__top {
+    flex-direction: row;
+  }
+
+  .adm-sidebar__brand-text {
+    display: flex;
+  }
+}
+
+/* Accesibilidad: respeta preferencia de menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .adm-sidebar,
+  .adm-sidebar__chevron {
+    transition-duration: 0.001ms;
+  }
+}

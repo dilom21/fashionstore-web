@@ -1,0 +1,289 @@
+<div class="bit">
+  <header class="bit__head">
+    <div>
+      <span class="bit__eyebrow">Administración · Seguridad</span>
+      <h1 class="bit__title">Bitácora del sistema</h1>
+      <p class="bit__subtitle">
+        Consulta las actividades registradas en FashionStore. Vista de solo
+        lectura de los eventos y operaciones del sistema.
+      </p>
+    </div>
+    <span class="bit__solo-lectura" role="note">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+        <rect x="4" y="10" width="16" height="10" rx="2"></rect>
+        <path d="M8 10V7a4 4 0 018 0v3"></path>
+      </svg>
+      Solo lectura
+    </span>
+  </header>
+
+  <form
+    class="bit__filtros"
+    [formGroup]="filtros"
+    (ngSubmit)="buscar()"
+    novalidate
+    aria-label="Filtros de la bitácora"
+  >
+    <div class="bit__busqueda">
+      <input
+        type="search"
+        formControlName="buscar"
+        placeholder="Buscar por descripción, acción, entidad o correo…"
+        aria-label="Buscar en la bitácora"
+        autocomplete="off"
+      />
+      <button
+        type="submit"
+        class="bit__buscar-btn"
+        aria-label="Aplicar búsqueda"
+        [disabled]="cargando() || rangoInvalido()"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M21 21l-4.3-4.3"></path>
+        </svg>
+      </button>
+    </div>
+
+    <label class="bit__select">
+      <span class="bit__label">Usuario</span>
+      <select
+        formControlName="usuarioId"
+        [disabled]="cargandoCatalogos() || usuariosCatalogo().length === 0"
+      >
+        <option [ngValue]="null">Todos los usuarios</option>
+        @for (usuario of usuariosCatalogo(); track usuario.id) {
+          <option [ngValue]="usuario.id">{{ usuario.correo }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="bit__select">
+      <span class="bit__label">Acción</span>
+      <select
+        formControlName="accion"
+        [disabled]="cargandoCatalogos() || acciones().length === 0"
+      >
+        <option value="">Todas las acciones</option>
+        @for (accion of acciones(); track accion) {
+          <option [value]="accion">{{ humanizar(accion) }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="bit__select">
+      <span class="bit__label">Entidad</span>
+      <select
+        formControlName="entidad"
+        [disabled]="cargandoCatalogos() || entidades().length === 0"
+      >
+        <option value="">Todas las entidades</option>
+        @for (entidad of entidades(); track entidad) {
+          <option [value]="entidad">{{ humanizar(entidad) }}</option>
+        }
+      </select>
+    </label>
+
+    <div
+      class="bit__fechas"
+      [class.bit__fechas--error]="rangoInvalido()"
+    >
+      <label class="bit__select">
+        <span class="bit__label" id="bit-desde-label">Desde</span>
+        <input
+          type="date"
+          formControlName="fechaDesde"
+          aria-labelledby="bit-desde-label"
+          [attr.aria-invalid]="rangoInvalido()"
+          [attr.aria-describedby]="rangoInvalido() ? 'bit-fecha-error' : null"
+        />
+      </label>
+      <label class="bit__select">
+        <span class="bit__label" id="bit-hasta-label">Hasta</span>
+        <input
+          type="date"
+          formControlName="fechaHasta"
+          aria-labelledby="bit-hasta-label"
+          [attr.aria-invalid]="rangoInvalido()"
+          [attr.aria-describedby]="rangoInvalido() ? 'bit-fecha-error' : null"
+        />
+      </label>
+      @if (rangoInvalido()) {
+        <p class="bit__fecha-error" id="bit-fecha-error" role="alert">
+          La fecha "desde" no puede ser posterior a la fecha "hasta".
+        </p>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="bit__limpiar"
+      [disabled]="!filtrosActivos() || cargando()"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar filtros
+    </button>
+  </form>
+
+  @if (errorCatalogos(); as error) {
+    <div class="bit__aviso bit__aviso--warn" role="alert">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+        <path d="M12 8v4.5M12 15.6v.1"></path>
+        <path d="M10.3 4.2 2.9 17a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"></path>
+      </svg>
+      <p>{{ error }} Los filtros de usuario, acción y entidad no están disponibles.</p>
+      <button type="button" class="bit__reintentar" (click)="cargarCatalogos()">
+        Reintentar
+      </button>
+    </div>
+  }
+
+  <section class="bit__panel">
+    @if (cargando() && items().length === 0) {
+      <div class="bit__carga" role="status">
+        <span class="bit__spinner" aria-hidden="true"></span>
+        <span>Cargando bitácora…</span>
+      </div>
+    } @else if (error(); as error) {
+      <div class="bit__vacio" role="alert">
+        <p>{{ error }}</p>
+        <button type="button" class="bit__vacio-btn" (click)="reintentar()">
+          Reintentar
+        </button>
+      </div>
+    } @else if (items().length === 0) {
+      <div class="bit__vacio">
+        @if (filtrosActivos()) {
+          <p>No hay eventos que coincidan con los filtros aplicados.</p>
+          <button type="button" class="bit__vacio-btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        } @else {
+          <p>Todavía no hay eventos registrados en la bitácora.</p>
+        }
+      </div>
+    } @else {
+      <div class="bit__resumen" role="status">
+        <p>
+          Mostrando
+          <strong>{{ inicioVisible() }}–{{ finVisible() }}</strong> de
+          <strong>{{ total() }}</strong> registro(s)
+        </p>
+        @if (cargando()) {
+          <p class="bit__resumen-actualizando">
+            <span class="bit__spinner bit__spinner--mini" aria-hidden="true"></span>
+            Actualizando…
+          </p>
+        }
+      </div>
+
+      <div class="bit__tabla-wrap">
+        <table class="bit__tabla">
+          <thead>
+            <tr>
+              <th scope="col">Fecha y hora</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Acción</th>
+              <th scope="col">Entidad</th>
+              <th scope="col">IP</th>
+              <th scope="col">Descripción</th>
+              <th scope="col"><span class="bit__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (evento of items(); track evento.id) {
+              <tr>
+                <td data-label="Fecha y hora" class="bit__fecha">
+                  {{ evento.fecha_hora | date : 'dd/MM/yyyy HH:mm' }}
+                </td>
+                <td data-label="Usuario" class="bit__usuario">
+                  {{ textoUsuario(evento) }}
+                  @if (esSistema(evento)) {
+                    <span class="bit__chip bit__chip--sistema">Sistema</span>
+                  }
+                </td>
+                <td data-label="Acción">
+                  <span class="bit__accion">{{ humanizar(evento.accion) }}</span>
+                </td>
+                <td data-label="Entidad">{{ humanizarEntidad(evento.entidad_afectada) }}</td>
+                <td data-label="IP" class="bit__ip">{{ textoIp(evento) }}</td>
+                <td data-label="Descripción" class="bit__desc-cell">
+                  <span
+                    class="bit__desc"
+                    [title]="evento.descripcion ?? ''"
+                  >
+                    {{ textoDescripcion(evento) }}
+                  </span>
+                </td>
+                <td data-label="">
+                  <button
+                    type="button"
+                    class="bit__ver"
+                    (click)="verDetalle(evento)"
+                    [attr.aria-label]="'Ver detalle del evento #' + evento.id"
+                  >
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bit__pie">
+        <label class="bit__pie-tamano">
+          <span class="bit__label">Registros por página</span>
+          <select
+            [value]="limit()"
+            (change)="cambiarLimite($event)"
+            [disabled]="cargando()"
+            aria-label="Registros por página"
+          >
+            @for (opcion of opcionesLimite; track opcion) {
+              <option [value]="opcion">{{ opcion }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="bit__pagina">
+          <button
+            type="button"
+            class="bit__pagina-btn"
+            (click)="irAnterior()"
+            [disabled]="!hayAnterior()"
+            aria-label="Página anterior"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m15 6-6 6 6 6"></path>
+            </svg>
+            Anterior
+          </button>
+          <span class="bit__pagina-info">
+            Página <strong>{{ paginaActual() }}</strong> de
+            {{ totalPaginas() || 1 }}
+          </span>
+          <button
+            type="button"
+            class="bit__pagina-btn"
+            (click)="irSiguiente()"
+            [disabled]="!haySiguiente()"
+            aria-label="Página siguiente"
+          >
+            Siguiente
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="m9 6 6 6-6 6"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</div>
+
+@if (detalleId(); as id) {
+  <app-bitacora-detalle-dialog
+    [bitacoraId]="id"
+    (cerrado)="cerrarDetalle()"
+  />
+}

@@ -1,0 +1,259 @@
+/* ===== Matriz de permisos: estructura en rejilla ===== */
+.mat {
+  margin-top: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+.mat__encabezado,
+.mat__fila {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.7fr) repeat(var(--cols), minmax(62px, 1fr));
+  align-items: center;
+}
+
+.mat__encabezado {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.mat__funcion-titulo {
+  padding: 0.8rem 1rem;
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mat__accion-titulo {
+  padding: 0.8rem 0.5rem;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ===== Módulo ===== */
+.mat__modulo {
+  border-bottom: 1px solid var(--line);
+}
+
+.mat__modulo:last-child {
+  border-bottom: 0;
+}
+
+.mat__modulo-barra {
+  display: flex;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+}
+
+.mat__modulo-boton {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  text-align: left;
+}
+
+.mat__modulo-nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.mat__modulo-resumen {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mat__chevron {
+  color: var(--text-3);
+  transition: transform 0.2s ease;
+}
+
+.mat__chevron--abierto {
+  transform: rotate(180deg);
+}
+
+/* ===== Celdas ===== */
+.mat__fila {
+  min-width: 0;
+}
+
+.mat__fila + .mat__fila {
+  border-top: 1px solid var(--line);
+}
+
+.mat__funcion {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.55rem 1rem;
+}
+
+.mat__funcion-nombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.mat__celda {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  padding: 0.55rem 0.5rem;
+  border-left: 1px solid var(--line);
+}
+
+.mat__funcion-seleccion,
+.mat__modulo-seleccion {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.mat__cb {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--accent-3);
+  cursor: pointer;
+}
+
+.mat__cb:disabled {
+  cursor: not-allowed;
+}
+
+.mat__funcion-seleccion:has(.mat__cb:disabled),
+.mat__modulo-seleccion:has(.mat__cb:disabled) {
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .mat__encabezado,
+  .mat__fila {
+    grid-template-columns: minmax(150px, 1.7fr) repeat(var(--cols), minmax(52px, 1fr));
+  }
+}
+
+/* ===== Estados de carga / vacío / placeholder ===== */
+.rpm__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 3rem 1rem;
+  color: var(--text-2);
+  font-size: 0.95rem;
+}
+
+.rpm__loading--panel {
+  margin-top: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.rpm__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--accent-strong);
+  border-top-color: var(--accent-3);
+  border-radius: 50%;
+  animation: rpm-spin 0.7s linear infinite;
+}
+
+.rpm__spinner--btn {
+  width: 15px;
+  height: 15px;
+  border-color: rgb(255 255 255 / 35%);
+  border-top-color: #ffffff;
+}
+
+.rpm__vacio {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--text-3);
+  text-align: center;
+  font-size: 0.92rem;
+}
+
+.rpm__vacio-btn {
+  min-height: 2.5rem;
+  padding: 0.4rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.rpm__vacio-btn:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+
+.rpm__placeholder {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.6rem;
+  min-height: 340px;
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-l);
+  text-align: center;
+}
+
+.rpm__placeholder-icono {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.rpm__placeholder-titulo {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.rpm__placeholder-texto {
+  max-width: 40ch;
+  color: var(--text-3);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+@keyframes rpm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -27,6 +27,9 @@ import {
 /** Clave usada en sessionStorage para guardar únicamente el JWT. */
 export const AUTH_TOKEN_STORAGE_KEY = 'vanter_access_token';
 
+/** Nombre exacto del rol administrativo (backend: app.core.dependencies). */
+export const ROL_ADMINISTRADOR = 'ADMINISTRADOR';
+
 /** Usuario que puede estar autenticado en memoria. */
 type UsuarioSesion = UsuarioAuth | ClienteAuth | PersonalAuth;
 
@@ -55,6 +58,12 @@ export class AuthService {
 
   readonly contexto = computed<AuthContext | null>(
     () => this._usuarioActual()?.contexto ?? null,
+  );
+
+  /** true si el usuario autenticado tiene rol ADMINISTRADOR. */
+  readonly esAdministrador = computed(
+    () =>
+      this._usuarioActual()?.rol?.trim().toUpperCase() === ROL_ADMINISTRADOR,
   );
 
   /**

@@ -7,6 +7,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'admin/**',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'auth/personal/login',
     renderMode: RenderMode.Server,
   },

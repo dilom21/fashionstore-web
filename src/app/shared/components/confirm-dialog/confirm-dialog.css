@@ -1,0 +1,138 @@
+:host {
+  display: contents;
+}
+
+.confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(2 5 12 / 62%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: confirm-fade 0.18s ease;
+}
+
+.confirm__card {
+  width: min(100%, 420px);
+  padding: 1.8rem 1.6rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  animation: confirm-pop 0.2s ease;
+}
+
+.confirm__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-inline: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.confirm__icon--danger {
+  background: rgb(190 18 60 / 14%);
+  border-color: rgb(248 113 113 / 38%);
+  color: #fb7185;
+}
+
+html[data-theme='light'] .confirm__icon--danger {
+  color: #be123c;
+}
+
+.confirm__title {
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.confirm__text {
+  margin-top: 0.5rem;
+  color: var(--text-2);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.confirm__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-top: 1.6rem;
+}
+
+.confirm__btn {
+  min-height: 2.9rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.confirm__btn:hover {
+  transform: translateY(-1px);
+}
+
+.confirm__btn--ghost {
+  background: transparent;
+  color: var(--text-2);
+}
+
+.confirm__btn--ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.confirm__btn--primary {
+  background: var(--grad-accent);
+  border-color: transparent;
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.confirm__btn--danger {
+  background: linear-gradient(100deg, #e11d48, #f43f5e);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 14px 30px -16px rgb(225 29 72 / 60%);
+}
+
+@keyframes confirm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confirm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirm__actions {
+    grid-template-columns: 1fr;
+  }
+}

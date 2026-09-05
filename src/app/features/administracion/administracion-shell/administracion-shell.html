@@ -1,0 +1,50 @@
+<div class="adm" [class.adm--colapsada]="colapsada()">
+  <app-admin-sidebar
+    [items]="navItems"
+    [colapsada]="colapsada()"
+    [abiertaMovil]="movilAbierta()"
+    [nombre]="etiquetaUsuario()"
+    [rol]="rol()"
+    [correo]="correo()"
+    (toggleColapso)="alternarColapso()"
+    (cerrarMovil)="cerrarMovil()"
+    (solicitarLogout)="cerrarSesion()"
+  />
+
+  @if (movilAbierta()) {
+    <div class="adm__scrim" (click)="cerrarMovil()" aria-hidden="true"></div>
+  }
+
+  <main class="adm__contenido">
+    <header class="adm__topbar">
+      <button
+        type="button"
+        class="adm__topbar-btn"
+        (click)="abrirMovil()"
+        aria-label="Abrir menú"
+      >
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+      <span class="adm__topbar-brand">VANTER&nbsp;<em>MEN</em></span>
+      <button
+        type="button"
+        class="adm__topbar-btn"
+        (click)="cerrarSesion()"
+        aria-label="Cerrar sesión"
+        title="Cerrar sesión"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"></path>
+          <path d="M11 7 6 12l5 5"></path>
+          <path d="M6 12h10"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div class="adm__pagina">
+      <router-outlet />
+    </div>
+  </main>
+</div>
