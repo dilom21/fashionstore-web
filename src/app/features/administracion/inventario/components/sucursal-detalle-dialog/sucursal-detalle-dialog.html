@@ -1,0 +1,77 @@
+@if (sucursal(); as sucursal) {
+  <div class="sdd" (click)="cerrar()">
+    <div
+      class="sdd__card"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Detalle de la sucursal"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="sdd__close" (click)="cerrar()" aria-label="Cerrar">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+
+      <div class="sdd__icon" aria-hidden="true">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+        >
+          <path d="M4 21V7l8-4 8 4v14" />
+          <path d="M4 21h16" />
+          <path d="M9 21v-4h6v4" />
+          <path d="M9 9.5h.01M15 9.5h.01" />
+        </svg>
+      </div>
+
+      <p class="sdd__eyebrow">Sucursal #{{ sucursal.id }}</p>
+      <h2 class="sdd__title">{{ sucursal.nombre }}</h2>
+
+      <dl class="sdd__lista">
+        <div class="sdd__fila">
+          <dt>ID</dt>
+          <dd>#{{ sucursal.id }}</dd>
+        </div>
+        <div class="sdd__fila">
+          <dt>Ciudad</dt>
+          <dd>{{ sucursal.ciudad.nombre }}</dd>
+        </div>
+        <div class="sdd__fila">
+          <dt>Dirección</dt>
+          <dd>{{ sucursal.direccion }}</dd>
+        </div>
+        <div class="sdd__fila">
+          <dt>Teléfono</dt>
+          <dd>{{ sucursal.telefono ?? '—' }}</dd>
+        </div>
+        <div class="sdd__fila">
+          <dt>Estado</dt>
+          <dd>
+            @if (sucursal.estado) {
+              <span class="sdd__badge sdd__badge--on">Activa</span>
+            } @else {
+              <span class="sdd__badge sdd__badge--off">Inactiva</span>
+            }
+          </dd>
+        </div>
+      </dl>
+
+      <div class="sdd__actions">
+        <button type="button" class="sdd__btn" (click)="cerrar()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

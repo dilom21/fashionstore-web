@@ -9,10 +9,11 @@ import { AdministracionShell } from './administracion-shell/administracion-shell
  * Se montan bajo el prefijo 'admin' en app.routes.ts y exigen rol
  * ADMINISTRADOR (adminAuthGuard en el shell padre).
  *
- * CU03 - Gestión de Usuarios, CU04 - Gestión de Roles y Permisos y CU05 -
- * Consultar Bitácora son las funcionalidades activas. El resto de módulos
- * tiene rutas preparadas hacia la pantalla de "módulo en construcción" para
- * que la navegación exista sin inventar funcionalidad.
+ * CU03 - Gestión de Usuarios, CU04 - Gestión de Roles y Permisos, CU05 -
+ * Consultar Bitácora y CU06 - Gestionar Sucursales y Ciudades son las
+ * funcionalidades activas. El resto de módulos tiene rutas preparadas hacia
+ * la pantalla de "módulo en construcción" para que la navegación exista sin
+ * inventar funcionalidad.
  */
 export const administracionRoutes: Routes = [
   {
@@ -73,6 +74,14 @@ export const administracionRoutes: Routes = [
             (m) => m.BitacoraPage,
           ),
       },
+      // ===== CU06 - Gestionar Sucursales y Ciudades (funcional) =====
+      {
+        path: 'inventario/sucursales-ciudades',
+        loadComponent: () =>
+          import(
+            './inventario/pages/sucursales-ciudades-page/sucursales-ciudades-page'
+          ).then((m) => m.SucursalesCiudadesPage),
+      },
       // ===== Módulos de negocio (rutas preparadas) =====
       {
         path: 'catalogo',
@@ -82,20 +91,6 @@ export const administracionRoutes: Routes = [
           descripcion:
             'Productos, categorías, tallas, colores y colecciones de la marca.',
           icono: 'catalogo',
-        },
-        loadComponent: () =>
-          import(
-            './components/modulo-en-construccion/modulo-en-construccion'
-          ).then((m) => m.ModuloEnConstruccion),
-      },
-      {
-        path: 'inventario',
-        data: {
-          modulo: 'INVENTARIO',
-          titulo: 'Inventario',
-          descripcion:
-            'Existencias y movimientos de inventario por sucursal.',
-          icono: 'inventario',
         },
         loadComponent: () =>
           import(
