@@ -10,7 +10,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
-import { SucursalActiva } from '../../models/catalogos.model';
+import { Sucursal } from '../../../inventario/models/sucursal.model';
 import {
   EmpleadoUpdatePayload,
   Usuario,
@@ -19,7 +19,7 @@ import {
 } from '../../models/usuario.model';
 import { Rol } from '../../../roles-permisos/models/rol.model';
 import { RolesService } from '../../../roles-permisos/services/roles.service';
-import { SucursalesService } from '../../services/sucursales.service';
+import { SucursalesService } from '../../../inventario/services/sucursales.service';
 import { UsuariosService } from '../../services/usuarios.service';
 import { traducirErrorHttp } from '../../utils/http-error.util';
 
@@ -69,7 +69,7 @@ export class UsuarioFormPage {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly roles = signal<Rol[]>([]);
-  readonly sucursales = signal<SucursalActiva[]>([]);
+  readonly sucursales = signal<Sucursal[]>([]);
 
   readonly esEdicion = signal(false);
   readonly sinEmpleado = signal(false);

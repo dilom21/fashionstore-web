@@ -16,6 +16,7 @@ export type IconoNav =
   | 'bitacora'
   | 'catalogo'
   | 'inventario'
+  | 'sucursales'
   | 'reservas'
   | 'ventas'
   | 'compras'

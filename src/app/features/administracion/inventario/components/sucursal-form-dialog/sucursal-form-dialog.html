@@ -1,0 +1,166 @@
+<div class="sfs" (click)="cancelar()">
+  <div
+    class="sfs__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="esCreacion() ? 'Nueva sucursal' : 'Editar sucursal'"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="sfs__close" (click)="cancelar()" aria-label="Cerrar">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <div class="sfs__icon" aria-hidden="true">
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.9"
+      >
+        <path d="M4 21V7l8-4 8 4v14" />
+        <path d="M4 21h16" />
+        <path d="M9 21v-4h6v4" />
+        <path d="M9 9.5h.01M15 9.5h.01" />
+      </svg>
+    </div>
+
+    <h2 class="sfs__title">{{ esCreacion() ? 'Nueva sucursal' : 'Editar sucursal' }}</h2>
+    <p class="sfs__text">
+      {{
+        esCreacion()
+          ? 'Registra una sucursal dentro de una ciudad activa de FashionStore.'
+          : 'Actualiza los datos de la sucursal. Solo puedes moverla a una ciudad activa.'
+      }}
+    </p>
+
+    @if (mensajeError(); as error) {
+      <p class="sfs__alert" role="alert">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        {{ error }}
+      </p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="sfs__field">
+        <label class="sfs__label" for="sfs-nombre">Nombre de la sucursal</label>
+        <input
+          class="sfs__input"
+          [class.sfs__input--error]="mensajeCampo(form.controls.nombre) !== null"
+          id="sfs-nombre"
+          type="text"
+          formControlName="nombre"
+          autocomplete="off"
+          placeholder="Ej. Casa Central"
+          [attr.aria-describedby]="mensajeCampo(form.controls.nombre) ? 'sfs-nombre-error' : null"
+        />
+        @if (mensajeCampo(form.controls.nombre); as msg) {
+          <p class="sfs__field-error" id="sfs-nombre-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="sfs__field">
+        <label class="sfs__label" for="sfs-ciudad">Ciudad</label>
+        <select
+          class="sfs__input sfs__select"
+          [class.sfs__input--error]="errorCiudad() !== null"
+          id="sfs-ciudad"
+          formControlName="ciudadId"
+          [attr.aria-describedby]="errorCiudad() ? 'sfs-ciudad-error' : null"
+        >
+          <option [ngValue]="null" disabled>Selecciona una ciudad…</option>
+          @for (ciudad of opcionesCiudades(); track ciudad.id) {
+            <option [ngValue]="ciudad.id">{{ ciudad.nombre }}</option>
+          }
+        </select>
+        @if (errorCiudad(); as msg) {
+          <p class="sfs__field-error" id="sfs-ciudad-error">{{ msg }}</p>
+        }
+        @if (ciudades().length === 0 && esCreacion()) {
+          <p class="sfs__hint">Aún no hay ciudades activas. Primero registra una ciudad.</p>
+        }
+      </div>
+
+      <div class="sfs__field">
+        <label class="sfs__label" for="sfs-direccion">Dirección</label>
+        <textarea
+          class="sfs__input sfs__textarea"
+          [class.sfs__input--error]="mensajeCampo(form.controls.direccion) !== null"
+          id="sfs-direccion"
+          rows="2"
+          formControlName="direccion"
+          autocomplete="off"
+          placeholder="Calle, número, zona…"
+          [attr.aria-describedby]="
+            mensajeCampo(form.controls.direccion) ? 'sfs-direccion-error' : null
+          "
+        ></textarea>
+        @if (mensajeCampo(form.controls.direccion); as msg) {
+          <p class="sfs__field-error" id="sfs-direccion-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="sfs__field">
+        <label class="sfs__label" for="sfs-telefono"
+          >Teléfono <span class="sfs__opcional">(opcional)</span></label
+        >
+        <input
+          class="sfs__input"
+          [class.sfs__input--error]="mensajeCampo(form.controls.telefono) !== null"
+          id="sfs-telefono"
+          type="tel"
+          formControlName="telefono"
+          autocomplete="off"
+          placeholder="Ej. +591 70000000"
+          [attr.aria-describedby]="
+            mensajeCampo(form.controls.telefono) ? 'sfs-telefono-error' : null
+          "
+        />
+        @if (mensajeCampo(form.controls.telefono); as msg) {
+          <p class="sfs__field-error" id="sfs-telefono-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="sfs__actions">
+        <button type="button" class="sfs__btn sfs__btn--ghost" (click)="cancelar()">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="sfs__btn sfs__btn--primary"
+          [disabled]="guardando() || (esCreacion() && ciudades().length === 0)"
+          [attr.aria-busy]="guardando()"
+        >
+          @if (guardando()) {
+            <span class="sfs__spinner" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            {{ esCreacion() ? 'Crear sucursal' : 'Guardar cambios' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

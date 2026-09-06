@@ -8,9 +8,10 @@ import { AdminNavItem } from '../models/admin-nav-item';
  * COMPRAS_PROVEEDORES, REPORTES).
  *
  * "Seguridad > Gestionar Usuarios" (CU03), "Seguridad > Gestionar Roles y
- * Permisos" (CU04) y "Seguridad > Consultar Bitácora" (CU05) están
- * funcionales. El resto de opciones tienen navegación preparada hacia una
- * pantalla de módulo en construcción.
+ * Permisos" (CU04), "Seguridad > Consultar Bitácora" (CU05) e
+ * "Inventario > Gestionar sucursales y ciudades" (CU06) están funcionales.
+ * El resto de opciones tienen navegación preparada hacia una pantalla de
+ * módulo en construcción.
  */
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
@@ -71,10 +72,20 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     id: 'inventario',
     label: 'Inventario',
     icon: 'inventario',
-    route: '/admin/inventario',
-    descripcion: 'Existencias y movimientos de inventario por sucursal.',
-    estado: 'proximamente',
     permiso: 'INVENTARIO',
+    descripcion: 'Estructura física, existencias y movimientos de inventario.',
+    children: [
+      {
+        id: 'sucursales-ciudades',
+        label: 'Gestionar sucursales y ciudades',
+        icon: 'sucursales',
+        route: '/admin/inventario/sucursales-ciudades',
+        descripcion:
+          'Registra, consulta, edita, habilita y deshabilita sucursales y ciudades.',
+        estado: 'funcional',
+        permiso: 'INVENTARIO:SUCURSALES_CIUDADES',
+      },
+    ],
   },
   {
     id: 'reservas',

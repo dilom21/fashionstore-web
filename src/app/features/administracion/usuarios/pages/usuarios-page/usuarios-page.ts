@@ -5,11 +5,11 @@ import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
 import { ConfirmDialog } from '../../../../../shared/components/confirm-dialog/confirm-dialog';
-import { SucursalActiva } from '../../models/catalogos.model';
+import { Sucursal } from '../../../inventario/models/sucursal.model';
+import { SucursalesService } from '../../../inventario/services/sucursales.service';
 import { Usuario } from '../../models/usuario.model';
 import { Rol } from '../../../roles-permisos/models/rol.model';
 import { RolesService } from '../../../roles-permisos/services/roles.service';
-import { SucursalesService } from '../../services/sucursales.service';
 import { UsuariosService } from '../../services/usuarios.service';
 import { traducirErrorHttp } from '../../utils/http-error.util';
 
@@ -42,7 +42,7 @@ export class UsuariosPage {
 
   readonly usuarios = signal<Usuario[]>([]);
   readonly roles = signal<Rol[]>([]);
-  readonly sucursales = signal<SucursalActiva[]>([]);
+  readonly sucursales = signal<Sucursal[]>([]);
 
   readonly cargando = signal(false);
   readonly cargandoCatalogos = signal(false);
