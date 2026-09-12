@@ -16,7 +16,11 @@
 
     <nav class="nav__links" [class.is-open]="menuOpen()" aria-label="Navegación principal">
       @for (link of navLinks; track link.label) {
-        <a class="nav__link" [href]="link.href" (click)="closeMenu()">{{ link.label }}</a>
+        @if (link.routerLink) {
+          <a class="nav__link" [routerLink]="link.routerLink" (click)="closeMenu()">{{ link.label }}</a>
+        } @else {
+          <a class="nav__link" [href]="link.href" (click)="closeMenu()">{{ link.label }}</a>
+        }
       }
     </nav>
 

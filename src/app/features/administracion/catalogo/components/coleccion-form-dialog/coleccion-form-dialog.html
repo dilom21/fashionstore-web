@@ -1,0 +1,122 @@
+<div class="cfd" (click)="cancelar()">
+  <div
+    class="cfd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="esCreacion() ? 'Nueva colección' : 'Editar colección'"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="cfd__close" (click)="cancelar()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <div class="cfd__icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+        <path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"></path>
+        <path d="M3 12l9 4.5 9-4.5"></path>
+        <path d="M3 16.5 12 21l9-4.5"></path>
+      </svg>
+    </div>
+
+    <h2 class="cfd__title">{{ esCreacion() ? 'Nueva colección' : 'Editar colección' }}</h2>
+    <p class="cfd__text">
+      {{
+        esCreacion()
+          ? 'Registra una colección dentro de una temporada activa.'
+          : 'Actualiza los datos de la colección. Solo puedes moverla a una temporada activa.'
+      }}
+    </p>
+
+    @if (mensajeError(); as error) {
+      <p class="cfd__alert" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        {{ error }}
+      </p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="cfd__field">
+        <label class="cfd__label" for="cfd-temporada">Temporada</label>
+        <select
+          class="cfd__input cfd__select"
+          [class.cfd__input--error]="errorTemporada() !== null"
+          id="cfd-temporada"
+          formControlName="temporadaId"
+        >
+          <option [ngValue]="null" disabled>Selecciona una temporada…</option>
+          @for (temporada of opcionesTemporadas(); track temporada.id) {
+            <option [ngValue]="temporada.id">
+              {{ temporada.nombre }}{{ temporada.estado ? '' : ' (inactiva)' }}
+            </option>
+          }
+        </select>
+        @if (errorTemporada(); as msg) {
+          <p class="cfd__field-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="cfd__field">
+        <label class="cfd__label" for="cfd-nombre">Nombre de la colección</label>
+        <input
+          class="cfd__input"
+          [class.cfd__input--error]="mensajeCampo(form.controls.nombre) !== null"
+          id="cfd-nombre"
+          type="text"
+          formControlName="nombre"
+          autocomplete="off"
+          placeholder="Ej. Essentials Denim"
+        />
+        @if (mensajeCampo(form.controls.nombre); as msg) {
+          <p class="cfd__field-error">{{ msg }}</p>
+        }
+      </div>
+
+      @if (opcionesTemporadas().length === 0) {
+        <p class="cfd__hint">
+          Aún no hay temporadas activas. Primero crea o habilita una temporada.
+        </p>
+      }
+
+      <div class="cfd__field">
+        <label class="cfd__label" for="cfd-descripcion">
+          Descripción <span class="cfd__opcional">(opcional)</span>
+        </label>
+        <textarea
+          class="cfd__input cfd__textarea"
+          [class.cfd__input--error]="mensajeCampo(form.controls.descripcion) !== null"
+          id="cfd-descripcion"
+          rows="3"
+          formControlName="descripcion"
+          placeholder="Describe la colección…"
+        ></textarea>
+        @if (mensajeCampo(form.controls.descripcion); as msg) {
+          <p class="cfd__field-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="cfd__actions">
+        <button type="button" class="cfd__btn cfd__btn--ghost" (click)="cancelar()">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="cfd__btn cfd__btn--primary"
+          [disabled]="guardando()"
+          [attr.aria-busy]="guardando()"
+        >
+          @if (guardando()) {
+            <span class="cfd__spinner" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            {{ esCreacion() ? 'Crear colección' : 'Guardar cambios' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

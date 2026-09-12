@@ -1,0 +1,472 @@
+<div class="tc">
+  <header class="tc__head">
+    <div>
+      <span class="tc__eyebrow">Catálogo · Temporadas y colecciones</span>
+      <h1 class="tc__title">Temporadas y colecciones</h1>
+      <p class="tc__subtitle">
+        Administra las temporadas de la marca y las colecciones de productos
+        asociadas a cada una.
+      </p>
+    </div>
+  </header>
+
+  <div class="tc__tabs" role="tablist" aria-label="Secciones de temporadas y colecciones">
+    <button
+      type="button"
+      role="tab"
+      id="tc-tab-temporadas"
+      class="tc__tab"
+      [class.tc__tab--activo]="esTabActiva('temporadas')"
+      [attr.aria-selected]="esTabActiva('temporadas')"
+      (click)="activarTab('temporadas')"
+    >
+      Temporadas
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="tc-tab-colecciones"
+      class="tc__tab"
+      [class.tc__tab--activo]="esTabActiva('colecciones')"
+      [attr.aria-selected]="esTabActiva('colecciones')"
+      (click)="activarTab('colecciones')"
+    >
+      Colecciones
+    </button>
+  </div>
+
+  @if (esTabActiva('temporadas')) {
+    <section class="tc__panel" role="tabpanel" aria-labelledby="tc-tab-temporadas">
+      <div class="tc__panel-head">
+        <div>
+          <h2 class="tc__panel-title">Temporadas</h2>
+          <p class="tc__panel-sub">Temporadas según los filtros aplicados.</p>
+        </div>
+        <button type="button" class="tc__btn-new" (click)="abrirNuevaTemporada()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nueva temporada
+        </button>
+      </div>
+
+      <form
+        class="tc__filters"
+        [formGroup]="filtrosTemporadas"
+        (ngSubmit)="buscarTemporadas()"
+        novalidate
+        aria-label="Filtros de temporadas"
+      >
+        <div class="tc__search">
+          <input
+            type="search"
+            formControlName="buscar"
+            placeholder="Buscar por nombre…"
+            aria-label="Buscar temporadas"
+          />
+          <button type="submit" class="tc__search-btn" aria-label="Buscar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <label class="tc__select">
+          <span class="tc__select-label">Estado</span>
+          <select formControlName="estado">
+            <option value="todos">Todas</option>
+            <option value="activos">Activas</option>
+            <option value="inactivos">Inactivas</option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          class="tc__clear"
+          [disabled]="!tieneFiltrosTemporadas()"
+          (click)="limpiarFiltrosTemporadas()"
+        >
+          Limpiar
+        </button>
+      </form>
+
+      @if (exitoTemporadas(); as exito) {
+        <p class="tc__notice tc__notice--ok" role="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+          </svg>
+          {{ exito }}
+        </p>
+      }
+
+      @if (errorTemporadas(); as error) {
+        <p class="tc__notice tc__notice--error" role="alert">{{ error }}</p>
+      }
+
+      <section class="tc__panel tc__panel--inner">
+        @if (cargandoTemporadas()) {
+          <div class="tc__loading" role="status">
+            <span class="tc__spinner" aria-hidden="true"></span>
+            <span>Cargando temporadas…</span>
+          </div>
+        } @else if (temporadas().length === 0) {
+          <div class="tc__empty">
+            <p>{{ mensajeVacioTemporadas() }}</p>
+            @if (tieneFiltrosTemporadas()) {
+              <button type="button" class="tc__empty-btn" (click)="limpiarFiltrosTemporadas()">
+                Limpiar filtros
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="tc__table-wrap">
+            <table class="tc__table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Fecha inicio</th>
+                  <th scope="col">Fecha fin</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="tc__sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (temporada of temporadas(); track temporada.id) {
+                  <tr>
+                    <td data-label="ID" class="tc__id">#{{ temporada.id }}</td>
+                    <td data-label="Nombre" class="tc__nombre">{{ temporada.nombre }}</td>
+                    <td data-label="Fecha inicio">{{ temporada.fecha_inicio }}</td>
+                    <td data-label="Fecha fin">{{ temporada.fecha_fin }}</td>
+                    <td data-label="Estado">
+                      @if (temporada.estado) {
+                        <span class="tc__badge tc__badge--on">Activa</span>
+                      } @else {
+                        <span class="tc__badge tc__badge--off">Inactiva</span>
+                      }
+                    </td>
+                    <td data-label="Acciones" class="tc__acciones-cell">
+                      <div class="tc__actions">
+                        <button
+                          type="button"
+                          class="tc__action tc__action--view"
+                          (click)="verTemporada(temporada)"
+                          [attr.aria-label]="'Ver ' + temporada.nombre"
+                        >
+                          Ver
+                        </button>
+                        <button
+                          type="button"
+                          class="tc__action tc__action--edit"
+                          (click)="abrirEditarTemporada(temporada)"
+                          [attr.aria-label]="'Editar ' + temporada.nombre"
+                        >
+                          Editar
+                        </button>
+                        @if (temporada.estado) {
+                          <button
+                            type="button"
+                            class="tc__action tc__action--off"
+                            [disabled]="procesandoEstadoTemporada()"
+                            (click)="solicitarCambioEstadoTemporada(temporada)"
+                          >
+                            Deshabilitar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="tc__action tc__action--on"
+                            [disabled]="procesandoEstadoTemporada()"
+                            (click)="solicitarCambioEstadoTemporada(temporada)"
+                          >
+                            Habilitar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="tc__count">{{ temporadas().length }} temporada(s)</p>
+        }
+      </section>
+    </section>
+  } @else {
+    <section class="tc__panel" role="tabpanel" aria-labelledby="tc-tab-colecciones">
+      <div class="tc__panel-head">
+        <div>
+          <h2 class="tc__panel-title">Colecciones</h2>
+          <p class="tc__panel-sub">Colecciones según los filtros aplicados.</p>
+        </div>
+        <button
+          type="button"
+          class="tc__btn-new"
+          [disabled]="cargandoTemporadasCatalogo() || temporadasActivas().length === 0"
+          [title]="
+            temporadasActivas().length === 0
+              ? 'Primero registra una temporada activa'
+              : 'Nueva colección'
+          "
+          (click)="abrirNuevaColeccion()"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nueva colección
+        </button>
+      </div>
+
+      <form
+        class="tc__filters"
+        [formGroup]="filtrosColecciones"
+        (ngSubmit)="buscarColecciones()"
+        novalidate
+        aria-label="Filtros de colecciones"
+      >
+        <div class="tc__search">
+          <input
+            type="search"
+            formControlName="buscar"
+            placeholder="Buscar por nombre…"
+            aria-label="Buscar colecciones"
+          />
+          <button type="submit" class="tc__search-btn" aria-label="Buscar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <label class="tc__select">
+          <span class="tc__select-label">Temporada</span>
+          <select
+            formControlName="temporadaId"
+            [disabled]="cargandoTemporadasCatalogo() || temporadasCatalogo().length === 0"
+          >
+            <option [ngValue]="null">Todas las temporadas</option>
+            @for (temporada of temporadasCatalogo(); track temporada.id) {
+              <option [ngValue]="temporada.id">
+                {{ temporada.nombre }}{{ temporada.estado ? '' : ' (inactiva)' }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="tc__select">
+          <span class="tc__select-label">Estado</span>
+          <select formControlName="estado">
+            <option value="todos">Todas</option>
+            <option value="activos">Activas</option>
+            <option value="inactivos">Inactivas</option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          class="tc__clear"
+          [disabled]="!tieneFiltrosColecciones()"
+          (click)="limpiarFiltrosColecciones()"
+        >
+          Limpiar
+        </button>
+      </form>
+
+      @if (errorTemporadasCatalogo(); as error) {
+        <p class="tc__notice tc__notice--warn" role="alert">{{ error }}</p>
+      }
+
+      @if (exitoColecciones(); as exito) {
+        <p class="tc__notice tc__notice--ok" role="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+          </svg>
+          {{ exito }}
+        </p>
+      }
+
+      @if (errorColecciones(); as error) {
+        <p class="tc__notice tc__notice--error" role="alert">{{ error }}</p>
+      }
+
+      <section class="tc__panel tc__panel--inner">
+        @if (cargandoColecciones()) {
+          <div class="tc__loading" role="status">
+            <span class="tc__spinner" aria-hidden="true"></span>
+            <span>Cargando colecciones…</span>
+          </div>
+        } @else if (colecciones().length === 0) {
+          <div class="tc__empty">
+            <p>{{ mensajeVacioColecciones() }}</p>
+            @if (tieneFiltrosColecciones()) {
+              <button type="button" class="tc__empty-btn" (click)="limpiarFiltrosColecciones()">
+                Limpiar filtros
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="tc__table-wrap">
+            <table class="tc__table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Temporada</th>
+                  <th scope="col">Descripción</th>
+                  <th scope="col">Productos asignados</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="tc__sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (coleccion of colecciones(); track coleccion.id) {
+                  <tr>
+                    <td data-label="ID" class="tc__id">#{{ coleccion.id }}</td>
+                    <td data-label="Nombre" class="tc__nombre">{{ coleccion.nombre }}</td>
+                    <td data-label="Temporada">{{ nombreTemporada(coleccion.temporada_id) }}</td>
+                    <td data-label="Descripción" class="tc__desc">
+                      {{ coleccion.descripcion ?? '—' }}
+                    </td>
+                    <td data-label="Productos asignados" class="tc__conteo">
+                      {{ contarProductos(coleccion.id) ?? '—' }}
+                    </td>
+                    <td data-label="Estado">
+                      @if (coleccion.estado) {
+                        <span class="tc__badge tc__badge--on">Activa</span>
+                      } @else {
+                        <span class="tc__badge tc__badge--off">Inactiva</span>
+                      }
+                    </td>
+                    <td data-label="Acciones" class="tc__acciones-cell">
+                      <div class="tc__actions">
+                        <button
+                          type="button"
+                          class="tc__action tc__action--view"
+                          [disabled]="cargandoDetalleColeccion()"
+                          (click)="verColeccion(coleccion)"
+                          [attr.aria-label]="'Ver ' + coleccion.nombre"
+                        >
+                          Ver
+                        </button>
+                        <button
+                          type="button"
+                          class="tc__action tc__action--edit"
+                          (click)="abrirEditarColeccion(coleccion)"
+                          [attr.aria-label]="'Editar ' + coleccion.nombre"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="tc__action tc__action--alt"
+                          (click)="gestionarProductos(coleccion)"
+                          [attr.aria-label]="'Gestionar productos de ' + coleccion.nombre"
+                        >
+                          Gestionar productos
+                        </button>
+                        @if (coleccion.estado) {
+                          <button
+                            type="button"
+                            class="tc__action tc__action--off"
+                            [disabled]="procesandoEstadoColeccion()"
+                            (click)="solicitarCambioEstadoColeccion(coleccion)"
+                          >
+                            Deshabilitar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="tc__action tc__action--on"
+                            [disabled]="procesandoEstadoColeccion()"
+                            (click)="solicitarCambioEstadoColeccion(coleccion)"
+                          >
+                            Habilitar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="tc__count">{{ colecciones().length }} colección(es)</p>
+        }
+      </section>
+    </section>
+  }
+</div>
+
+@if (dialogoTemporadaAbierto()) {
+  <app-temporada-form-dialog
+    [temporada]="temporadaEnForm()"
+    (guardado)="onTemporadaGuardada($event)"
+    (cerrado)="cerrarDialogoTemporada()"
+  />
+}
+
+@if (detalleTemporada(); as temporadaDetalle) {
+  <app-temporada-detalle-dialog
+    [temporada]="temporadaDetalle"
+    (cerrado)="cerrarDetalleTemporada()"
+  />
+}
+
+@if (dialogoColeccionAbierto()) {
+  <app-coleccion-form-dialog
+    [coleccion]="coleccionEnForm()"
+    [temporadas]="temporadasCatalogo()"
+    (guardado)="onColeccionGuardada($event)"
+    (cerrado)="cerrarDialogoColeccion()"
+  />
+}
+
+@if (detalleColeccion(); as coleccionDetalle) {
+  <app-coleccion-detalle-dialog
+    [coleccion]="coleccionDetalle"
+    (cerrado)="cerrarDetalleColeccion()"
+  />
+}
+
+@if (coleccionProductos(); as coleccionProductosActual) {
+  <app-coleccion-productos-dialog
+    [coleccion]="coleccionProductosActual"
+    (guardado)="onProductosGuardados($event)"
+    (cerrado)="cerrarProductos()"
+  />
+}
+
+@if (confirmacionTemporada(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar temporada' : 'Deshabilitar temporada'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar la temporada ' + pendiente.temporada.nombre + '? Podrá recibir colecciones.'
+        : '¿Deseas deshabilitar la temporada ' + pendiente.temporada.nombre + '? Solo es posible si no tiene colecciones activas ni inventario con stock o reservas.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstadoTemporada()"
+    (cancelado)="cancelarCambioEstadoTemporada()"
+  />
+}
+
+@if (confirmacionColeccion(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar colección' : 'Deshabilitar colección'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar la colección ' + pendiente.coleccion.nombre + '?'
+        : '¿Deseas deshabilitar la colección ' + pendiente.coleccion.nombre + '? Se conservarán sus productos asignados.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstadoColeccion()"
+    (cancelado)="cancelarCambioEstadoColeccion()"
+  />
+}

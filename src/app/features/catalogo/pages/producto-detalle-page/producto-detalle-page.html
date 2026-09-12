@@ -1,0 +1,152 @@
+<app-navbar />
+
+<main class="pdet">
+  <div class="vm-container">
+    <nav class="pdet__breadcrumb" aria-label="Ruta de navegación">
+      <button type="button" class="pdet__back" (click)="volver()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M14.5 5 8 12l6.5 7"></path>
+        </svg>
+        Volver
+      </button>
+      <span class="pdet__crumb-sep" aria-hidden="true">/</span>
+      <a class="pdet__crumb" routerLink="/catalogo">Catálogo</a>
+      @if (producto(); as productoActual) {
+        <span class="pdet__crumb-sep" aria-hidden="true">/</span>
+        <span class="pdet__crumb pdet__crumb--actual">
+          {{ productoActual.nombre }}
+        </span>
+      }
+    </nav>
+
+    @if (cargando()) {
+      <div class="pdet__loading" role="status">
+        <span class="pdet__spinner" aria-hidden="true"></span>
+        <span>Cargando producto…</span>
+      </div>
+    } @else if (error(); as errorDetalle) {
+      <div class="pdet__state" role="alert">
+        <p class="pdet__state-title">No pudimos cargar el producto</p>
+        <p class="pdet__state-text">{{ errorDetalle }}</p>
+        <div class="pdet__state-actions">
+          @if (productoId() !== null) {
+            <button type="button" class="pdet__btn pdet__btn--primary" (click)="reintentar()">
+              Reintentar
+            </button>
+          }
+          <a class="pdet__btn pdet__btn--ghost" routerLink="/catalogo">
+            Ir al catálogo
+          </a>
+        </div>
+      </div>
+    } @else if (producto(); as productoActual) {
+      <div class="pdet__layout">
+        <section class="pdet__gallery" aria-label="Imágenes del producto">
+          <div class="pdet__media">
+            <app-producto-media
+              [url]="imagenActiva()?.url"
+              [nombre]="productoActual.nombre"
+              [alt]="productoActual.nombre"
+              prioridad="eager"
+            />
+            @if (imagenActiva()?.es_principal) {
+              <span class="pdet__principal">Imagen principal</span>
+            }
+          </div>
+
+          @if (recursosImagenes().length > 1) {
+            <ul class="pdet__thumbs" aria-label="Miniaturas">
+              @for (recurso of recursosImagenes(); track recurso.id; let i = $index) {
+                <li>
+                  <button
+                    type="button"
+                    class="pdet__thumb"
+                    [class.pdet__thumb--activa]="i === indiceImagen()"
+                    [attr.aria-label]="'Ver imagen ' + (i + 1)"
+                    [attr.aria-current]="i === indiceImagen()"
+                    (click)="seleccionarImagen(i)"
+                  >
+                    <app-producto-media
+                      [url]="recurso.url"
+                      [nombre]="productoActual.nombre"
+                      [alt]="'Miniatura ' + (i + 1) + ' de ' + productoActual.nombre"
+                    />
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section class="pdet__info" aria-label="Información del producto">
+          <span class="vm-eyebrow">{{ productoActual.categoria.nombre }}</span>
+          <h1 class="pdet__title">{{ productoActual.nombre }}</h1>
+          <p class="pdet__price">
+            Bs {{ productoActual.precio | number: '1.2-2' }}
+          </p>
+
+          @if (productoActual.descripcion) {
+            <p class="pdet__desc">{{ productoActual.descripcion }}</p>
+          } @else {
+            <p class="pdet__desc pdet__desc--muted">
+              Este producto todavía no tiene descripción.
+            </p>
+          }
+
+          <dl class="pdet__meta">
+            <div class="pdet__meta-item">
+              <dt>Categoría</dt>
+              <dd>{{ productoActual.categoria.nombre }}</dd>
+            </div>
+            <div class="pdet__meta-item">
+              <dt>Referencia</dt>
+              <dd>#{{ productoActual.id }}</dd>
+            </div>
+          </dl>
+
+          <div class="pdet__block">
+            <h2 class="pdet__block-title">Tallas</h2>
+            @if (tallas().length > 0) {
+              <ul class="pdet__chips" aria-label="Tallas disponibles">
+                @for (talla of tallas(); track talla.id) {
+                  <li class="pdet__chip">{{ talla.nombre }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="pdet__muted">Sin tallas registradas.</p>
+            }
+          </div>
+
+          <div class="pdet__block">
+            <h2 class="pdet__block-title">Colores</h2>
+            @if (colores().length > 0) {
+              <ul class="pdet__chips" aria-label="Colores disponibles">
+                @for (color of colores(); track color.id) {
+                  <li class="pdet__chip">{{ color.nombre }}</li>
+                }
+              </ul>
+            } @else {
+              <p class="pdet__muted">Sin colores registrados.</p>
+            }
+          </div>
+
+          <div class="pdet__stock">
+            @if (inventarioTotal() > 0) {
+              <span class="pdet__stock-dot pdet__stock-dot--on" aria-hidden="true"></span>
+              <span>{{ inventarioTotal() }} unidades disponibles en total</span>
+            } @else {
+              <span class="pdet__stock-dot pdet__stock-dot--off" aria-hidden="true"></span>
+              <span>Sin stock disponible por el momento</span>
+            }
+          </div>
+        </section>
+      </div>
+
+      <app-disponibilidad-producto
+        [productoId]="productoActual.id"
+        [productoNombre]="productoActual.nombre"
+        [filtros]="filtros()"
+      />
+    }
+  </div>
+</main>

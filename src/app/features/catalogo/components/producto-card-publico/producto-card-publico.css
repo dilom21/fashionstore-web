@@ -1,0 +1,91 @@
+:host {
+  display: block;
+}
+
+.pc {
+  height: 100%;
+}
+
+.pc__link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.pc__link:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.pc__media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.pc__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.pc__cat {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.pc__name {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pc__desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.pc__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.pc__price {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.pc__cta {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.pc__link:hover .pc__cta {
+  text-decoration: underline;
+}

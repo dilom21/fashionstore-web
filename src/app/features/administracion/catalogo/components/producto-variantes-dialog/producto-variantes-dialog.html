@@ -1,0 +1,259 @@
+<div class="pvd" (click)="cerrar()">
+  <div
+    class="pvd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Variantes de ' + producto().nombre"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="pvd__close" (click)="cerrar()" aria-label="Cerrar">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <p class="pvd__eyebrow">Variantes · Producto #{{ producto().id }}</p>
+    <h2 class="pvd__title">{{ producto().nombre }}</h2>
+    <p class="pvd__text">
+      Administra las combinaciones de talla y color. El SKU se guarda en mayúsculas y debe ser
+      único; la combinación producto + talla + color también es única.
+    </p>
+
+    @if (!producto().estado) {
+      <p class="pvd__notice pvd__notice--warn" role="status">
+        El producto está inactivo. No se pueden crear ni habilitar variantes hasta habilitarlo.
+      </p>
+    }
+
+    @if (exito(); as mensaje) {
+      <p class="pvd__notice pvd__notice--ok" role="status">{{ mensaje }}</p>
+    }
+
+    @if (error(); as mensaje) {
+      <p class="pvd__notice pvd__notice--error" role="alert">{{ mensaje }}</p>
+    }
+
+    <div class="pvd__toolbar">
+      <span class="pvd__count">{{ variantes().length }} variante(s)</span>
+      <button
+        type="button"
+        class="pvd__btn-new"
+        [disabled]="modoForm() !== 'cerrado'"
+        (click)="abrirCrear()"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          aria-hidden="true"
+        >
+          <path d="M12 5v14M5 12h14"></path>
+        </svg>
+        Nueva variante
+      </button>
+    </div>
+
+    @if (modoForm() !== 'cerrado') {
+      <form class="pvd__form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <h3 class="pvd__form-title">
+          {{ modoForm() === 'crear' ? 'Nueva variante' : 'Editar variante' }}
+        </h3>
+
+        @if (errorForm(); as mensaje) {
+          <p class="pvd__notice pvd__notice--error" role="alert">{{ mensaje }}</p>
+        }
+
+        <div class="pvd__grid">
+          <div class="pvd__field">
+            <label class="pvd__label" for="pvd-sku">SKU</label>
+            <input
+              class="pvd__input"
+              [class.pvd__input--error]="mensajeCampo(form.controls.sku) !== null"
+              id="pvd-sku"
+              type="text"
+              formControlName="sku"
+              autocomplete="off"
+              placeholder="Ej. CAM-OXF-M-NEG"
+            />
+            @if (mensajeCampo(form.controls.sku); as msg) {
+              <p class="pvd__field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="pvd__field">
+            <label class="pvd__label" for="pvd-talla">Talla</label>
+            <select
+              class="pvd__input pvd__select"
+              [class.pvd__input--error]="mensajeCampo(form.controls.tallaId) !== null"
+              id="pvd-talla"
+              formControlName="tallaId"
+            >
+              <option [ngValue]="null" disabled>Selecciona una talla…</option>
+              @for (talla of opcionesTallas(); track talla.id) {
+                <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+              }
+            </select>
+            @if (mensajeCampo(form.controls.tallaId); as msg) {
+              <p class="pvd__field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="pvd__field">
+            <label class="pvd__label" for="pvd-color">Color</label>
+            <select
+              class="pvd__input pvd__select"
+              [class.pvd__input--error]="mensajeCampo(form.controls.colorId) !== null"
+              id="pvd-color"
+              formControlName="colorId"
+            >
+              <option [ngValue]="null" disabled>Selecciona un color…</option>
+              @for (color of opcionesColores(); track color.id) {
+                <option [ngValue]="color.id">{{ color.nombre }}</option>
+              }
+            </select>
+            @if (mensajeCampo(form.controls.colorId); as msg) {
+              <p class="pvd__field-error">{{ msg }}</p>
+            }
+          </div>
+        </div>
+
+        @if (tallasActivas().length === 0 || coloresActivos().length === 0) {
+          <p class="pvd__hint">
+            Para crear variantes necesitas al menos una talla activa y un color activo.
+          </p>
+        }
+
+        <div class="pvd__form-actions">
+          <button type="button" class="pvd__btn pvd__btn--ghost" (click)="cerrarForm()">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="pvd__btn pvd__btn--primary"
+            [disabled]="guardandoForm()"
+            [attr.aria-busy]="guardandoForm()"
+          >
+            @if (guardandoForm()) {
+              <span class="pvd__spinner" aria-hidden="true"></span>
+              <span>Guardando…</span>
+            } @else {
+              {{ modoForm() === 'crear' ? 'Crear variante' : 'Guardar cambios' }}
+            }
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (confirmacion(); as pendiente) {
+      <div class="pvd__confirm" role="alertdialog" aria-label="Confirmar cambio de estado">
+        <p class="pvd__confirm-text">
+          {{
+            pendiente.habilitar
+              ? '¿Deseas habilitar la variante ' + pendiente.variante.sku + '?'
+              : '¿Deseas deshabilitar la variante ' + pendiente.variante.sku + '?'
+          }}
+        </p>
+        <div class="pvd__confirm-actions">
+          <button
+            type="button"
+            class="pvd__btn pvd__btn--ghost"
+            [disabled]="procesandoEstado()"
+            (click)="cancelarCambioEstado()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="pvd__btn"
+            [class.pvd__btn--primary]="pendiente.habilitar"
+            [class.pvd__btn--danger]="!pendiente.habilitar"
+            [disabled]="procesandoEstado()"
+            (click)="confirmarCambioEstado()"
+          >
+            {{ pendiente.habilitar ? 'Habilitar' : 'Deshabilitar' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (cargando()) {
+      <div class="pvd__loading" role="status">
+        <span class="pvd__spinner" aria-hidden="true"></span>
+        <span>Cargando variantes…</span>
+      </div>
+    } @else if (variantes().length === 0) {
+      <div class="pvd__empty">Este producto todavía no tiene variantes registradas.</div>
+    } @else {
+      <div class="pvd__table-wrap">
+        <table class="pvd__table">
+          <thead>
+            <tr>
+              <th scope="col">SKU</th>
+              <th scope="col">Talla</th>
+              <th scope="col">Color</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="pvd__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (variante of variantes(); track variante.id) {
+              <tr>
+                <td data-label="SKU" class="pvd__sku">{{ variante.sku }}</td>
+                <td data-label="Talla">{{ variante.talla.nombre }}</td>
+                <td data-label="Color">{{ variante.color.nombre }}</td>
+                <td data-label="Estado">
+                  @if (variante.estado) {
+                    <span class="pvd__badge pvd__badge--on">Activa</span>
+                  } @else {
+                    <span class="pvd__badge pvd__badge--off">Inactiva</span>
+                  }
+                </td>
+                <td data-label="Acciones" class="pvd__acciones">
+                  <div class="pvd__actions">
+                    <button
+                      type="button"
+                      class="pvd__action pvd__action--edit"
+                      (click)="abrirEditar(variante)"
+                    >
+                      Editar
+                    </button>
+                    @if (variante.estado) {
+                      <button
+                        type="button"
+                        class="pvd__action pvd__action--off"
+                        [disabled]="procesandoEstado()"
+                        (click)="solicitarCambioEstado(variante)"
+                      >
+                        Deshabilitar
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="pvd__action pvd__action--on"
+                        [disabled]="procesandoEstado() || !producto().estado"
+                        (click)="solicitarCambioEstado(variante)"
+                      >
+                        Habilitar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

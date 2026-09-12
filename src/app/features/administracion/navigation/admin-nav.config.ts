@@ -63,10 +63,29 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     id: 'catalogo',
     label: 'Catálogo',
     icon: 'catalogo',
-    route: '/admin/catalogo',
     descripcion: 'Productos, categorías, tallas, colores y colecciones.',
-    estado: 'proximamente',
     permiso: 'CATALOGO',
+    children: [
+      {
+        id: 'catalogo-productos',
+        label: 'Gestionar catálogo de productos',
+        icon: 'productos',
+        route: '/admin/catalogo/productos',
+        descripcion:
+          'Registra, consulta, edita, habilita y deshabilita productos, categorías, tallas, colores, variantes y recursos.',
+        estado: 'funcional',
+        permiso: 'CATALOGO:PRODUCTOS',
+      },
+      {
+        id: 'temporadas-colecciones',
+        label: 'Gestionar temporadas y colecciones',
+        icon: 'colecciones',
+        route: '/admin/catalogo/temporadas-colecciones',
+        descripcion:
+          'Registra, consulta, edita, habilita y deshabilita temporadas y colecciones, y asigna productos a cada colección.',
+        estado: 'funcional',
+      },
+    ],
   },
   {
     id: 'inventario',

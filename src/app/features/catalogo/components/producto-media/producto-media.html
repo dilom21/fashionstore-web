@@ -1,0 +1,20 @@
+@if (mostrarImagen()) {
+  <img
+    class="media__img"
+    [src]="url()"
+    [alt]="alt()"
+    [attr.loading]="prioridad()"
+    decoding="async"
+    (error)="marcarRota()"
+  />
+} @else {
+  <div
+    class="media__ph"
+    role="img"
+    [attr.aria-label]="alt() || 'Imagen del producto no disponible'"
+  >
+    <span class="media__ph-brand" aria-hidden="true">VANTER</span>
+    <span class="media__ph-letter" aria-hidden="true">{{ inicial() }}</span>
+    <span class="media__ph-line" aria-hidden="true"></span>
+  </div>
+}
