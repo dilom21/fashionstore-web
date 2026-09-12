@@ -22,11 +22,15 @@ import {
 
 interface NavLink {
   label: string;
-  href: string;
+  /** Ancla interna de la landing (secciones con id). */
+  href?: string;
+  /** Ruta de la aplicación (p. ej. el catálogo público CU09). */
+  routerLink?: string;
 }
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Inicio', href: '#inicio' },
+  { label: 'Catálogo', routerLink: '/catalogo' },
   { label: 'Categorías', href: '#categorias' },
   { label: 'Novedades', href: '#novedades' },
   { label: 'Ofertas', href: '#ofertas' },

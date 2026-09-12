@@ -1,0 +1,45 @@
+<div class="tdd" (click)="cerrar()">
+  <div
+    class="tdd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Detalle de la temporada ' + temporada().nombre"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="tdd__close" (click)="cerrar()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <span class="tdd__eyebrow">Temporada #{{ temporada().id }}</span>
+    <h2 class="tdd__title">{{ temporada().nombre }}</h2>
+
+    <span
+      class="tdd__badge"
+      [class.tdd__badge--on]="temporada().estado"
+      [class.tdd__badge--off]="!temporada().estado"
+    >
+      {{ temporada().estado ? 'Activa' : 'Inactiva' }}
+    </span>
+
+    <dl class="tdd__list">
+      <div class="tdd__item">
+        <dt>Fecha de inicio</dt>
+        <dd>{{ formatearFecha(temporada().fecha_inicio) }}</dd>
+      </div>
+      <div class="tdd__item">
+        <dt>Fecha de fin</dt>
+        <dd>{{ formatearFecha(temporada().fecha_fin) }}</dd>
+      </div>
+      <div class="tdd__item">
+        <dt>Estado</dt>
+        <dd>{{ temporada().estado ? 'Habilitada' : 'Deshabilitada' }}</dd>
+      </div>
+    </dl>
+
+    <div class="tdd__actions">
+      <button type="button" class="tdd__btn" (click)="cerrar()">Cerrar</button>
+    </div>
+  </div>
+</div>

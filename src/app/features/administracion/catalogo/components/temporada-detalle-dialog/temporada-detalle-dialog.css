@@ -1,0 +1,161 @@
+:host {
+  display: contents;
+}
+
+.tdd {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(2 5 12 / 62%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: tdd-fade 0.18s ease;
+  overflow-y: auto;
+}
+
+.tdd__card {
+  position: relative;
+  width: min(100%, 480px);
+  padding: 1.7rem 1.6rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: tdd-pop 0.2s ease;
+}
+
+.tdd__close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--text-3);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.tdd__close:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.tdd__eyebrow {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.tdd__title {
+  margin-top: 0.45rem;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+}
+
+.tdd__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.tdd__badge--on {
+  background: rgb(22 101 52 / 16%);
+  color: #4ade80;
+}
+
+.tdd__badge--off {
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+
+html[data-theme='light'] .tdd__badge--on {
+  color: #15803d;
+}
+
+.tdd__list {
+  margin-top: 1.2rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.tdd__item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tdd__item dt {
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tdd__item dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.94rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.tdd__actions {
+  margin-top: 1.4rem;
+}
+
+.tdd__btn {
+  width: 100%;
+  min-height: 2.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.tdd__btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+@keyframes tdd-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tdd-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

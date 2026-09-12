@@ -1,0 +1,299 @@
+/* Tablas de temporadas y colecciones (CU08) + adaptación responsive. */
+
+.tc__table-wrap {
+  overflow-x: auto;
+}
+
+.tc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.tc__table th {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tc__table td {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.tc__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tc__table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+
+.tc__id {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tc__nombre {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tc__desc {
+  max-width: 260px;
+}
+
+.tc__conteo {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.tc__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tc__badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.tc__badge--on {
+  color: #4ade80;
+}
+
+.tc__badge--on::before {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 18%);
+}
+
+.tc__badge--off {
+  color: var(--text-3);
+}
+
+.tc__badge--off::before {
+  background: var(--text-3);
+}
+
+html[data-theme='light'] .tc__badge--on {
+  color: #15803d;
+}
+
+/* ===== Acciones de fila ===== */
+.tc__acciones-cell {
+  min-width: 300px;
+}
+
+.tc__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.tc__action {
+  min-height: 30px;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.tc__action--view {
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}
+
+.tc__action--view:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.tc__action--edit {
+  border-color: var(--accent-strong);
+  color: var(--accent-text);
+}
+
+.tc__action--edit:hover {
+  background: var(--accent-soft);
+}
+
+.tc__action--alt {
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}
+
+.tc__action--alt:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tc__action--off {
+  background: rgb(190 18 60 / 12%);
+  border-color: rgb(248 113 113 / 30%);
+  color: #fb7185;
+}
+
+html[data-theme='light'] .tc__action--off {
+  color: #be123c;
+}
+
+.tc__action--off:hover:not(:disabled) {
+  background: rgb(190 18 60 / 24%);
+}
+
+.tc__action--on {
+  background: rgb(22 101 52 / 14%);
+  border-color: rgb(34 197 94 / 30%);
+  color: #4ade80;
+}
+
+html[data-theme='light'] .tc__action--on {
+  color: #15803d;
+}
+
+.tc__action--on:hover:not(:disabled) {
+  background: rgb(22 101 52 / 28%);
+}
+
+.tc__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ===== Responsive: tabla adaptada a tarjetas en móvil ===== */
+@media (max-width: 860px) {
+  .tc__tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .tc__tab {
+    flex: 1 1 0;
+    text-align: center;
+    padding-inline: 0.8rem;
+  }
+
+  .tc__filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tc__select select {
+    width: 100%;
+  }
+
+  .tc__clear {
+    align-self: flex-start;
+  }
+
+  .tc__table-wrap {
+    overflow: visible;
+  }
+
+  .tc__table,
+  .tc__table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .tc__table thead {
+    display: none;
+  }
+
+  .tc__table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
+
+  .tc__table tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--surface-2);
+  }
+
+  .tc__table tbody tr:hover {
+    background: var(--surface-2);
+  }
+
+  .tc__table td {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+    max-width: none;
+  }
+
+  .tc__table td::before {
+    content: attr(data-label);
+    flex: 0 0 108px;
+    color: var(--text-3);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .tc__table td.tc__id {
+    color: var(--text-3);
+  }
+
+  .tc__conteo {
+    text-align: left;
+  }
+
+  .tc__acciones-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+    min-width: 0;
+  }
+
+  .tc__acciones-cell::before {
+    content: attr(data-label);
+    color: var(--text-3);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .tc__actions {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,104 @@
+<div class="clfd" (click)="cancelar()">
+  <div
+    class="clfd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="esCreacion() ? 'Nuevo color' : 'Editar color'"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="clfd__close" (click)="cancelar()" aria-label="Cerrar">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <div class="clfd__icon" aria-hidden="true">
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.9"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="3.4" />
+      </svg>
+    </div>
+
+    <h2 class="clfd__title">{{ esCreacion() ? 'Nuevo color' : 'Editar color' }}</h2>
+    <p class="clfd__text">
+      {{
+        esCreacion()
+          ? 'Registra un color para las variantes y recursos de producto.'
+          : 'Actualiza el nombre del color.'
+      }}
+    </p>
+
+    @if (mensajeError(); as error) {
+      <p class="clfd__alert" role="alert">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        {{ error }}
+      </p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="clfd__field">
+        <label class="clfd__label" for="clfd-nombre">Nombre del color</label>
+        <input
+          class="clfd__input"
+          [class.clfd__input--error]="mensajeCampo(form.controls.nombre) !== null"
+          id="clfd-nombre"
+          type="text"
+          formControlName="nombre"
+          autocomplete="off"
+          placeholder="Ej. Negro, Azul marino"
+          [attr.aria-describedby]="
+            mensajeCampo(form.controls.nombre) ? 'clfd-nombre-error' : null
+          "
+        />
+        @if (mensajeCampo(form.controls.nombre); as msg) {
+          <p class="clfd__field-error" id="clfd-nombre-error">{{ msg }}</p>
+        }
+      </div>
+
+      <div class="clfd__actions">
+        <button type="button" class="clfd__btn clfd__btn--ghost" (click)="cancelar()">
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="clfd__btn clfd__btn--primary"
+          [disabled]="guardando()"
+          [attr.aria-busy]="guardando()"
+        >
+          @if (guardando()) {
+            <span class="clfd__spinner" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            {{ esCreacion() ? 'Crear color' : 'Guardar cambios' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<div class="cdd" (click)="cerrar()">
+  <div
+    class="cdd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Detalle de la colección ' + coleccion().nombre"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="cdd__close" (click)="cerrar()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <span class="cdd__eyebrow">Colección #{{ coleccion().id }}</span>
+    <h2 class="cdd__title">{{ coleccion().nombre }}</h2>
+
+    <span
+      class="cdd__badge"
+      [class.cdd__badge--on]="coleccion().estado"
+      [class.cdd__badge--off]="!coleccion().estado"
+    >
+      {{ coleccion().estado ? 'Activa' : 'Inactiva' }}
+    </span>
+
+    <dl class="cdd__list">
+      <div class="cdd__item">
+        <dt>Temporada</dt>
+        <dd>{{ coleccion().temporada.nombre }}</dd>
+      </div>
+      <div class="cdd__item">
+        <dt>Estado de la temporada</dt>
+        <dd>{{ coleccion().temporada.estado ? 'Activa' : 'Inactiva' }}</dd>
+      </div>
+      <div class="cdd__item">
+        <dt>Productos asignados</dt>
+        <dd>{{ coleccion().total_productos }}</dd>
+      </div>
+      <div class="cdd__item cdd__item--stack">
+        <dt>Descripción</dt>
+        <dd>{{ coleccion().descripcion ?? 'Sin descripción' }}</dd>
+      </div>
+    </dl>
+
+    <div class="cdd__actions">
+      <button type="button" class="cdd__btn" (click)="cerrar()">Cerrar</button>
+    </div>
+  </div>
+</div>

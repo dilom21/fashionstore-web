@@ -83,6 +83,22 @@ export const administracionRoutes: Routes = [
           ).then((m) => m.SucursalesCiudadesPage),
       },
       // ===== Módulos de negocio (rutas preparadas) =====
+      // ===== CU07 - Gestionar catálogo de productos (funcional) =====
+      {
+        path: 'catalogo/productos',
+        loadComponent: () =>
+          import(
+            './catalogo/pages/catalogo-productos-page/catalogo-productos-page'
+          ).then((m) => m.CatalogoProductosPage),
+      },
+      // ===== CU08 - Gestionar temporadas y colecciones (funcional) =====
+      {
+        path: 'catalogo/temporadas-colecciones',
+        loadComponent: () =>
+          import(
+            './catalogo/pages/temporadas-colecciones-page/temporadas-colecciones-page'
+          ).then((m) => m.TemporadasColeccionesPage),
+      },
       {
         path: 'catalogo',
         data: {

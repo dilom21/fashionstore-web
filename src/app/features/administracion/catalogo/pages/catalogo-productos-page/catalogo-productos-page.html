@@ -1,0 +1,756 @@
+<div class="cat">
+  <header class="cat__head">
+    <div>
+      <span class="cat__eyebrow">Catálogo · Gestión de productos</span>
+      <h1 class="cat__title">Catálogo de productos</h1>
+      <p class="cat__subtitle">
+        Administra productos, categorías, tallas, colores y variantes.
+      </p>
+    </div>
+  </header>
+
+  <div class="cat__tabs" role="tablist" aria-label="Secciones del catálogo">
+    <button
+      type="button"
+      role="tab"
+      id="cat-tab-productos"
+      class="cat__tab"
+      [class.cat__tab--activo]="esTabActiva('productos')"
+      [attr.aria-selected]="esTabActiva('productos')"
+      (click)="activarTab('productos')"
+    >
+      Productos
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="cat-tab-categorias"
+      class="cat__tab"
+      [class.cat__tab--activo]="esTabActiva('categorias')"
+      [attr.aria-selected]="esTabActiva('categorias')"
+      (click)="activarTab('categorias')"
+    >
+      Categorías
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="cat-tab-tallas"
+      class="cat__tab"
+      [class.cat__tab--activo]="esTabActiva('tallas')"
+      [attr.aria-selected]="esTabActiva('tallas')"
+      (click)="activarTab('tallas')"
+    >
+      Tallas
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="cat-tab-colores"
+      class="cat__tab"
+      [class.cat__tab--activo]="esTabActiva('colores')"
+      [attr.aria-selected]="esTabActiva('colores')"
+      (click)="activarTab('colores')"
+    >
+      Colores
+    </button>
+  </div>
+
+  @if (esTabActiva('productos')) {
+    <section class="cat__panel" role="tabpanel" aria-labelledby="cat-tab-productos">
+      <div class="cat__panel-head">
+        <div>
+          <h2 class="cat__panel-title">Productos</h2>
+          <p class="cat__panel-sub">Productos según los filtros aplicados.</p>
+        </div>
+        <button
+          type="button"
+          class="cat__btn-new"
+          [disabled]="cargandoCategoriasCatalogo() || categoriasActivas().length === 0"
+          [title]="
+            categoriasActivas().length === 0
+              ? 'Primero registra una categoría activa'
+              : 'Nuevo producto'
+          "
+          (click)="abrirNuevoProducto()"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nuevo producto
+        </button>
+      </div>
+
+      <form
+        class="cat__filters"
+        [formGroup]="filtrosProductos"
+        (ngSubmit)="buscarProductos()"
+        novalidate
+        aria-label="Filtros de productos"
+      >
+        <div class="cat__search">
+          <input
+            type="search"
+            formControlName="buscar"
+            placeholder="Buscar por nombre…"
+            aria-label="Buscar productos"
+          />
+          <button type="submit" class="cat__search-btn" aria-label="Buscar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <label class="cat__select">
+          <span class="cat__select-label">Categoría</span>
+          <select
+            formControlName="categoriaId"
+            [disabled]="cargandoCategoriasCatalogo() || categoriasCatalogo().length === 0"
+          >
+            <option [ngValue]="null">Todas las categorías</option>
+            @for (categoria of categoriasCatalogo(); track categoria.id) {
+              <option [ngValue]="categoria.id">
+                {{ categoria.nombre }}{{ categoria.estado ? '' : ' (inactiva)' }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="cat__select">
+          <span class="cat__select-label">Estado</span>
+          <select formControlName="estado">
+            <option value="todos">Todos</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          class="cat__clear"
+          [disabled]="!tieneFiltrosProductos()"
+          (click)="limpiarFiltrosProductos()"
+        >
+          Limpiar
+        </button>
+      </form>
+
+      @if (errorCategoriasCatalogo(); as error) {
+        <p class="cat__notice cat__notice--warn" role="alert">{{ error }}</p>
+      }
+
+      @if (exitoProductos(); as exito) {
+        <p class="cat__notice cat__notice--ok" role="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+          </svg>
+          {{ exito }}
+        </p>
+      }
+
+      @if (errorProductos(); as error) {
+        <p class="cat__notice cat__notice--error" role="alert">{{ error }}</p>
+      }
+
+      <section class="cat__panel">
+        @if (cargandoProductos()) {
+          <div class="cat__loading" role="status">
+            <span class="cat__spinner" aria-hidden="true"></span>
+            <span>Cargando productos…</span>
+          </div>
+        } @else if (productos().length === 0) {
+          <div class="cat__empty">
+            <p>{{ mensajeVacioProductos() }}</p>
+            @if (tieneFiltrosProductos()) {
+              <button type="button" class="cat__empty-btn" (click)="limpiarFiltrosProductos()">
+                Limpiar filtros
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="cat__table-wrap">
+            <table class="cat__table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Producto</th>
+                  <th scope="col">Categoría</th>
+                  <th scope="col">Precio</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="cat__sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (producto of productos(); track producto.id) {
+                  <tr>
+                    <td data-label="ID" class="cat__id">#{{ producto.id }}</td>
+                    <td data-label="Producto" class="cat__nombre">{{ producto.nombre }}</td>
+                    <td data-label="Categoría">{{ producto.categoria.nombre }}</td>
+                    <td data-label="Precio" class="cat__precio">
+                      {{ producto.precio | number: '1.2-2' }} Bs
+                    </td>
+                    <td data-label="Estado">
+                      @if (producto.estado) {
+                        <span class="cat__badge cat__badge--on">Activo</span>
+                      } @else {
+                        <span class="cat__badge cat__badge--off">Inactivo</span>
+                      }
+                    </td>
+                    <td data-label="Acciones" class="cat__acciones-cell">
+                      <div class="cat__actions">
+                        <button
+                          type="button"
+                          class="cat__action cat__action--view"
+                          (click)="verProducto(producto)"
+                          title="Ver detalle"
+                          [attr.aria-label]="'Ver detalle de ' + producto.nombre"
+                        >
+                          Ver
+                        </button>
+                        <button
+                          type="button"
+                          class="cat__action cat__action--edit"
+                          (click)="abrirEditarProducto(producto)"
+                          title="Editar"
+                          [attr.aria-label]="'Editar ' + producto.nombre"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="cat__action cat__action--alt"
+                          (click)="gestionarVariantes(producto)"
+                          title="Gestionar variantes"
+                          [attr.aria-label]="'Variantes de ' + producto.nombre"
+                        >
+                          Variantes
+                        </button>
+                        <button
+                          type="button"
+                          class="cat__action cat__action--alt"
+                          (click)="gestionarRecursos(producto)"
+                          title="Gestionar recursos"
+                          [attr.aria-label]="'Recursos de ' + producto.nombre"
+                        >
+                          Recursos
+                        </button>
+                        @if (producto.estado) {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--off"
+                            [disabled]="procesandoEstadoProducto()"
+                            (click)="solicitarCambioEstadoProducto(producto)"
+                          >
+                            Deshabilitar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--on"
+                            [disabled]="procesandoEstadoProducto()"
+                            (click)="solicitarCambioEstadoProducto(producto)"
+                          >
+                            Habilitar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="cat__count">{{ productos().length }} producto(s)</p>
+        }
+      </section>
+    </section>
+  } @else if (esTabActiva('categorias')) {
+    <section class="cat__panel" role="tabpanel" aria-labelledby="cat-tab-categorias">
+      <div class="cat__panel-head">
+        <div>
+          <h2 class="cat__panel-title">Categorías</h2>
+          <p class="cat__panel-sub">Clasificación de los productos del catálogo.</p>
+        </div>
+        <button type="button" class="cat__btn-new" (click)="abrirNuevaCategoria()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nueva categoría
+        </button>
+      </div>
+
+      <form
+        class="cat__filters"
+        [formGroup]="filtrosCategorias"
+        (ngSubmit)="buscarCategorias()"
+        novalidate
+        aria-label="Filtros de categorías"
+      >
+        <div class="cat__search">
+          <input type="search" formControlName="buscar" placeholder="Buscar por nombre…" aria-label="Buscar categorías" />
+          <button type="submit" class="cat__search-btn" aria-label="Buscar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <label class="cat__select">
+          <span class="cat__select-label">Estado</span>
+          <select formControlName="estado">
+            <option value="todos">Todos</option>
+            <option value="activos">Activas</option>
+            <option value="inactivos">Inactivas</option>
+          </select>
+        </label>
+
+        <button type="button" class="cat__clear" [disabled]="!tieneFiltrosCategorias()" (click)="limpiarFiltrosCategorias()">
+          Limpiar
+        </button>
+      </form>
+
+      @if (exitoCategorias(); as exito) {
+        <p class="cat__notice cat__notice--ok" role="status">{{ exito }}</p>
+      }
+      @if (errorCategorias(); as error) {
+        <p class="cat__notice cat__notice--error" role="alert">{{ error }}</p>
+      }
+
+      <section class="cat__panel">
+        @if (cargandoCategorias()) {
+          <div class="cat__loading" role="status">
+            <span class="cat__spinner" aria-hidden="true"></span>
+            <span>Cargando categorías…</span>
+          </div>
+        } @else if (categorias().length === 0) {
+          <div class="cat__empty">
+            <p>{{ mensajeVacioCategorias() }}</p>
+            @if (tieneFiltrosCategorias()) {
+              <button type="button" class="cat__empty-btn" (click)="limpiarFiltrosCategorias()">Limpiar filtros</button>
+            }
+          </div>
+        } @else {
+          <div class="cat__table-wrap">
+            <table class="cat__table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Descripción</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="cat__sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (categoria of categorias(); track categoria.id) {
+                  <tr>
+                    <td data-label="ID" class="cat__id">#{{ categoria.id }}</td>
+                    <td data-label="Nombre" class="cat__nombre">{{ categoria.nombre }}</td>
+                    <td data-label="Descripción">{{ categoria.descripcion ?? '—' }}</td>
+                    <td data-label="Estado">
+                      @if (categoria.estado) {
+                        <span class="cat__badge cat__badge--on">Activa</span>
+                      } @else {
+                        <span class="cat__badge cat__badge--off">Inactiva</span>
+                      }
+                    </td>
+                    <td data-label="Acciones" class="cat__acciones-cell">
+                      <div class="cat__actions">
+                        <button type="button" class="cat__action cat__action--edit" (click)="abrirEditarCategoria(categoria)">
+                          Editar
+                        </button>
+                        @if (categoria.estado) {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--off"
+                            [disabled]="procesandoEstadoCategoria()"
+                            (click)="solicitarCambioEstadoCategoria(categoria)"
+                          >
+                            Deshabilitar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--on"
+                            [disabled]="procesandoEstadoCategoria()"
+                            (click)="solicitarCambioEstadoCategoria(categoria)"
+                          >
+                            Habilitar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="cat__count">{{ categorias().length }} categoría(s)</p>
+        }
+      </section>
+    </section>
+  } @else if (esTabActiva('tallas')) {
+    <section class="cat__panel" role="tabpanel" aria-labelledby="cat-tab-tallas">
+      <div class="cat__panel-head">
+        <div>
+          <h2 class="cat__panel-title">Tallas</h2>
+          <p class="cat__panel-sub">Tallas disponibles para las variantes.</p>
+        </div>
+        <button type="button" class="cat__btn-new" (click)="abrirNuevaTalla()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nueva talla
+        </button>
+      </div>
+
+      <form
+        class="cat__filters"
+        [formGroup]="filtrosTallas"
+        (ngSubmit)="buscarTallas()"
+        novalidate
+        aria-label="Filtros de tallas"
+      >
+        <div class="cat__search">
+          <input type="search" formControlName="buscar" placeholder="Buscar por nombre…" aria-label="Buscar tallas" />
+          <button type="submit" class="cat__search-btn" aria-label="Buscar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <label class="cat__select">
+          <span class="cat__select-label">Estado</span>
+          <select formControlName="estado">
+            <option value="todos">Todas</option>
+            <option value="activos">Activas</option>
+            <option value="inactivos">Inactivas</option>
+          </select>
+        </label>
+
+        <button type="button" class="cat__clear" [disabled]="!tieneFiltrosTallas()" (click)="limpiarFiltrosTallas()">
+          Limpiar
+        </button>
+      </form>
+
+      @if (exitoTallas(); as exito) {
+        <p class="cat__notice cat__notice--ok" role="status">{{ exito }}</p>
+      }
+      @if (errorTallas(); as error) {
+        <p class="cat__notice cat__notice--error" role="alert">{{ error }}</p>
+      }
+
+      <section class="cat__panel">
+        @if (cargandoTallas()) {
+          <div class="cat__loading" role="status">
+            <span class="cat__spinner" aria-hidden="true"></span>
+            <span>Cargando tallas…</span>
+          </div>
+        } @else if (tallas().length === 0) {
+          <div class="cat__empty">
+            <p>{{ mensajeVacioTallas() }}</p>
+            @if (tieneFiltrosTallas()) {
+              <button type="button" class="cat__empty-btn" (click)="limpiarFiltrosTallas()">Limpiar filtros</button>
+            }
+          </div>
+        } @else {
+          <div class="cat__table-wrap">
+            <table class="cat__table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="cat__sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (talla of tallas(); track talla.id) {
+                  <tr>
+                    <td data-label="ID" class="cat__id">#{{ talla.id }}</td>
+                    <td data-label="Nombre" class="cat__nombre">{{ talla.nombre }}</td>
+                    <td data-label="Estado">
+                      @if (talla.estado) {
+                        <span class="cat__badge cat__badge--on">Activa</span>
+                      } @else {
+                        <span class="cat__badge cat__badge--off">Inactiva</span>
+                      }
+                    </td>
+                    <td data-label="Acciones" class="cat__acciones-cell">
+                      <div class="cat__actions">
+                        <button type="button" class="cat__action cat__action--edit" (click)="abrirEditarTalla(talla)">
+                          Editar
+                        </button>
+                        @if (talla.estado) {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--off"
+                            [disabled]="procesandoEstadoTalla()"
+                            (click)="solicitarCambioEstadoTalla(talla)"
+                          >
+                            Deshabilitar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--on"
+                            [disabled]="procesandoEstadoTalla()"
+                            (click)="solicitarCambioEstadoTalla(talla)"
+                          >
+                            Habilitar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="cat__count">{{ tallas().length }} talla(s)</p>
+        }
+      </section>
+    </section>
+  } @else {
+    <section class="cat__panel" role="tabpanel" aria-labelledby="cat-tab-colores">
+      <div class="cat__panel-head">
+        <div>
+          <h2 class="cat__panel-title">Colores</h2>
+          <p class="cat__panel-sub">Colores disponibles para variantes y recursos.</p>
+        </div>
+        <button type="button" class="cat__btn-new" (click)="abrirNuevoColor()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Nuevo color
+        </button>
+      </div>
+
+      <form
+        class="cat__filters"
+        [formGroup]="filtrosColores"
+        (ngSubmit)="buscarColores()"
+        novalidate
+        aria-label="Filtros de colores"
+      >
+        <div class="cat__search">
+          <input type="search" formControlName="buscar" placeholder="Buscar por nombre…" aria-label="Buscar colores" />
+          <button type="submit" class="cat__search-btn" aria-label="Buscar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-4.3-4.3"></path>
+            </svg>
+          </button>
+        </div>
+
+        <label class="cat__select">
+          <span class="cat__select-label">Estado</span>
+          <select formControlName="estado">
+            <option value="todos">Todos</option>
+            <option value="activos">Activos</option>
+            <option value="inactivos">Inactivos</option>
+          </select>
+        </label>
+
+        <button type="button" class="cat__clear" [disabled]="!tieneFiltrosColores()" (click)="limpiarFiltrosColores()">
+          Limpiar
+        </button>
+      </form>
+
+      @if (exitoColores(); as exito) {
+        <p class="cat__notice cat__notice--ok" role="status">{{ exito }}</p>
+      }
+      @if (errorColores(); as error) {
+        <p class="cat__notice cat__notice--error" role="alert">{{ error }}</p>
+      }
+
+      <section class="cat__panel">
+        @if (cargandoColores()) {
+          <div class="cat__loading" role="status">
+            <span class="cat__spinner" aria-hidden="true"></span>
+            <span>Cargando colores…</span>
+          </div>
+        } @else if (colores().length === 0) {
+          <div class="cat__empty">
+            <p>{{ mensajeVacioColores() }}</p>
+            @if (tieneFiltrosColores()) {
+              <button type="button" class="cat__empty-btn" (click)="limpiarFiltrosColores()">Limpiar filtros</button>
+            }
+          </div>
+        } @else {
+          <div class="cat__table-wrap">
+            <table class="cat__table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col"><span class="cat__sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (color of colores(); track color.id) {
+                  <tr>
+                    <td data-label="ID" class="cat__id">#{{ color.id }}</td>
+                    <td data-label="Nombre" class="cat__nombre">{{ color.nombre }}</td>
+                    <td data-label="Estado">
+                      @if (color.estado) {
+                        <span class="cat__badge cat__badge--on">Activo</span>
+                      } @else {
+                        <span class="cat__badge cat__badge--off">Inactivo</span>
+                      }
+                    </td>
+                    <td data-label="Acciones" class="cat__acciones-cell">
+                      <div class="cat__actions">
+                        <button type="button" class="cat__action cat__action--edit" (click)="abrirEditarColor(color)">
+                          Editar
+                        </button>
+                        @if (color.estado) {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--off"
+                            [disabled]="procesandoEstadoColor()"
+                            (click)="solicitarCambioEstadoColor(color)"
+                          >
+                            Deshabilitar
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="cat__action cat__action--on"
+                            [disabled]="procesandoEstadoColor()"
+                            (click)="solicitarCambioEstadoColor(color)"
+                          >
+                            Habilitar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="cat__count">{{ colores().length }} color(es)</p>
+        }
+      </section>
+    </section>
+  }
+</div>
+
+@if (dialogoProductoAbierto()) {
+  <app-producto-form-dialog
+    [producto]="productoEnForm()"
+    [categorias]="categoriasCatalogo()"
+    (guardado)="onProductoGuardado($event)"
+    (cerrado)="cerrarDialogoProducto()"
+  />
+}
+
+@if (detalleProducto(); as productoDetalle) {
+  <app-producto-detalle-dialog [producto]="productoDetalle" (cerrado)="cerrarDetalleProducto()" />
+}
+
+@if (productoVariantes(); as productoVariantesActual) {
+  <app-producto-variantes-dialog
+    [producto]="productoVariantesActual"
+    (cerrado)="cerrarVariantes()"
+  />
+}
+
+@if (productoRecursos(); as productoRecursosActual) {
+  <app-producto-recursos-dialog
+    [producto]="productoRecursosActual"
+    (cerrado)="cerrarRecursos()"
+  />
+}
+
+@if (dialogoCategoriaAbierto()) {
+  <app-categoria-form-dialog
+    [categoria]="categoriaEnForm()"
+    (guardado)="onCategoriaGuardada($event)"
+    (cerrado)="cerrarDialogoCategoria()"
+  />
+}
+
+@if (dialogoTallaAbierto()) {
+  <app-talla-form-dialog
+    [talla]="tallaEnForm()"
+    (guardado)="onTallaGuardada($event)"
+    (cerrado)="cerrarDialogoTalla()"
+  />
+}
+
+@if (dialogoColorAbierto()) {
+  <app-color-form-dialog
+    [color]="colorEnForm()"
+    (guardado)="onColorGuardado($event)"
+    (cerrado)="cerrarDialogoColor()"
+  />
+}
+
+@if (confirmacionProducto(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar producto' : 'Deshabilitar producto'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar el producto ' + pendiente.producto.nombre + '? Volverá a estar disponible en el catálogo.'
+        : '¿Deseas deshabilitar el producto ' + pendiente.producto.nombre + '? No se mostrará en el catálogo público.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstadoProducto()"
+    (cancelado)="cancelarCambioEstadoProducto()"
+  />
+}
+
+@if (confirmacionCategoria(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar categoría' : 'Deshabilitar categoría'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar la categoría ' + pendiente.categoria.nombre + '? Podrá recibir productos.'
+        : '¿Deseas deshabilitar la categoría ' + pendiente.categoria.nombre + '? Solo es posible si no tiene productos activos.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstadoCategoria()"
+    (cancelado)="cancelarCambioEstadoCategoria()"
+  />
+}
+
+@if (confirmacionTalla(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar talla' : 'Deshabilitar talla'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar la talla ' + pendiente.talla.nombre + '?'
+        : '¿Deseas deshabilitar la talla ' + pendiente.talla.nombre + '? Solo es posible si no tiene variantes activas.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstadoTalla()"
+    (cancelado)="cancelarCambioEstadoTalla()"
+  />
+}
+
+@if (confirmacionColor(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar color' : 'Deshabilitar color'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar el color ' + pendiente.color.nombre + '?'
+        : '¿Deseas deshabilitar el color ' + pendiente.color.nombre + '? Solo es posible si no tiene variantes activas.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstadoColor()"
+    (cancelado)="cancelarCambioEstadoColor()"
+  />
+}

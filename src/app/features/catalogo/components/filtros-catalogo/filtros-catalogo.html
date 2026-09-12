@@ -1,0 +1,137 @@
+<form
+  class="fc"
+  [formGroup]="form()"
+  (ngSubmit)="onAplicar()"
+  novalidate
+  aria-label="Filtros del catálogo"
+>
+  <div class="fc__head">
+    <h2 class="fc__title">Filtros</h2>
+    @if (cargandoFiltros()) {
+      <span class="fc__loading" role="status">Cargando opciones…</span>
+    }
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-buscar">Buscar</label>
+    <input
+      id="fc-buscar"
+      type="search"
+      class="fc__input"
+      formControlName="buscar"
+      placeholder="Nombre o descripción…"
+      autocomplete="off"
+    />
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-categoria">Categoría</label>
+    <select
+      id="fc-categoria"
+      class="fc__select"
+      formControlName="categoria_id"
+      [disabled]="cargandoFiltros()"
+    >
+      <option [ngValue]="null">Todas las categorías</option>
+      @for (categoria of filtros()?.categorias ?? []; track categoria.id) {
+        <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-talla">Talla</label>
+    <select
+      id="fc-talla"
+      class="fc__select"
+      formControlName="talla_id"
+      [disabled]="cargandoFiltros()"
+    >
+      <option [ngValue]="null">Todas las tallas</option>
+      @for (talla of filtros()?.tallas ?? []; track talla.id) {
+        <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-color">Color</label>
+    <select
+      id="fc-color"
+      class="fc__select"
+      formControlName="color_id"
+      [disabled]="cargandoFiltros()"
+    >
+      <option [ngValue]="null">Todos los colores</option>
+      @for (color of filtros()?.colores ?? []; track color.id) {
+        <option [ngValue]="color.id">{{ color.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-temporada">Temporada</label>
+    <select
+      id="fc-temporada"
+      class="fc__select"
+      formControlName="temporada_id"
+      [disabled]="cargandoFiltros()"
+    >
+      <option [ngValue]="null">Todas las temporadas</option>
+      @for (temporada of filtros()?.temporadas ?? []; track temporada.id) {
+        <option [ngValue]="temporada.id">{{ temporada.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-coleccion">Colección</label>
+    <select
+      id="fc-coleccion"
+      class="fc__select"
+      formControlName="coleccion_id"
+      [disabled]="cargandoFiltros()"
+    >
+      <option [ngValue]="null">Todas las colecciones</option>
+      @for (coleccion of filtros()?.colecciones ?? []; track coleccion.id) {
+        <option [ngValue]="coleccion.id">{{ coleccion.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="fc__field">
+    <label class="fc__label" for="fc-sucursal">Sucursal</label>
+    <select
+      id="fc-sucursal"
+      class="fc__select"
+      formControlName="sucursal_id"
+      [disabled]="cargandoFiltros()"
+    >
+      <option [ngValue]="null">Todas las sucursales</option>
+      @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {
+        <option [ngValue]="sucursal.id">
+          {{ sucursal.nombre }}{{ sucursal.ciudad ? ' · ' + sucursal.ciudad : '' }}
+        </option>
+      }
+    </select>
+  </div>
+
+  <label class="fc__check">
+    <input type="checkbox" formControlName="con_stock" />
+    <span>Solo con stock disponible</span>
+  </label>
+
+  <div class="fc__actions">
+    <button type="submit" class="fc__btn fc__btn--primary">
+      Aplicar filtros
+    </button>
+    <button
+      type="button"
+      class="fc__btn fc__btn--ghost"
+      [disabled]="!tieneFiltros()"
+      (click)="onLimpiar()"
+    >
+      Limpiar filtros
+    </button>
+  </div>
+</form>

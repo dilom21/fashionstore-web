@@ -14,6 +14,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'auth/personal/login',
     renderMode: RenderMode.Server,
   },
+  // Catálogo público (CU09): datos dinámicos, se renderiza por petición.
+  {
+    path: 'catalogo/**',
+    renderMode: RenderMode.Server,
+  },
   {
     path: '**',
     renderMode: RenderMode.Prerender,
