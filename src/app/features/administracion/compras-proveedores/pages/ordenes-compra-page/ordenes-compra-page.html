@@ -1,0 +1,296 @@
+<div class="oc">
+  <header class="oc__head">
+    <div>
+      <span class="oc__eyebrow">Compras y Proveedores · Órdenes de compra</span>
+      <h1 class="oc__title">Gestionar compras a proveedores</h1>
+      <p class="oc__subtitle">
+        Registra, consulta y da seguimiento a las órdenes de compra: envía,
+        cancela y recibe la mercadería de tus proveedores.
+      </p>
+    </div>
+  </header>
+
+  <div class="oc__panel-head">
+    <div>
+      <h2 class="oc__panel-title">Órdenes de compra</h2>
+      <p class="oc__panel-sub">Órdenes según los filtros aplicados.</p>
+    </div>
+    <button type="button" class="oc__btn-new" (click)="abrirNueva()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 5v14M5 12h14"></path>
+      </svg>
+      Nueva orden
+    </button>
+  </div>
+
+  <form
+    class="oc__filters"
+    [formGroup]="filtros"
+    (ngSubmit)="buscar()"
+    novalidate
+    aria-label="Filtros de órdenes de compra"
+  >
+    <div class="oc__search">
+      <input
+        type="search"
+        formControlName="buscar"
+        placeholder="Buscar por observación, proveedor o ID…"
+        aria-label="Buscar órdenes de compra"
+      />
+      <button type="submit" class="oc__search-btn" aria-label="Buscar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M21 21l-4.3-4.3"></path>
+        </svg>
+      </button>
+    </div>
+
+    <label class="oc__select">
+      <span class="oc__select-label">Proveedor</span>
+      <select formControlName="proveedorId">
+        <option [ngValue]="null">Todos</option>
+        @for (proveedor of proveedores(); track proveedor.id) {
+          <option [ngValue]="proveedor.id">{{ proveedor.razon_social }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="oc__select">
+      <span class="oc__select-label">Sucursal</span>
+      <select formControlName="sucursalId">
+        <option [ngValue]="null">Todas</option>
+        @for (sucursal of sucursales(); track sucursal.id) {
+          <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="oc__select">
+      <span class="oc__select-label">Estado</span>
+      <select formControlName="estado">
+        <option value="TODOS">Todos</option>
+        @for (estado of estados; track estado) {
+          <option [value]="estado">{{ etiquetaEstado(estado) }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="oc__select">
+      <span class="oc__select-label">Desde</span>
+      <input type="date" formControlName="fechaDesde" aria-label="Fecha desde" />
+    </label>
+
+    <label class="oc__select">
+      <span class="oc__select-label">Hasta</span>
+      <input type="date" formControlName="fechaHasta" aria-label="Fecha hasta" />
+    </label>
+
+    <div class="oc__filter-actions">
+      <button type="submit" class="oc__btn-search">Buscar</button>
+      <button
+        type="button"
+        class="oc__clear"
+        [disabled]="!tieneFiltros()"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  @if (exito(); as mensajeExito) {
+    <p class="oc__notice oc__notice--ok" role="status">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+      </svg>
+      {{ mensajeExito }}
+    </p>
+  }
+
+  @if (error(); as mensajeError) {
+    <p class="oc__notice oc__notice--error" role="alert">{{ mensajeError }}</p>
+  }
+
+  <section class="oc__panel">
+    @if (cargando()) {
+      <div class="oc__loading" role="status">
+        <span class="oc__spinner" aria-hidden="true"></span>
+        <span>Cargando órdenes…</span>
+      </div>
+    } @else if (ordenes().length === 0) {
+      <div class="oc__empty">
+        <p>{{ mensajeVacio() }}</p>
+        @if (tieneFiltros()) {
+          <button type="button" class="oc__empty-btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="oc__table-wrap">
+        <table class="oc__table">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Fecha orden</th>
+              <th scope="col">Fecha estimada</th>
+              <th scope="col">Fecha recepción</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="oc__num">Total ítems</th>
+              <th scope="col"><span class="oc__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (orden of ordenes(); track orden.id) {
+              <tr [class.oc__row--busy]="estaProcesando(orden)">
+                <td data-label="ID" class="oc__id">#{{ orden.id }}</td>
+                <td data-label="Proveedor" class="oc__nombre">
+                  {{ orden.proveedor_razon_social }}
+                </td>
+                <td data-label="Sucursal">{{ orden.sucursal_nombre }}</td>
+                <td data-label="Fecha orden">{{ formatearFecha(orden.fecha_orden) }}</td>
+                <td data-label="Fecha estimada">{{ formatearFecha(orden.fecha_estimada) }}</td>
+                <td data-label="Fecha recepción">{{ formatearFecha(orden.fecha_recepcion) }}</td>
+                <td data-label="Estado">
+                  <span class="oc__badge" [class]="'oc__badge--' + orden.estado.toLowerCase()">
+                    {{ etiquetaEstado(orden.estado) }}
+                  </span>
+                </td>
+                <td data-label="Total ítems" class="oc__num oc__conteo">
+                  {{ orden.total_detalles }}
+                </td>
+                <td data-label="Acciones" class="oc__acciones-cell">
+                  <div class="oc__actions">
+                    <button
+                      type="button"
+                      class="oc__action oc__action--view"
+                      [disabled]="procesando()"
+                      (click)="verOrden(orden)"
+                    >
+                      Ver
+                    </button>
+
+                    @if (puedeEditar(orden)) {
+                      <button
+                        type="button"
+                        class="oc__action oc__action--edit"
+                        [disabled]="procesando()"
+                        (click)="abrirEditar(orden)"
+                      >
+                        Editar cabecera
+                      </button>
+                    }
+
+                    @if (puedeGestionar(orden)) {
+                      <button
+                        type="button"
+                        class="oc__action oc__action--alt"
+                        [disabled]="procesando()"
+                        (click)="abrirGestionDetalles(orden)"
+                      >
+                        Gestionar detalles
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="oc__action oc__action--alt"
+                        [disabled]="procesando()"
+                        (click)="verDetalles(orden)"
+                      >
+                        Ver detalles
+                      </button>
+                    }
+
+                    @if (puedeEnviar(orden)) {
+                      <button
+                        type="button"
+                        class="oc__action oc__action--send"
+                        [disabled]="procesando()"
+                        (click)="solicitarEnviar(orden)"
+                      >
+                        @if (tipoEnCurso(orden) === 'enviar') {
+                          Enviando…
+                        } @else {
+                          Enviar
+                        }
+                      </button>
+                    }
+
+                    @if (puedeRecibir(orden)) {
+                      <button
+                        type="button"
+                        class="oc__action oc__action--recv"
+                        [disabled]="procesando()"
+                        (click)="solicitarRecibir(orden)"
+                      >
+                        @if (tipoEnCurso(orden) === 'recibir') {
+                          Recibiendo…
+                        } @else {
+                          Recibir
+                        }
+                      </button>
+                    }
+
+                    @if (puedeCancelar(orden)) {
+                      <button
+                        type="button"
+                        class="oc__action oc__action--off"
+                        [disabled]="procesando()"
+                        (click)="solicitarCancelar(orden)"
+                      >
+                        @if (tipoEnCurso(orden) === 'cancelar') {
+                          Cancelando…
+                        } @else {
+                          Cancelar
+                        }
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="oc__count">{{ ordenes().length }} orden(es)</p>
+    }
+  </section>
+</div>
+
+@if (dialogoFormAbierto()) {
+  <app-orden-compra-form-dialog
+    [orden]="ordenEnForm()"
+    (guardado)="onOrdenGuardada($event)"
+    (cerrado)="cerrarForm()"
+  />
+}
+
+@if (detalleOrden(); as ordenDetalle) {
+  <app-orden-compra-detalle-dialog
+    [orden]="ordenDetalle"
+    (cerrado)="cerrarDetalle()"
+  />
+}
+
+@if (gestion(); as gestionActual) {
+  <app-orden-compra-detalles-dialog
+    [orden]="gestionActual.orden"
+    [soloLectura]="gestionActual.soloLectura"
+    (guardado)="onDetallesGuardados($event)"
+    (cerrado)="cerrarGestion()"
+  />
+}
+
+@if (confirmacion(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="tituloConfirmacion(pendiente.tipo)"
+    [mensaje]="mensajeConfirmacion(pendiente)"
+    [confirmarLabel]="confirmarLabel(pendiente.tipo)"
+    [peligro]="pendiente.tipo === 'cancelar'"
+    (confirmado)="confirmarAccion()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}

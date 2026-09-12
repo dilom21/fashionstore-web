@@ -1,0 +1,62 @@
+<div class="pdd" (click)="cerrar()">
+  <div
+    class="pdd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Detalle de la promoción ' + promocion().nombre"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="pdd__close" (click)="cerrar()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <span class="pdd__eyebrow">Promoción #{{ promocion().id }}</span>
+    <h2 class="pdd__title">{{ promocion().nombre }}</h2>
+
+    <div class="pdd__badges">
+      <span
+        class="pdd__badge"
+        [class.pdd__badge--on]="promocion().estado"
+        [class.pdd__badge--off]="!promocion().estado"
+      >
+        {{ promocion().estado ? 'Habilitada' : 'Deshabilitada' }}
+      </span>
+      <span [class]="'pdd__badge pdd__badge--vig ' + claseVigencia()">
+        {{ vigencia() }}
+      </span>
+    </div>
+
+    <dl class="pdd__list">
+      <div class="pdd__item">
+        <dt>Tipo de descuento</dt>
+        <dd>{{ promocion().tipo_descuento === 'PORCENTAJE' ? 'Porcentaje' : 'Monto' }}</dd>
+      </div>
+      <div class="pdd__item">
+        <dt>Valor</dt>
+        <dd>{{ valor() }}</dd>
+      </div>
+      <div class="pdd__item">
+        <dt>Descripción</dt>
+        <dd>{{ promocion().descripcion ?? '—' }}</dd>
+      </div>
+      <div class="pdd__item">
+        <dt>Fecha de inicio</dt>
+        <dd>{{ formatearFecha(promocion().fecha_inicio) }}</dd>
+      </div>
+      <div class="pdd__item">
+        <dt>Fecha de fin</dt>
+        <dd>{{ formatearFecha(promocion().fecha_fin) }}</dd>
+      </div>
+      <div class="pdd__item">
+        <dt>Estado</dt>
+        <dd>{{ promocion().estado ? 'Habilitada' : 'Deshabilitada' }}</dd>
+      </div>
+    </dl>
+
+    <div class="pdd__actions">
+      <button type="button" class="pdd__btn" (click)="cerrar()">Cerrar</button>
+    </div>
+  </div>
+</div>

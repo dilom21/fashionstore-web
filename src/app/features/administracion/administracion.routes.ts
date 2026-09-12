@@ -99,6 +99,14 @@ export const administracionRoutes: Routes = [
             './catalogo/pages/temporadas-colecciones-page/temporadas-colecciones-page'
           ).then((m) => m.TemporadasColeccionesPage),
       },
+      // ===== CU10 - Gestionar promociones (funcional) =====
+      {
+        path: 'catalogo/promociones',
+        loadComponent: () =>
+          import(
+            './catalogo/pages/promociones-page/promociones-page'
+          ).then((m) => m.PromocionesPage),
+      },
       {
         path: 'catalogo',
         data: {
@@ -141,19 +149,26 @@ export const administracionRoutes: Routes = [
             './components/modulo-en-construccion/modulo-en-construccion'
           ).then((m) => m.ModuloEnConstruccion),
       },
+      // ===== CU11 - Gestionar proveedores (funcional) =====
       {
-        path: 'compras',
-        data: {
-          modulo: 'COMPRAS_PROVEEDORES',
-          titulo: 'Compras y Proveedores',
-          descripcion:
-            'Órdenes de compra y gestión de proveedores.',
-          icono: 'compras',
-        },
+        path: 'compras-proveedores/proveedores',
         loadComponent: () =>
           import(
-            './components/modulo-en-construccion/modulo-en-construccion'
-          ).then((m) => m.ModuloEnConstruccion),
+            './compras-proveedores/pages/proveedores-page/proveedores-page'
+          ).then((m) => m.ProveedoresPage),
+      },
+      // ===== CU12 - Gestionar compras a proveedores (funcional) =====
+      {
+        path: 'compras-proveedores/ordenes-compra',
+        loadComponent: () =>
+          import(
+            './compras-proveedores/pages/ordenes-compra-page/ordenes-compra-page'
+          ).then((m) => m.OrdenesCompraPage),
+      },
+      {
+        path: 'compras',
+        pathMatch: 'full',
+        redirectTo: 'compras-proveedores/proveedores',
       },
       {
         path: 'reportes',

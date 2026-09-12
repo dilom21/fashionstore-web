@@ -1,0 +1,121 @@
+@if (orden(); as actual) {
+  <div class="ocd" (click)="cerrar()">
+    <div
+      class="ocd__card"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'Detalle de la orden #' + actual.id"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="ocd__close" (click)="cerrar()" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+
+      <p class="ocd__eyebrow">Orden de compra #{{ actual.id }}</p>
+      <h2 class="ocd__title">{{ actual.proveedor_razon_social }}</h2>
+
+      <dl class="ocd__lista">
+        <div class="ocd__fila">
+          <dt>ID</dt>
+          <dd>#{{ actual.id }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Proveedor</dt>
+          <dd>{{ actual.proveedor_razon_social }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Sucursal</dt>
+          <dd>{{ actual.sucursal_nombre }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Empleado</dt>
+          <dd>{{ actual.empleado_id !== null ? '#' + actual.empleado_id : '—' }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Fecha orden</dt>
+          <dd>{{ formatearFecha(actual.fecha_orden) }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Fecha estimada</dt>
+          <dd>{{ formatearFecha(actual.fecha_estimada) }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Fecha recepción</dt>
+          <dd>{{ formatearFecha(actual.fecha_recepcion) }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Estado</dt>
+          <dd>
+            <span class="ocd__badge" [class]="'ocd__badge--' + actual.estado.toLowerCase()">
+              {{ etiquetaEstado(actual.estado) }}
+            </span>
+          </dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Observación</dt>
+          <dd>{{ actual.observacion ?? '—' }}</dd>
+        </div>
+        <div class="ocd__fila">
+          <dt>Cantidad de detalles</dt>
+          <dd>{{ actual.total_detalles }}</dd>
+        </div>
+      </dl>
+
+      <h3 class="ocd__subtitle">Detalles de la orden</h3>
+
+      @if (cargando()) {
+        <div class="ocd__loading" role="status">
+          <span class="ocd__spinner" aria-hidden="true"></span>
+          <span>Cargando detalles…</span>
+        </div>
+      } @else if (error(); as mensaje) {
+        <p class="ocd__alert" role="alert">{{ mensaje }}</p>
+      } @else if (detalles().length === 0) {
+        <p class="ocd__empty">Esta orden todavía no tiene detalles registrados.</p>
+      } @else {
+        <div class="ocd__table-wrap">
+          <table class="ocd__table">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">SKU</th>
+                <th scope="col">Temporada</th>
+                <th scope="col" class="ocd__num">Cantidad</th>
+                <th scope="col" class="ocd__num">Costo unit.</th>
+                <th scope="col" class="ocd__num">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (detalle of detalles(); track detalle.id) {
+                <tr>
+                  <td data-label="Producto" class="ocd__nombre">{{ detalle.producto_nombre }}</td>
+                  <td data-label="SKU">{{ detalle.sku }}</td>
+                  <td data-label="Temporada">{{ detalle.temporada_nombre }}</td>
+                  <td data-label="Cantidad" class="ocd__num">{{ detalle.cantidad }}</td>
+                  <td data-label="Costo unit." class="ocd__num">
+                    {{ formatearMoneda(detalle.costo_unitario) }}
+                  </td>
+                  <td data-label="Subtotal" class="ocd__num ocd__subtotal">
+                    {{ formatearMoneda(subtotal(detalle)) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" class="ocd__total-label">Total estimado</td>
+                <td class="ocd__num ocd__total-valor">{{ formatearMoneda(total()) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      }
+
+      <div class="ocd__actions">
+        <button type="button" class="ocd__btn" (click)="cerrar()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

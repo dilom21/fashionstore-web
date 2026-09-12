@@ -1,0 +1,161 @@
+<div class="ppd" (click)="cerrar()">
+  <div
+    class="ppd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Productos de la promoción ' + promocion().nombre"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="ppd__head">
+      <div>
+        <span class="ppd__eyebrow">Gestionar productos</span>
+        <h2 class="ppd__title">{{ promocion().nombre }}</h2>
+        <p class="ppd__sub">
+          Selecciona los productos activos de la promoción. Se guardan todos con
+          una sola operación.
+        </p>
+      </div>
+      <button type="button" class="ppd__close" (click)="cerrar()" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    @if (error(); as mensaje) {
+      <p class="ppd__alert ppd__alert--error" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        {{ mensaje }}
+      </p>
+    }
+
+    @if (exito(); as mensaje) {
+      <p class="ppd__alert ppd__alert--ok" role="status">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+        </svg>
+        {{ mensaje }}
+      </p>
+    }
+
+    <div class="ppd__toolbar">
+      <div class="ppd__search">
+        <input
+          type="search"
+          placeholder="Buscar producto por nombre…"
+          aria-label="Buscar producto"
+          (input)="onFiltro($event)"
+        />
+      </div>
+      <label class="ppd__toggle">
+        <input type="checkbox" (change)="onSoloAsignados($event)" />
+        <span>Solo asignados</span>
+      </label>
+    </div>
+
+    <div class="ppd__meta">
+      <span>{{ totalSeleccionados() }} seleccionado(s)</span>
+      <span>·</span>
+      <span>{{ totalAsignados() }} asignado(s) actualmente</span>
+      @if (hayCambios()) {
+        <span class="ppd__dirty">Cambios sin guardar</span>
+      }
+    </div>
+
+    @if (cargando()) {
+      <div class="ppd__loading" role="status">
+        <span class="ppd__spinner" aria-hidden="true"></span>
+        <span>Cargando productos…</span>
+      </div>
+    } @else if (productosFiltrados().length === 0) {
+      <div class="ppd__empty">
+        <p>
+          {{
+            soloAsignados()
+              ? 'Esta promoción todavía no tiene productos asignados.'
+              : 'No hay productos activos que coincidan con la búsqueda.'
+          }}
+        </p>
+      </div>
+    } @else {
+      <ul class="ppd__list" role="list">
+        @for (producto of productosFiltrados(); track producto.id) {
+          <li class="ppd__item">
+            <label class="ppd__item-label">
+              <input
+                type="checkbox"
+                [checked]="estaSeleccionado(producto.id)"
+                (change)="alternar(producto.id)"
+              />
+              <span class="ppd__item-body">
+                <span class="ppd__item-name">
+                  {{ producto.nombre }}
+                  @if (!producto.estado) {
+                    <span class="ppd__tag ppd__tag--off">Inactivo</span>
+                  }
+                </span>
+                <span class="ppd__item-meta">
+                  @if (producto.categoria) {
+                    <span>{{ producto.categoria }}</span>
+                    <span>·</span>
+                  }
+                  <span>{{ formatearPrecio(producto.precio) }} Bs</span>
+                </span>
+              </span>
+            </label>
+          </li>
+        }
+      </ul>
+    }
+
+    <footer class="ppd__foot">
+      <div class="ppd__foot-links">
+        <button
+          type="button"
+          class="ppd__link"
+          [disabled]="cargando() || guardando()"
+          (click)="seleccionarVisibles()"
+        >
+          Seleccionar visibles
+        </button>
+        <button
+          type="button"
+          class="ppd__link"
+          [disabled]="cargando() || guardando() || totalSeleccionados() === 0"
+          (click)="limpiarSeleccion()"
+        >
+          Quitar todos
+        </button>
+      </div>
+
+      <div class="ppd__actions">
+        <button
+          type="button"
+          class="ppd__btn ppd__btn--ghost"
+          [disabled]="guardando() || !hayCambios()"
+          (click)="descartar()"
+        >
+          Descartar
+        </button>
+        <button
+          type="button"
+          class="ppd__btn ppd__btn--primary"
+          [disabled]="guardando() || !hayCambios()"
+          [attr.aria-busy]="guardando()"
+          (click)="guardar()"
+        >
+          @if (guardando()) {
+            <span class="ppd__btn-spinner" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            Guardar
+          }
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>
