@@ -1,0 +1,310 @@
+<div class="prd" (click)="cerrar()">
+  <div
+    class="prd__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Recursos de ' + producto().nombre"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="prd__close" (click)="cerrar()" aria-label="Cerrar">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <p class="prd__eyebrow">Recursos · Producto #{{ producto().id }}</p>
+    <h2 class="prd__title">{{ producto().nombre }}</h2>
+    <p class="prd__text">
+      Administra imágenes y recursos por URL. No hay carga de archivos. Solo puede existir un
+      recurso principal activo por producto y color; al marcar otro, el backend sustituye el
+      anterior.
+    </p>
+
+    @if (exito(); as mensaje) {
+      <p class="prd__notice prd__notice--ok" role="status">{{ mensaje }}</p>
+    }
+
+    @if (error(); as mensaje) {
+      <p class="prd__notice prd__notice--error" role="alert">{{ mensaje }}</p>
+    }
+
+    <div class="prd__toolbar">
+      <span class="prd__count">{{ recursos().length }} recurso(s)</span>
+      <button
+        type="button"
+        class="prd__btn-new"
+        [disabled]="modoForm() !== 'cerrado'"
+        (click)="abrirCrear()"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          aria-hidden="true"
+        >
+          <path d="M12 5v14M5 12h14"></path>
+        </svg>
+        Nuevo recurso
+      </button>
+    </div>
+
+    @if (modoForm() !== 'cerrado') {
+      <form class="prd__form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <h3 class="prd__form-title">
+          {{ modoForm() === 'crear' ? 'Nuevo recurso' : 'Editar recurso' }}
+        </h3>
+
+        @if (errorForm(); as mensaje) {
+          <p class="prd__notice prd__notice--error" role="alert">{{ mensaje }}</p>
+        }
+
+        <div class="prd__grid">
+          <div class="prd__field">
+            <label class="prd__label" for="prd-tipo">Tipo</label>
+            <input
+              class="prd__input"
+              [class.prd__input--error]="mensajeCampo(form.controls.tipo) !== null"
+              id="prd-tipo"
+              type="text"
+              formControlName="tipo"
+              list="prd-tipos"
+              autocomplete="off"
+              placeholder="Ej. IMAGEN"
+            />
+            <datalist id="prd-tipos">
+              <option value="IMAGEN"></option>
+              <option value="VIDEO"></option>
+              <option value="MODELO_3D"></option>
+            </datalist>
+            @if (mensajeCampo(form.controls.tipo); as msg) {
+              <p class="prd__field-error">{{ msg }}</p>
+            }
+          </div>
+
+          <div class="prd__field">
+            <label class="prd__label" for="prd-color"
+              >Color <span class="prd__opcional">(opcional)</span></label
+            >
+            <select class="prd__input prd__select" id="prd-color" formControlName="colorId">
+              <option [ngValue]="null">Sin color específico</option>
+              @for (color of opcionesColores(); track color.id) {
+                <option [ngValue]="color.id">{{ color.nombre }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="prd__field">
+          <label class="prd__label" for="prd-url">URL</label>
+          <input
+            class="prd__input"
+            [class.prd__input--error]="mensajeCampo(form.controls.url) !== null"
+            id="prd-url"
+            type="url"
+            formControlName="url"
+            autocomplete="off"
+            placeholder="https://…"
+            (input)="previewFormRota.set(false)"
+          />
+          @if (mensajeCampo(form.controls.url); as msg) {
+            <p class="prd__field-error">{{ msg }}</p>
+          }
+        </div>
+
+        @if (mostrarPreviewForm()) {
+          <div class="prd__preview">
+            <img
+              class="prd__preview-img"
+              [src]="form.controls.url.value"
+              alt="Previsualización del recurso"
+              (error)="previewFormRota.set(true)"
+            />
+          </div>
+        }
+
+        <label class="prd__check">
+          <input type="checkbox" formControlName="esPrincipal" />
+          <span>Marcar como recurso principal (para el color seleccionado)</span>
+        </label>
+
+        <div class="prd__form-actions">
+          <button type="button" class="prd__btn prd__btn--ghost" (click)="cerrarForm()">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="prd__btn prd__btn--primary"
+            [disabled]="guardandoForm()"
+            [attr.aria-busy]="guardandoForm()"
+          >
+            @if (guardandoForm()) {
+              <span class="prd__spinner" aria-hidden="true"></span>
+              <span>Guardando…</span>
+            } @else {
+              {{ modoForm() === 'crear' ? 'Agregar recurso' : 'Guardar cambios' }}
+            }
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (confirmacion(); as pendiente) {
+      <div class="prd__confirm" role="alertdialog" aria-label="Confirmar cambio de estado">
+        <p class="prd__confirm-text">
+          {{
+            pendiente.habilitar
+              ? '¿Deseas habilitar este recurso?'
+              : '¿Deseas deshabilitar este recurso?'
+          }}
+        </p>
+        <div class="prd__confirm-actions">
+          <button
+            type="button"
+            class="prd__btn prd__btn--ghost"
+            [disabled]="procesandoEstado()"
+            (click)="cancelarCambioEstado()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="prd__btn"
+            [class.prd__btn--primary]="pendiente.habilitar"
+            [class.prd__btn--danger]="!pendiente.habilitar"
+            [disabled]="procesandoEstado()"
+            (click)="confirmarCambioEstado()"
+          >
+            {{ pendiente.habilitar ? 'Habilitar' : 'Deshabilitar' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (cargando()) {
+      <div class="prd__loading" role="status">
+        <span class="prd__spinner" aria-hidden="true"></span>
+        <span>Cargando recursos…</span>
+      </div>
+    } @else if (recursos().length === 0) {
+      <div class="prd__empty">Este producto todavía no tiene recursos registrados.</div>
+    } @else {
+      <div class="prd__table-wrap">
+        <table class="prd__table">
+          <thead>
+            <tr>
+              <th scope="col">Vista</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">URL</th>
+              <th scope="col">Color</th>
+              <th scope="col">Principal</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="prd__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (recurso of recursos(); track recurso.id) {
+              <tr>
+                <td data-label="Vista" class="prd__vista">
+                  @if (mostrarImagen(recurso)) {
+                    <img
+                      class="prd__thumb"
+                      [src]="recurso.url"
+                      [alt]="'Recurso ' + recurso.id"
+                      loading="lazy"
+                      (error)="marcarImagenRota(recurso.id)"
+                    />
+                  } @else {
+                    <span class="prd__thumb prd__thumb--vacio" aria-hidden="true">
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      >
+                        <rect x="3" y="4" width="18" height="16" rx="2" />
+                        <path d="m3 15 4.5-4.5a2 2 0 0 1 2.8 0L15 15" />
+                        <circle cx="15.5" cy="8.5" r="1.4" />
+                      </svg>
+                    </span>
+                  }
+                </td>
+                <td data-label="Tipo">{{ recurso.tipo }}</td>
+                <td data-label="URL" class="prd__url" [attr.title]="recurso.url">
+                  {{ recurso.url }}
+                </td>
+                <td data-label="Color">{{ recurso.color?.nombre ?? '—' }}</td>
+                <td data-label="Principal">
+                  @if (recurso.es_principal) {
+                    <span class="prd__badge prd__badge--principal">Principal</span>
+                  } @else {
+                    <span class="prd__muted">—</span>
+                  }
+                </td>
+                <td data-label="Estado">
+                  @if (recurso.estado) {
+                    <span class="prd__badge prd__badge--on">Activo</span>
+                  } @else {
+                    <span class="prd__badge prd__badge--off">Inactivo</span>
+                  }
+                </td>
+                <td data-label="Acciones" class="prd__acciones">
+                  <div class="prd__actions">
+                    <button
+                      type="button"
+                      class="prd__action prd__action--edit"
+                      (click)="abrirEditar(recurso)"
+                    >
+                      Editar
+                    </button>
+                    @if (recurso.estado && !recurso.es_principal) {
+                      <button
+                        type="button"
+                        class="prd__action prd__action--principal"
+                        [disabled]="procesandoPrincipal()"
+                        (click)="marcarPrincipal(recurso)"
+                      >
+                        Principal
+                      </button>
+                    }
+                    @if (recurso.estado) {
+                      <button
+                        type="button"
+                        class="prd__action prd__action--off"
+                        [disabled]="procesandoEstado()"
+                        (click)="solicitarCambioEstado(recurso)"
+                      >
+                        Deshabilitar
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="prd__action prd__action--on"
+                        [disabled]="procesandoEstado()"
+                        (click)="solicitarCambioEstado(recurso)"
+                      >
+                        Habilitar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

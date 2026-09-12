@@ -5,6 +5,8 @@ import { personalAuthGuard } from './core/guards/personal-auth.guard';
 /**
  * Rutas públicas y de autenticación:
  *  - ''                   -> Home / Landing pública
+ *  - catalogo             -> Catálogo público de productos (CU09)
+ *  - catalogo/productos/:producto_id -> Detalle público de producto (CU09)
  *  - login                -> Login de CLIENTES
  *  - auth                 -> Rutas internas de autenticación-seguridad
  *                            (auth/personal/login -> Login del PERSONAL)
@@ -16,6 +18,21 @@ export const routes: Routes = [
     pathMatch: 'full',
     loadComponent: () =>
       import('./features/home/pages/home/home').then((m) => m.Home),
+  },
+  // ===== CU09 - Consultar catálogo y disponibilidad (cliente) =====
+  {
+    path: 'catalogo',
+    loadComponent: () =>
+      import('./features/catalogo/pages/catalogo-page/catalogo-page').then(
+        (m) => m.CatalogoPage,
+      ),
+  },
+  {
+    path: 'catalogo/productos/:producto_id',
+    loadComponent: () =>
+      import(
+        './features/catalogo/pages/producto-detalle-page/producto-detalle-page'
+      ).then((m) => m.ProductoDetallePage),
   },
   {
     path: 'login',

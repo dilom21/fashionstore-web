@@ -1,0 +1,29 @@
+<article class="pc">
+  <a
+    class="pc__link"
+    [routerLink]="['/catalogo/productos', producto().id]"
+    [attr.aria-label]="'Ver producto ' + producto().nombre"
+  >
+    <div class="pc__media">
+      <app-producto-media
+        [nombre]="producto().nombre"
+        [alt]="producto().nombre"
+      />
+    </div>
+
+    <div class="pc__body">
+      <p class="pc__cat">{{ producto().categoria.nombre }}</p>
+      <h3 class="pc__name">{{ producto().nombre }}</h3>
+      @if (producto().descripcion) {
+        <p class="pc__desc">{{ producto().descripcion }}</p>
+      }
+
+      <div class="pc__foot">
+        <span class="pc__price">
+          Bs {{ producto().precio | number: '1.2-2' }}
+        </span>
+        <span class="pc__cta">Ver producto</span>
+      </div>
+    </div>
+  </a>
+</article>

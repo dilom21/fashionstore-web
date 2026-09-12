@@ -1,0 +1,150 @@
+<section class="disp" aria-labelledby="disp-title">
+  <header class="disp__head">
+    <div>
+      <span class="vm-eyebrow">Disponibilidad</span>
+      <h2 class="disp__title" id="disp-title">Consultar disponibilidad</h2>
+      <p class="disp__sub">
+        Consulta las tallas, colores y unidades disponibles por sucursal.
+      </p>
+    </div>
+    @if (!cargando() && !error() && totalVariantes() > 0) {
+      <span class="disp__total">{{ totalVariantes() }} variante(s)</span>
+    }
+  </header>
+
+  <form
+    class="disp__filters"
+    [formGroup]="filtrosForm"
+    aria-label="Filtros de disponibilidad"
+  >
+    <label class="disp__field">
+      <span class="disp__label">Sucursal</span>
+      <select formControlName="sucursal_id">
+        <option [ngValue]="null">Todas las sucursales</option>
+        @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {
+          <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="disp__field">
+      <span class="disp__label">Talla</span>
+      <select formControlName="talla_id">
+        <option [ngValue]="null">Todas las tallas</option>
+        @for (talla of filtros()?.tallas ?? []; track talla.id) {
+          <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="disp__field">
+      <span class="disp__label">Color</span>
+      <select formControlName="color_id">
+        <option [ngValue]="null">Todos los colores</option>
+        @for (color of filtros()?.colores ?? []; track color.id) {
+          <option [ngValue]="color.id">{{ color.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="disp__field">
+      <span class="disp__label">Temporada</span>
+      <select formControlName="temporada_id">
+        <option [ngValue]="null">Todas las temporadas</option>
+        @for (temporada of filtros()?.temporadas ?? []; track temporada.id) {
+          <option [ngValue]="temporada.id">{{ temporada.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <button
+      type="button"
+      class="disp__clear"
+      [disabled]="!tieneFiltros()"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar
+    </button>
+  </form>
+
+  @if (cargando()) {
+    <div class="disp__loading" role="status">
+      <span class="disp__spinner" aria-hidden="true"></span>
+      <span>Consultando disponibilidad…</span>
+    </div>
+  } @else if (error(); as errorDisponibilidad) {
+    <div class="disp__state" role="alert">
+      <p class="disp__state-title">No pudimos consultar la disponibilidad</p>
+      <p class="disp__state-text">{{ errorDisponibilidad }}</p>
+      <button type="button" class="disp__retry" (click)="reintentar()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (totalVariantes() === 0) {
+    <div class="disp__state">
+      <p class="disp__state-title">Sin disponibilidad</p>
+      <p class="disp__state-text">
+        @if (tieneFiltros()) {
+          No hay variantes que coincidan con los filtros seleccionados.
+        } @else {
+          Este producto no tiene inventario registrado en ninguna sucursal.
+        }
+      </p>
+      @if (tieneFiltros()) {
+        <button type="button" class="disp__retry" (click)="limpiarFiltros()">
+          Limpiar filtros
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="disp__sucursales">
+      @for (sucursal of disponibilidad()?.sucursales ?? []; track sucursal.sucursal_id) {
+        @if (sucursal.variantes.length > 0) {
+          <article class="disp__sucursal">
+            <header class="disp__sucursal-head">
+              <h3 class="disp__sucursal-name">{{ sucursal.sucursal }}</h3>
+              <span class="disp__sucursal-count">
+                {{ sucursal.variantes.length }} variante(s)
+              </span>
+            </header>
+
+            <div class="disp__table-wrap">
+              <table class="disp__table" [attr.aria-label]="'Disponibilidad en ' + sucursal.sucursal">
+                <thead>
+                  <tr>
+                    <th scope="col">Talla</th>
+                    <th scope="col">Color</th>
+                    <th scope="col">Temporada</th>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (variante of sucursal.variantes; track variante.variante_id) {
+                    <tr>
+                      <td data-label="Talla">{{ variante.talla }}</td>
+                      <td data-label="Color">{{ variante.color }}</td>
+                      <td data-label="Temporada">{{ variante.temporada }}</td>
+                      <td data-label="SKU" class="disp__sku">{{ variante.sku }}</td>
+                      <td data-label="Stock">
+                        @if (variante.stock_disponible > 0) {
+                          <span class="disp__badge disp__badge--on">
+                            Disponible · {{ variante.stock_disponible }}
+                          </span>
+                        } @else {
+                          <span class="disp__badge disp__badge--off">
+                            Sin stock
+                          </span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </article>
+        }
+      }
+    </div>
+  }
+</section>

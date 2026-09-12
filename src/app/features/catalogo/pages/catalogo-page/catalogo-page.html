@@ -1,0 +1,144 @@
+<app-navbar />
+
+<main class="cat">
+  <div class="vm-container">
+    <header class="cat__head">
+      <div>
+        <span class="vm-eyebrow">Catálogo</span>
+        <h1 class="cat__title">Explora el catálogo</h1>
+        <p class="cat__subtitle">
+          Descubre las prendas disponibles y consulta su disponibilidad por
+          sucursal.
+        </p>
+      </div>
+    </header>
+
+    <div class="cat__toolbar">
+      <button
+        type="button"
+        class="cat__filters-toggle"
+        (click)="abrirFiltros()"
+        [attr.aria-label]="
+          'Abrir filtros' +
+          (cantidadFiltrosActivos() > 0
+            ? ' (' + cantidadFiltrosActivos() + ' activos)'
+            : '')
+        "
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <path d="M3 6h18M6 12h12M10 18h4"></path>
+        </svg>
+        Filtros
+        @if (cantidadFiltrosActivos() > 0) {
+          <span class="cat__filters-badge">{{ cantidadFiltrosActivos() }}</span>
+        }
+      </button>
+
+      @if (!cargando() && !error()) {
+        <span class="cat__count">{{ productos().length }} producto(s)</span>
+      }
+    </div>
+
+    <div class="cat__layout">
+      <aside
+        class="cat__sidebar"
+        [class.is-open]="drawerAbierto()"
+        aria-label="Filtros del catálogo"
+      >
+        <div class="cat__sidebar-head">
+          <h2 class="cat__sidebar-title">Filtros</h2>
+          <button
+            type="button"
+            class="cat__sidebar-close"
+            aria-label="Cerrar filtros"
+            (click)="cerrarFiltros()"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M5 5l14 14M19 5L5 19"></path>
+            </svg>
+          </button>
+        </div>
+
+        @if (errorFiltros(); as errorFiltros) {
+          <p class="cat__notice cat__notice--error" role="alert">
+            {{ errorFiltros }}
+          </p>
+          <button
+            type="button"
+            class="cat__retry cat__retry--small"
+            (click)="reintentarFiltros()"
+          >
+            Reintentar filtros
+          </button>
+        }
+
+        <app-filtros-catalogo
+          [form]="filtrosForm"
+          [filtros]="filtros()"
+          [cargandoFiltros]="cargandoFiltros()"
+          [tieneFiltros]="tieneFiltros()"
+          (aplicar)="aplicarFiltros()"
+          (limpiar)="limpiarFiltros()"
+        />
+      </aside>
+
+      @if (drawerAbierto()) {
+        <div
+          class="cat__backdrop"
+          role="presentation"
+          (click)="cerrarFiltros()"
+        ></div>
+      }
+
+      <section class="cat__results" aria-live="polite" aria-busy="{{ cargando() }}">
+        @if (cargando()) {
+          <div class="cat__grid" role="status" aria-label="Cargando productos">
+            @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+              <div class="cat__skeleton" aria-hidden="true">
+                <div class="cat__skeleton-media"></div>
+                <div class="cat__skeleton-line"></div>
+                <div class="cat__skeleton-line cat__skeleton-line--short"></div>
+              </div>
+            }
+          </div>
+        } @else if (error(); as errorCatalogo) {
+          <div class="cat__state cat__state--error" role="alert">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7.5v5.5M12 16.4v.2"></path>
+            </svg>
+            <p class="cat__state-title">No pudimos cargar el catálogo</p>
+            <p class="cat__state-text">{{ errorCatalogo }}</p>
+            <button type="button" class="cat__retry" (click)="reintentar()">
+              Reintentar
+            </button>
+          </div>
+        } @else if (productos().length === 0) {
+          <div class="cat__state">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.2-3.2"></path>
+            </svg>
+            <p class="cat__state-title">Sin resultados</p>
+            <p class="cat__state-text">{{ mensajeVacio() }}</p>
+            @if (tieneFiltros()) {
+              <button
+                type="button"
+                class="cat__retry"
+                (click)="limpiarFiltros()"
+              >
+                Limpiar filtros
+              </button>
+            }
+          </div>
+        } @else {
+          <div class="cat__grid">
+            @for (producto of productos(); track producto.id) {
+              <app-producto-card-publico [producto]="producto" />
+            }
+          </div>
+        }
+      </section>
+    </div>
+  </div>
+</main>
