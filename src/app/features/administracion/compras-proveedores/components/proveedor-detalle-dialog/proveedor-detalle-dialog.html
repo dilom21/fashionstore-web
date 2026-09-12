@@ -1,0 +1,89 @@
+@if (proveedor(); as proveedor) {
+  <div class="pvd" (click)="cerrar()">
+    <div
+      class="pvd__card"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Detalle del proveedor"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="pvd__close" (click)="cerrar()" aria-label="Cerrar">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+
+      <div class="pvd__icon" aria-hidden="true">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+        >
+          <path d="M3 9l1.5-5h15L21 9" />
+          <path d="M4 9v11h16V9" />
+          <path d="M4 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" />
+          <path d="M9 20v-6h6v6" />
+        </svg>
+      </div>
+
+      <p class="pvd__eyebrow">Proveedor #{{ proveedor.id }}</p>
+      <h2 class="pvd__title">{{ proveedor.razon_social }}</h2>
+
+      <dl class="pvd__lista">
+        <div class="pvd__fila">
+          <dt>ID</dt>
+          <dd>#{{ proveedor.id }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>Razón social</dt>
+          <dd>{{ proveedor.razon_social }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>NIT</dt>
+          <dd>{{ proveedor.nit ?? '—' }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>Correo</dt>
+          <dd>{{ proveedor.correo ?? '—' }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>Teléfono</dt>
+          <dd>{{ proveedor.telefono ?? '—' }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>Dirección</dt>
+          <dd>{{ proveedor.direccion ?? '—' }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>Productos asociados</dt>
+          <dd>{{ proveedor.total_productos }}</dd>
+        </div>
+        <div class="pvd__fila">
+          <dt>Estado</dt>
+          <dd>
+            @if (proveedor.estado) {
+              <span class="pvd__badge pvd__badge--on">Habilitado</span>
+            } @else {
+              <span class="pvd__badge pvd__badge--off">Deshabilitado</span>
+            }
+          </dd>
+        </div>
+      </dl>
+
+      <div class="pvd__actions">
+        <button type="button" class="pvd__btn" (click)="cerrar()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

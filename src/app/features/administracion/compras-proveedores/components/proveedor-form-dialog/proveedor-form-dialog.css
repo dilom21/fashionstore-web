@@ -1,0 +1,266 @@
+:host {
+  display: contents;
+}
+
+.pvf {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(2 5 12 / 62%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: pvf-fade 0.18s ease;
+  overflow-y: auto;
+}
+
+.pvf__card {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.7rem 1.6rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: pvf-pop 0.2s ease;
+}
+
+.pvf__close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--text-3);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.pvf__close:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.pvf__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.pvf__title {
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.pvf__text {
+  margin-top: 0.4rem;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.pvf__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgb(248 113 113 / 40%);
+  border-radius: var(--radius-m);
+  background: rgb(190 18 60 / 12%);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.pvf__alert svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: #fb7185;
+}
+
+form {
+  margin-top: 1.1rem;
+}
+
+.pvf__field {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.9rem;
+}
+
+.pvf__field:first-child {
+  margin-top: 0;
+}
+
+.pvf__label {
+  margin-bottom: 0.4rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pvf__opcional {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.pvf__input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 0.94rem;
+  font-family: inherit;
+  resize: vertical;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pvf__input::placeholder {
+  color: var(--text-3);
+}
+
+.pvf__input:focus {
+  outline: none;
+  border-color: var(--accent-3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.pvf__input--error {
+  border-color: rgb(248 113 113 / 65%);
+}
+
+.pvf__textarea {
+  min-height: auto;
+  line-height: 1.5;
+}
+
+.pvf__field-error {
+  margin-top: 0.35rem;
+  color: #fda4af;
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+
+html[data-theme='light'] .pvf__field-error {
+  color: #be123c;
+}
+
+.pvf__hint {
+  margin-top: 0.4rem;
+  color: var(--text-3);
+  font-size: 0.82rem;
+}
+
+.pvf__actions {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}
+
+.pvf__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.9rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.pvf__btn--ghost {
+  border: 1px solid var(--line-strong);
+  color: var(--text-2);
+  background: transparent;
+}
+
+.pvf__btn--ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.pvf__btn--primary {
+  border: 0;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.pvf__btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.07);
+}
+
+.pvf__btn:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+
+.pvf__spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgb(255 255 255 / 35%);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: pvf-spin 0.7s linear infinite;
+}
+
+@keyframes pvf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pvf-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pvf-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pvf__actions {
+    grid-template-columns: 1fr;
+  }
+}

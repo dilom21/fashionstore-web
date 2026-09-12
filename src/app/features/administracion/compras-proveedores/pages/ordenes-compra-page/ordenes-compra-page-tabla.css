@@ -1,0 +1,315 @@
+/* Tabla de órdenes de compra (CU12) + adaptación responsive a tarjetas. */
+
+.oc__table-wrap {
+  overflow-x: auto;
+}
+
+.oc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.oc__table th {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.oc__table td {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.oc__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.oc__table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+
+.oc__table tbody tr.oc__row--busy {
+  opacity: 0.75;
+}
+
+.oc__id {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.oc__nombre {
+  color: var(--text);
+  font-weight: 600;
+  min-width: 170px;
+}
+
+.oc__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.oc__conteo {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.oc__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.oc__badge--borrador {
+  background: rgb(148 163 184 / 18%);
+  color: var(--text-2);
+}
+
+.oc__badge--enviada {
+  background: rgb(59 130 246 / 16%);
+  color: #60a5fa;
+}
+
+.oc__badge--parcial {
+  background: rgb(245 158 11 / 16%);
+  color: #fbbf24;
+}
+
+.oc__badge--recibida {
+  background: rgb(22 101 52 / 16%);
+  color: #4ade80;
+}
+
+.oc__badge--cancelada {
+  background: rgb(190 18 60 / 14%);
+  color: #fb7185;
+}
+
+html[data-theme='light'] .oc__badge--enviada {
+  color: #1d4ed8;
+}
+
+html[data-theme='light'] .oc__badge--parcial {
+  color: #b45309;
+}
+
+html[data-theme='light'] .oc__badge--recibida {
+  color: #15803d;
+}
+
+html[data-theme='light'] .oc__badge--cancelada {
+  color: #be123c;
+}
+
+/* ===== Acciones de fila ===== */
+.oc__acciones-cell {
+  min-width: 420px;
+}
+
+.oc__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.oc__action {
+  min-height: 30px;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.oc__action--view {
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}
+
+.oc__action--view:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.oc__action--edit {
+  border-color: var(--accent-strong);
+  color: var(--accent-text);
+}
+
+.oc__action--edit:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.oc__action--alt {
+  border-color: var(--line-strong);
+  color: var(--text-2);
+}
+
+.oc__action--alt:hover:not(:disabled) {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.oc__action--send {
+  background: rgb(59 130 246 / 14%);
+  border-color: rgb(59 130 246 / 30%);
+  color: #60a5fa;
+}
+
+html[data-theme='light'] .oc__action--send {
+  color: #1d4ed8;
+}
+
+.oc__action--send:hover:not(:disabled) {
+  background: rgb(59 130 246 / 26%);
+}
+
+.oc__action--recv {
+  background: rgb(22 101 52 / 14%);
+  border-color: rgb(34 197 94 / 30%);
+  color: #4ade80;
+}
+
+html[data-theme='light'] .oc__action--recv {
+  color: #15803d;
+}
+
+.oc__action--recv:hover:not(:disabled) {
+  background: rgb(22 101 52 / 28%);
+}
+
+.oc__action--off {
+  background: rgb(190 18 60 / 12%);
+  border-color: rgb(248 113 113 / 30%);
+  color: #fb7185;
+}
+
+html[data-theme='light'] .oc__action--off {
+  color: #be123c;
+}
+
+.oc__action--off:hover:not(:disabled) {
+  background: rgb(190 18 60 / 24%);
+}
+
+.oc__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ===== Responsive: tabla adaptada a tarjetas en móvil ===== */
+@media (max-width: 860px) {
+  .oc__table-wrap {
+    overflow: visible;
+  }
+
+  .oc__table,
+  .oc__table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .oc__table thead {
+    display: none;
+  }
+
+  .oc__table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
+
+  .oc__table tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--surface-2);
+  }
+
+  .oc__table tbody tr:hover {
+    background: var(--surface-2);
+  }
+
+  .oc__table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+    max-width: none;
+  }
+
+  .oc__table td::before {
+    content: attr(data-label);
+    flex: 0 0 140px;
+    color: var(--text-3);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .oc__table td.oc__num {
+    text-align: right;
+  }
+
+  .oc__nombre {
+    min-width: 0;
+  }
+
+  .oc__acciones-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+    min-width: 0;
+  }
+
+  .oc__acciones-cell::before {
+    content: attr(data-label);
+    color: var(--text-3);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .oc__actions {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .oc__action {
+    flex: 1 1 auto;
+  }
+}

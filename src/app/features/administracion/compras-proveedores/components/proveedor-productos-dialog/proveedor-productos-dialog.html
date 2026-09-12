@@ -1,0 +1,197 @@
+<div class="pvp" (click)="cerrar()">
+  <div
+    class="pvp__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Productos del proveedor ' + proveedor().razon_social"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="pvp__head">
+      <div>
+        <span class="pvp__eyebrow">Gestionar productos</span>
+        <h2 class="pvp__title">{{ proveedor().razon_social }}</h2>
+        <p class="pvp__sub">
+          Selecciona los productos del proveedor y su costo de referencia. Se
+          guardan todos con una sola operación.
+        </p>
+      </div>
+      <button type="button" class="pvp__close" (click)="cerrar()" aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    @if (error(); as mensaje) {
+      <p class="pvp__alert pvp__alert--error" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        {{ mensaje }}
+      </p>
+    }
+
+    @if (exito(); as mensaje) {
+      <p class="pvp__alert pvp__alert--ok" role="status">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+        </svg>
+        {{ mensaje }}
+      </p>
+    }
+
+    <div class="pvp__toolbar">
+      <div class="pvp__search">
+        <input
+          type="search"
+          placeholder="Buscar producto por nombre o categoría…"
+          aria-label="Buscar producto"
+          (input)="onFiltro($event)"
+        />
+      </div>
+      <label class="pvp__toggle">
+        <input type="checkbox" (change)="onSoloAsociados($event)" />
+        <span>Solo asociados</span>
+      </label>
+    </div>
+
+    <div class="pvp__meta">
+      <span>{{ totalSeleccionados() }} seleccionado(s)</span>
+      <span>·</span>
+      <span>{{ totalAsignados() }} asociado(s) actualmente</span>
+      @if (hayCambios()) {
+        <span class="pvp__dirty">Cambios sin guardar</span>
+      }
+    </div>
+
+    @if (cargando()) {
+      <div class="pvp__loading" role="status">
+        <span class="pvp__spinner" aria-hidden="true"></span>
+        <span>Cargando productos…</span>
+      </div>
+    } @else if (productosFiltrados().length === 0) {
+      <div class="pvp__empty">
+        <p>
+          {{
+            soloAsociados()
+              ? 'Este proveedor todavía no tiene productos asociados.'
+              : 'No hay productos activos que coincidan con la búsqueda.'
+          }}
+        </p>
+      </div>
+    } @else {
+      <ul class="pvp__list" role="list">
+        @for (producto of productosFiltrados(); track producto.producto_id) {
+          <li class="pvp__item" [class.pvp__item--on]="estaSeleccionado(producto.producto_id)">
+            <label class="pvp__item-main">
+              <input
+                type="checkbox"
+                [checked]="estaSeleccionado(producto.producto_id)"
+                (change)="alternar(producto.producto_id)"
+                [attr.aria-label]="'Seleccionar ' + producto.nombre"
+              />
+              <span class="pvp__item-body">
+                <span class="pvp__item-name">
+                  {{ producto.nombre }}
+                  @if (!producto.productoActivo) {
+                    <span class="pvp__tag pvp__tag--off">Producto inactivo</span>
+                  }
+                </span>
+                <span class="pvp__item-meta">
+                  @if (producto.categoria) {
+                    <span>{{ producto.categoria }}</span>
+                  } @else {
+                    <span>Sin categoría</span>
+                  }
+                </span>
+              </span>
+            </label>
+
+            @if (seleccionDe(producto.producto_id); as seleccion) {
+              <div class="pvp__item-fields">
+                <label class="pvp__cost">
+                  <span class="pvp__cost-label">Costo referencia</span>
+                  <span class="pvp__cost-input">
+                    <span class="pvp__cost-prefix">Bs</span>
+                    <input
+                      type="number"
+                      inputmode="decimal"
+                      min="0"
+                      step="0.01"
+                      [value]="formatearCosto(seleccion.costo_referencia)"
+                      (change)="onCosto(producto.producto_id, $event)"
+                      [class.pvp__cost-field--error]="
+                        seleccion.costo_referencia === null || seleccion.costo_referencia < 0
+                      "
+                      [attr.aria-label]="'Costo de referencia de ' + producto.nombre"
+                    />
+                  </span>
+                  @if (seleccion.costo_referencia === null || seleccion.costo_referencia < 0) {
+                    <span class="pvp__cost-error">Ingresa un costo mayor o igual a 0.</span>
+                  }
+                </label>
+
+                <label class="pvp__rel">
+                  <input
+                    type="checkbox"
+                    [checked]="seleccion.estado"
+                    (change)="onEstadoRelacion(producto.producto_id, $event)"
+                  />
+                  <span>Relación activa</span>
+                </label>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <footer class="pvp__foot">
+      <div class="pvp__foot-links">
+        <button
+          type="button"
+          class="pvp__link"
+          [disabled]="cargando() || guardando()"
+          (click)="seleccionarVisibles()"
+        >
+          Seleccionar visibles
+        </button>
+        <button
+          type="button"
+          class="pvp__link"
+          [disabled]="cargando() || guardando() || totalSeleccionados() === 0"
+          (click)="limpiarSeleccion()"
+        >
+          Quitar todos
+        </button>
+      </div>
+
+      <div class="pvp__actions">
+        <button
+          type="button"
+          class="pvp__btn pvp__btn--ghost"
+          [disabled]="guardando() || !hayCambios()"
+          (click)="descartar()"
+        >
+          Descartar
+        </button>
+        <button
+          type="button"
+          class="pvp__btn pvp__btn--primary"
+          [disabled]="guardando() || !hayCambios() || hayCostoInvalido()"
+          [attr.aria-busy]="guardando()"
+          (click)="guardar()"
+        >
+          @if (guardando()) {
+            <span class="pvp__btn-spinner" aria-hidden="true"></span>
+            <span>Guardando…</span>
+          } @else {
+            Guardar
+          }
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>

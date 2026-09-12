@@ -1,0 +1,240 @@
+<div class="pr">
+  <header class="pr__head">
+    <div>
+      <span class="pr__eyebrow">Catálogo · Promociones</span>
+      <h1 class="pr__title">Gestionar promociones</h1>
+      <p class="pr__subtitle">
+        Administra las promociones de la marca, su tipo y valor de descuento, su
+        vigencia y los productos asociados.
+      </p>
+    </div>
+  </header>
+
+  <div class="pr__panel-head">
+    <div>
+      <h2 class="pr__panel-title">Promociones</h2>
+      <p class="pr__panel-sub">Promociones según los filtros aplicados.</p>
+    </div>
+    <button type="button" class="pr__btn-new" (click)="abrirNueva()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 5v14M5 12h14"></path>
+      </svg>
+      Nueva promoción
+    </button>
+  </div>
+
+  <form
+    class="pr__filters"
+    [formGroup]="filtros"
+    (ngSubmit)="buscar()"
+    novalidate
+    aria-label="Filtros de promociones"
+  >
+    <div class="pr__search">
+      <input
+        type="search"
+        formControlName="buscar"
+        placeholder="Buscar por nombre…"
+        aria-label="Buscar promociones"
+      />
+      <button type="submit" class="pr__search-btn" aria-label="Buscar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="M21 21l-4.3-4.3"></path>
+        </svg>
+      </button>
+    </div>
+
+    <label class="pr__select">
+      <span class="pr__select-label">Estado</span>
+      <select formControlName="estado">
+        <option value="todos">Todas</option>
+        <option value="activos">Habilitadas</option>
+        <option value="inactivos">Deshabilitadas</option>
+      </select>
+    </label>
+
+    <label class="pr__select">
+      <span class="pr__select-label">Tipo de descuento</span>
+      <select formControlName="tipoDescuento">
+        <option value="todos">Todos</option>
+        <option value="PORCENTAJE">Porcentaje</option>
+        <option value="MONTO">Monto</option>
+      </select>
+    </label>
+
+    <button
+      type="button"
+      class="pr__clear"
+      [disabled]="!tieneFiltros()"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar
+    </button>
+  </form>
+
+  @if (exito(); as mensajeExito) {
+    <p class="pr__notice pr__notice--ok" role="status">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+      </svg>
+      {{ mensajeExito }}
+    </p>
+  }
+
+  @if (error(); as mensajeError) {
+    <p class="pr__notice pr__notice--error" role="alert">{{ mensajeError }}</p>
+  }
+
+  <section class="pr__panel">
+    @if (cargando()) {
+      <div class="pr__loading" role="status">
+        <span class="pr__spinner" aria-hidden="true"></span>
+        <span>Cargando promociones…</span>
+      </div>
+    } @else if (promociones().length === 0) {
+      <div class="pr__empty">
+        <p>{{ mensajeVacio() }}</p>
+        @if (tieneFiltros()) {
+          <button type="button" class="pr__empty-btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="pr__table-wrap">
+        <table class="pr__table">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Valor</th>
+              <th scope="col">Fecha inicio</th>
+              <th scope="col">Fecha fin</th>
+              <th scope="col">Vigencia</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Productos asociados</th>
+              <th scope="col"><span class="pr__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (promocion of promociones(); track promocion.id) {
+              <tr>
+                <td data-label="ID" class="pr__id">#{{ promocion.id }}</td>
+                <td data-label="Nombre" class="pr__nombre">{{ promocion.nombre }}</td>
+                <td data-label="Tipo">{{ tipoDe(promocion) }}</td>
+                <td data-label="Valor" class="pr__valor">{{ valorDe(promocion) }}</td>
+                <td data-label="Fecha inicio">{{ fechaDe(promocion.fecha_inicio) }}</td>
+                <td data-label="Fecha fin">{{ fechaDe(promocion.fecha_fin) }}</td>
+                <td data-label="Vigencia">
+                  <span [class]="'pr__vig ' + claseVigenciaDe(promocion)">
+                    {{ vigenciaDe(promocion) }}
+                  </span>
+                </td>
+                <td data-label="Estado">
+                  @if (promocion.estado) {
+                    <span class="pr__badge pr__badge--on">Habilitada</span>
+                  } @else {
+                    <span class="pr__badge pr__badge--off">Deshabilitada</span>
+                  }
+                </td>
+                <td data-label="Productos asociados" class="pr__conteo">
+                  {{ contarProductos(promocion.id) ?? '—' }}
+                </td>
+                <td data-label="Acciones" class="pr__acciones-cell">
+                  <div class="pr__actions">
+                    <button
+                      type="button"
+                      class="pr__action pr__action--view"
+                      [disabled]="cargandoDetalle()"
+                      (click)="verPromocion(promocion)"
+                      [attr.aria-label]="'Ver ' + promocion.nombre"
+                    >
+                      Ver
+                    </button>
+                    <button
+                      type="button"
+                      class="pr__action pr__action--edit"
+                      (click)="abrirEditar(promocion)"
+                      [attr.aria-label]="'Editar ' + promocion.nombre"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="pr__action pr__action--alt"
+                      (click)="gestionarProductos(promocion)"
+                      [attr.aria-label]="'Gestionar productos de ' + promocion.nombre"
+                    >
+                      Gestionar productos
+                    </button>
+                    @if (promocion.estado) {
+                      <button
+                        type="button"
+                        class="pr__action pr__action--off"
+                        [disabled]="procesandoEstado()"
+                        (click)="solicitarCambioEstado(promocion)"
+                      >
+                        Deshabilitar
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="pr__action pr__action--on"
+                        [disabled]="procesandoEstado()"
+                        (click)="solicitarCambioEstado(promocion)"
+                      >
+                        Habilitar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="pr__count">{{ promociones().length }} promoción(es)</p>
+    }
+  </section>
+</div>
+
+@if (dialogoFormAbierto()) {
+  <app-promocion-form-dialog
+    [promocion]="promocionEnForm()"
+    (guardado)="onPromocionGuardada($event)"
+    (cerrado)="cerrarForm()"
+  />
+}
+
+@if (detallePromocion(); as detalle) {
+  <app-promocion-detalle-dialog
+    [promocion]="detalle"
+    (cerrado)="cerrarDetalle()"
+  />
+}
+
+@if (promocionProductos(); as promocionProductosActual) {
+  <app-promocion-productos-dialog
+    [promocion]="promocionProductosActual"
+    (guardado)="onProductosGuardados($event)"
+    (cerrado)="cerrarProductos()"
+  />
+}
+
+@if (confirmacion(); as pendiente) {
+  <app-confirm-dialog
+    [titulo]="pendiente.habilitar ? 'Habilitar promoción' : 'Deshabilitar promoción'"
+    [mensaje]="
+      pendiente.habilitar
+        ? '¿Deseas habilitar la promoción ' + pendiente.promocion.nombre + '?'
+        : '¿Deseas deshabilitar la promoción ' + pendiente.promocion.nombre + '? Se conservarán sus productos asociados.'
+    "
+    [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
+    [peligro]="!pendiente.habilitar"
+    (confirmado)="confirmarCambioEstado()"
+    (cancelado)="cancelarCambioEstado()"
+  />
+}

@@ -17,11 +17,13 @@ export type IconoNav =
   | 'catalogo'
   | 'productos'
   | 'colecciones'
+  | 'promociones'
   | 'inventario'
   | 'sucursales'
   | 'reservas'
   | 'ventas'
   | 'compras'
+  | 'proveedores'
   | 'reportes';
 
 /** Iconos auxiliares de interfaz. */
