@@ -85,6 +85,15 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
           'Registra, consulta, edita, habilita y deshabilita temporadas y colecciones, y asigna productos a cada colección.',
         estado: 'funcional',
       },
+      {
+        id: 'promociones',
+        label: 'Gestionar promociones',
+        icon: 'promociones',
+        route: '/admin/catalogo/promociones',
+        descripcion:
+          'Registra, consulta, edita, habilita y deshabilita promociones, y asocia sus productos.',
+        estado: 'funcional',
+      },
     ],
   },
   {
@@ -128,10 +137,30 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     id: 'compras',
     label: 'Compras y Proveedores',
     icon: 'compras',
-    route: '/admin/compras',
-    descripcion: 'Órdenes de compra y gestión de proveedores.',
-    estado: 'proximamente',
     permiso: 'COMPRAS_PROVEEDORES',
+    descripcion: 'Órdenes de compra y gestión de proveedores.',
+    children: [
+      {
+        id: 'proveedores',
+        label: 'Gestionar proveedores',
+        icon: 'proveedores',
+        route: '/admin/compras-proveedores/proveedores',
+        descripcion:
+          'Registra, consulta, edita, habilita y deshabilita proveedores y sus productos asociados.',
+        estado: 'funcional',
+        permiso: 'GESTIONAR_PROVEEDORES',
+      },
+      {
+        id: 'ordenes-compra',
+        label: 'Gestionar compras a proveedores',
+        icon: 'compras',
+        route: '/admin/compras-proveedores/ordenes-compra',
+        descripcion:
+          'Registra, consulta, edita y da seguimiento a las órdenes de compra: envía, cancela y recibe mercadería.',
+        estado: 'funcional',
+        permiso: 'GESTIONAR_ORDENES_COMPRA',
+      },
+    ],
   },
   {
     id: 'reportes',

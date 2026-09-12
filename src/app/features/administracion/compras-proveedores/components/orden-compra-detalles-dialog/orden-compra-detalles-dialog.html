@@ -1,0 +1,253 @@
+<div class="ocg" (click)="cerrar()">
+  <div
+    class="ocg__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="soloLectura() ? 'Detalles de la orden' : 'Gestionar detalles de la orden'"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="ocg__close" (click)="cerrar()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18"></path>
+      </svg>
+    </button>
+
+    <p class="ocg__eyebrow">Orden de compra #{{ orden().id }}</p>
+    <h2 class="ocg__title">
+      {{ soloLectura() ? 'Detalles de la orden' : 'Gestionar detalles' }}
+    </h2>
+    <p class="ocg__text">
+      {{
+        soloLectura()
+          ? 'Consulta las líneas de la orden. Solo las órdenes en BORRADOR permiten editar sus detalles.'
+          : 'Agrega, edita o quita líneas y guarda el conjunto completo con un solo envío.'
+      }}
+    </p>
+
+    <div class="ocg__resumen">
+      <span class="ocg__resumen-item">
+        <strong>Proveedor:</strong> {{ orden().proveedor_razon_social }}
+      </span>
+      <span class="ocg__resumen-item">
+        <strong>Sucursal:</strong> {{ orden().sucursal_nombre }}
+      </span>
+      <span class="ocg__resumen-item">
+        <strong>Estado:</strong>
+        <span class="ocg__badge" [class]="'ocg__badge--' + orden().estado.toLowerCase()">
+          {{ etiquetaEstado(orden().estado) }}
+        </span>
+      </span>
+    </div>
+
+    @if (exito(); as mensaje) {
+      <p class="ocg__notice ocg__notice--ok" role="status">{{ mensaje }}</p>
+    }
+    @if (error(); as mensaje) {
+      <p class="ocg__notice ocg__notice--error" role="alert">{{ mensaje }}</p>
+    }
+
+    @if (cargando()) {
+      <div class="ocg__loading" role="status">
+        <span class="ocg__spinner" aria-hidden="true"></span>
+        <span>Cargando detalles…</span>
+      </div>
+    } @else if (soloLectura()) {
+      @if (detallesServidor().length === 0) {
+        <p class="ocg__empty">Esta orden no tiene detalles registrados.</p>
+      } @else {
+        <div class="ocg__table-wrap">
+          <table class="ocg__table">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">SKU</th>
+                <th scope="col">Temporada</th>
+                <th scope="col" class="ocg__num">Cantidad</th>
+                <th scope="col" class="ocg__num">Costo unit.</th>
+                <th scope="col" class="ocg__num">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (detalle of detallesServidor(); track detalle.id) {
+                <tr>
+                  <td data-label="Producto" class="ocg__nombre">{{ detalle.producto_nombre }}</td>
+                  <td data-label="SKU">{{ detalle.sku }}</td>
+                  <td data-label="Temporada">{{ detalle.temporada_nombre }}</td>
+                  <td data-label="Cantidad" class="ocg__num">{{ detalle.cantidad }}</td>
+                  <td data-label="Costo unit." class="ocg__num">
+                    {{ formatearMoneda(detalle.costo_unitario) }}
+                  </td>
+                  <td data-label="Subtotal" class="ocg__num ocg__subtotal">
+                    {{ formatearMoneda(subtotalDetalle(detalle)) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="ocg__toolbar">
+        <button type="button" class="ocg__btn-new" [disabled]="guardando()" (click)="agregarFila()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Agregar línea
+        </button>
+        <button
+          type="button"
+          class="ocg__btn-clear"
+          [disabled]="guardando() || filas().length === 0"
+          (click)="vaciarFilas()"
+        >
+          Vaciar
+        </button>
+      </div>
+
+      @if (clavesDuplicadas().size > 0) {
+        <p class="ocg__notice ocg__notice--warn" role="alert">
+          Hay combinaciones de variante + temporada repetidas. Corrige los duplicados antes de
+          guardar.
+        </p>
+      }
+
+      @if (filas().length === 0) {
+        <p class="ocg__empty">
+          No hay líneas. Puedes guardar una lista vacía mientras la orden esté en BORRADOR.
+        </p>
+      } @else {
+        <div class="ocg__table-wrap">
+          <table class="ocg__table ocg__table--edit">
+            <thead>
+              <tr>
+                <th scope="col">Producto</th>
+                <th scope="col">Variante</th>
+                <th scope="col">Temporada</th>
+                <th scope="col" class="ocg__num">Cantidad</th>
+                <th scope="col" class="ocg__num">Costo unit.</th>
+                <th scope="col" class="ocg__num">Subtotal</th>
+                <th scope="col"><span class="ocg__sr-only">Quitar</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of filas(); track fila.key) {
+                <tr [class.ocg__row--dup]="esDuplicada(fila.key)">
+                  <td data-label="Producto">
+                    <select
+                      class="ocg__input"
+                      [value]="fila.productoId ?? ''"
+                      [disabled]="guardando()"
+                      (change)="onProducto(fila.key, $event)"
+                    >
+                      <option value="">Selecciona…</option>
+                      @for (producto of productos(); track producto.id) {
+                        <option [value]="producto.id">
+                          {{ producto.nombre }}{{ producto.activo ? '' : ' (inactivo)' }}
+                        </option>
+                      }
+                    </select>
+                  </td>
+                  <td data-label="Variante">
+                    @if (fila.cargandoVariantes) {
+                      <span class="ocg__mini">Cargando…</span>
+                    } @else {
+                      <select
+                        class="ocg__input"
+                        [value]="fila.varianteId ?? ''"
+                        [disabled]="guardando() || fila.productoId === null"
+                        (change)="onVariante(fila.key, $event)"
+                      >
+                        <option value="">Selecciona…</option>
+                        @for (variante of fila.variantes; track variante.id) {
+                          <option [value]="variante.id">{{ variante.etiqueta }}</option>
+                        }
+                      </select>
+                    }
+                  </td>
+                  <td data-label="Temporada">
+                    <select
+                      class="ocg__input"
+                      [value]="fila.temporadaId ?? ''"
+                      [disabled]="guardando()"
+                      (change)="onTemporada(fila.key, $event)"
+                    >
+                      <option value="">Selecciona…</option>
+                      @for (temporada of temporadas(); track temporada.id) {
+                        <option [value]="temporada.id">
+                          {{ temporada.nombre }}{{ temporada.activa ? '' : ' (inactiva)' }}
+                        </option>
+                      }
+                    </select>
+                  </td>
+                  <td data-label="Cantidad" class="ocg__num">
+                    <input
+                      class="ocg__input ocg__input--num"
+                      type="number"
+                      min="1"
+                      step="1"
+                      [value]="fila.cantidad"
+                      [disabled]="guardando()"
+                      (input)="onCantidad(fila.key, $event)"
+                    />
+                  </td>
+                  <td data-label="Costo unit." class="ocg__num">
+                    <input
+                      class="ocg__input ocg__input--num"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [value]="fila.costoUnitario"
+                      [disabled]="guardando()"
+                      (input)="onCosto(fila.key, $event)"
+                    />
+                  </td>
+                  <td data-label="Subtotal" class="ocg__num ocg__subtotal">
+                    {{ formatearMoneda(subtotal(fila)) }}
+                  </td>
+                  <td data-label="Quitar" class="ocg__quitar-cell">
+                    <button
+                      type="button"
+                      class="ocg__quitar"
+                      [disabled]="guardando()"
+                      (click)="quitarFila(fila.key)"
+                    >
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+
+    <footer class="ocg__footer">
+      <div class="ocg__total">
+        <span>Total estimado</span>
+        <strong>{{ formatearMoneda(totalVisible()) }}</strong>
+      </div>
+      <div class="ocg__footer-actions">
+        <button type="button" class="ocg__btn ocg__btn--ghost" (click)="cerrar()">
+          Cerrar
+        </button>
+        @if (!soloLectura()) {
+          <button
+            type="button"
+            class="ocg__btn ocg__btn--primary"
+            [disabled]="!puedeGuardar()"
+            [attr.aria-busy]="guardando()"
+            (click)="guardar()"
+          >
+            @if (guardando()) {
+              <span class="ocg__spinner ocg__spinner--btn" aria-hidden="true"></span>
+              <span>Guardando…</span>
+            } @else {
+              Guardar detalles
+            }
+          </button>
+        }
+      </div>
+    </footer>
+  </div>
+</div>
