@@ -82,6 +82,25 @@ export const administracionRoutes: Routes = [
             './inventario/pages/sucursales-ciudades-page/sucursales-ciudades-page'
           ).then((m) => m.SucursalesCiudadesPage),
       },
+      // ===== CU13 - Consultar inventario por sucursal (funcional) =====
+      // Accesible para ADMINISTRADOR y ENCARGADO_SUCURSAL (adminAuthGuard en el
+      // shell padre). El encargado solo ve estas opciones en el menú.
+      {
+        path: 'inventario/consultar',
+        loadComponent: () =>
+          import(
+            './inventario/pages/inventario-page/inventario-page'
+          ).then((m) => m.InventarioPage),
+      },
+      // ===== CU14 - Consultar movimientos de inventario (funcional) =====
+      // Kardex de solo lectura; mismo alcance de roles que CU13.
+      {
+        path: 'inventario/movimientos',
+        loadComponent: () =>
+          import(
+            './inventario/pages/movimientos-inventario-page/movimientos-inventario-page'
+          ).then((m) => m.MovimientosInventarioPage),
+      },
       // ===== Módulos de negocio (rutas preparadas) =====
       // ===== CU07 - Gestionar catálogo de productos (funcional) =====
       {

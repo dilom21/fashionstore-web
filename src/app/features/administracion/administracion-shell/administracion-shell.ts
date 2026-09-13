@@ -9,15 +9,26 @@ import { Router, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../autenticacion-seguridad/auth/services/auth.service';
 import { AdminSidebar } from '../components/admin-sidebar/admin-sidebar';
-import { ADMIN_NAV_ITEMS } from '../navigation/admin-nav.config';
+import { ADMIN_NAV_ITEMS, filtrarItemsNav } from '../navigation/admin-nav.config';
+
+/**
+ * Rutas del panel reservadas para ENCARGADO_SUCURSAL (CU13 - Consultar
+ * inventario y CU14 - Movimientos de inventario). El resto de módulos quedan
+ * ocultos para su rol.
+ */
+const RUTAS_ENCARGADO_SUCURSAL = new Set([
+  '/admin/inventario/consultar',
+  '/admin/inventario/movimientos',
+]);
 
 /**
  * Contenedor (shell) del área administrativa (/admin).
  *
  * Layout de escritorio: sidebar lateral fija + contenido (router-outlet).
  * La sidebar es reutilizable (app-admin-sidebar) y se alimenta de la
- * configuración ADMIN_NAV_ITEMS. Solo es accesible con rol ADMINISTRADOR
- * (adminAuthGuard en la ruta).
+ * configuración ADMIN_NAV_ITEMS filtrada por rol. El acceso lo controla
+ * adminAuthGuard en la ruta: ADMINISTRADOR (todo el panel) y
+ * ENCARGADO_SUCURSAL (solo CU13).
  */
 @Component({
   selector: 'app-administracion-shell',
@@ -29,8 +40,22 @@ export class AdministracionShell {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  /** Navegación real del panel (lista única de módulos). */
-  readonly navItems = ADMIN_NAV_ITEMS;
+  /**
+   * Navegación real del panel (lista única de módulos).
+   *
+   * Se filtra por rol reutilizando `filtrarItemsNav`: el ADMINISTRADOR ve todo
+   * y el ENCARGADO_SUCURSAL solo las opciones de su alcance (CU13).
+   */
+  readonly navItems = computed(() => {
+    if (this.authService.esAdministrador()) {
+      return ADMIN_NAV_ITEMS;
+    }
+    return filtrarItemsNav(
+      ADMIN_NAV_ITEMS,
+      (item) =>
+        item.route !== undefined && RUTAS_ENCARGADO_SUCURSAL.has(item.route),
+    );
+  });
 
   readonly correo = computed(
     () => this.authService.usuarioActual()?.correo ?? null,

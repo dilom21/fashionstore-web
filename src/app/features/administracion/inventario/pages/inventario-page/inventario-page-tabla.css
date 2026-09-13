@@ -1,0 +1,202 @@
+/* Tabla de Consultar inventario por sucursal (CU13) + adaptación responsive a tarjetas. */
+
+.inv__table-wrap {
+  overflow-x: auto;
+}
+
+.inv__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.inv__table th {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.inv__table td {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.inv__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.inv__table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+
+.inv__producto {
+  min-width: 200px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.inv__sku {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.inv__num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.inv__num--fuerte {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.inv__disp {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+
+.inv__fecha {
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* ===== Badges de disponibilidad ===== */
+.inv__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.inv__badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.inv__badge--con-stock {
+  border-color: rgb(34 197 94 / 30%);
+  background: rgb(22 101 52 / 14%);
+  color: #4ade80;
+}
+
+.inv__badge--con-stock::before {
+  background: #22c55e;
+}
+
+.inv__badge--stock-bajo {
+  border-color: rgb(251 191 36 / 35%);
+  background: rgb(120 53 15 / 16%);
+  color: #fbbf24;
+}
+
+.inv__badge--stock-bajo::before {
+  background: #f59e0b;
+}
+
+.inv__badge--sin-stock {
+  border-color: rgb(248 113 113 / 35%);
+  background: rgb(190 18 60 / 14%);
+  color: #fb7185;
+}
+
+.inv__badge--sin-stock::before {
+  background: #ef4444;
+}
+
+html[data-theme='light'] .inv__badge--con-stock {
+  color: #15803d;
+}
+
+html[data-theme='light'] .inv__badge--stock-bajo {
+  color: #b45309;
+}
+
+html[data-theme='light'] .inv__badge--sin-stock {
+  color: #be123c;
+}
+
+/* ===== Responsive: tabla como tarjetas ===== */
+@media (max-width: 760px) {
+  .inv__table-wrap {
+    overflow: visible;
+  }
+
+  .inv__table,
+  .inv__table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .inv__table thead {
+    display: none;
+  }
+
+  .inv__table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
+
+  .inv__table tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--surface-2);
+  }
+
+  .inv__table tbody tr:hover {
+    background: var(--surface-2);
+  }
+
+  .inv__table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+  }
+
+  .inv__table td::before {
+    content: attr(data-label);
+    flex: 0 0 92px;
+    color: var(--text-3);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .inv__num {
+    text-align: right;
+  }
+
+  .inv__disp {
+    justify-content: flex-end;
+  }
+}
