@@ -28,9 +28,17 @@
 
 .pc__media {
   position: relative;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   background: var(--surface-2);
   overflow: hidden;
+}
+
+.pc__media app-producto-media {
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.pc__link:hover .pc__media app-producto-media {
+  transform: scale(1.035);
 }
 
 .pc__body {

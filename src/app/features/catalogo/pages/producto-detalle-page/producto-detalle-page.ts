@@ -58,19 +58,45 @@ export class ProductoDetallePage {
 
   readonly productoId = signal<number | null>(null);
 
-  readonly recursosImagenes = computed<RecursoProductoDetalle[]>(() =>
-    (this.producto()?.recursos ?? []).filter((recurso) =>
+  /**
+   * Recursos de imagen del detalle, con la imagen principal primero y el resto
+   * en el orden entregado por el backend. No se ordena por nombre de archivo
+   * ni se asume la cantidad de recursos.
+   */
+  readonly recursosImagenes = computed<RecursoProductoDetalle[]>(() => {
+    const imagenes = (this.producto()?.recursos ?? []).filter((recurso) =>
       this.esImagen(recurso.tipo, recurso.url),
-    ),
-  );
+    );
+    return imagenes
+      .map((recurso, indice) => ({ recurso, indice }))
+      .sort((a, b) => {
+        const principalA = a.recurso.es_principal ? 0 : 1;
+        const principalB = b.recurso.es_principal ? 0 : 1;
+        if (principalA !== principalB) {
+          return principalA - principalB;
+        }
+        return a.indice - b.indice;
+      })
+      .map((entrada) => entrada.recurso);
+  });
+
+  readonly totalImagenes = computed(() => this.recursosImagenes().length);
+
+  /** Índice vigente acotado al total de imágenes disponibles. */
+  readonly indiceActivo = computed(() => {
+    const total = this.totalImagenes();
+    if (total === 0) {
+      return 0;
+    }
+    return Math.min(this.indiceImagen(), total - 1);
+  });
 
   readonly imagenActiva = computed<RecursoProductoDetalle | null>(() => {
     const imagenes = this.recursosImagenes();
     if (imagenes.length === 0) {
       return null;
     }
-    const indice = Math.min(this.indiceImagen(), imagenes.length - 1);
-    return imagenes[indice] ?? imagenes[0];
+    return imagenes[this.indiceActivo()] ?? imagenes[0];
   });
 
   readonly variantesActivas = computed<VarianteProductoDetalle[]>(() =>
@@ -117,7 +143,37 @@ export class ProductoDetallePage {
   }
 
   seleccionarImagen(indice: number): void {
+    if (indice < 0 || indice >= this.totalImagenes()) {
+      return;
+    }
     this.indiceImagen.set(indice);
+  }
+
+  imagenAnterior(): void {
+    const total = this.totalImagenes();
+    if (total < 2) {
+      return;
+    }
+    this.indiceImagen.set((this.indiceActivo() - 1 + total) % total);
+  }
+
+  imagenSiguiente(): void {
+    const total = this.totalImagenes();
+    if (total < 2) {
+      return;
+    }
+    this.indiceImagen.set((this.indiceActivo() + 1) % total);
+  }
+
+  /** Navegación por teclado (flechas) sobre la galería. */
+  onGaleriaKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.imagenAnterior();
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.imagenSiguiente();
+    }
   }
 
   reintentar(): void {

@@ -1,4 +1,12 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import {
+  Component,
+  DestroyRef,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -47,6 +55,7 @@ export class CatalogoPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
 
   readonly productos = signal<Producto[]>([]);
   readonly cargando = signal(false);
@@ -62,12 +71,12 @@ export class CatalogoPage {
 
   readonly filtrosForm = new FormGroup({
     buscar: new FormControl('', { nonNullable: true }),
-    categoria_id: new FormControl<number | null>(null),
-    talla_id: new FormControl<number | null>(null),
-    color_id: new FormControl<number | null>(null),
-    temporada_id: new FormControl<number | null>(null),
-    coleccion_id: new FormControl<number | null>(null),
-    sucursal_id: new FormControl<number | null>(null),
+    categoria_id: new FormControl<number | null>({ value: null, disabled: true }),
+    talla_id: new FormControl<number | null>({ value: null, disabled: true }),
+    color_id: new FormControl<number | null>({ value: null, disabled: true }),
+    temporada_id: new FormControl<number | null>({ value: null, disabled: true }),
+    coleccion_id: new FormControl<number | null>({ value: null, disabled: true }),
+    sucursal_id: new FormControl<number | null>({ value: null, disabled: true }),
     con_stock: new FormControl(false, { nonNullable: true }),
   });
 
@@ -178,6 +187,7 @@ export class CatalogoPage {
   private cargarFiltros(): void {
     this.cargandoFiltros.set(true);
     this.errorFiltros.set(null);
+    this.establecerEstadoControlesFiltros(false);
     this.catalogoService
       .obtenerFiltros()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -186,15 +196,43 @@ export class CatalogoPage {
           this.cargandoFiltros.set(false);
           this.filtros.set(filtros);
           this.ajustarSeleccion(filtros);
+          this.establecerEstadoControlesFiltros(true);
         },
         error: (error: unknown) => {
           this.cargandoFiltros.set(false);
           this.filtros.set(null);
+          this.establecerEstadoControlesFiltros(true);
           this.errorFiltros.set(
             traducirErrorPublico(error, 'cargar los filtros').mensaje,
           );
         },
       });
+  }
+
+  /**
+   * Habilita/deshabilita los selects dependientes de GET /catalogo/filtros.
+   *
+   * Los controles permanecen deshabilitados hasta que existan opciones reales
+   * que mostrar. Se usa `emitEvent: false` para no disparar `valueChanges` ni
+   * consultas adicionales de productos al cambiar el estado.
+   */
+  private establecerEstadoControlesFiltros(habilitados: boolean): void {
+    const controles = [
+      this.filtrosForm.controls.categoria_id,
+      this.filtrosForm.controls.talla_id,
+      this.filtrosForm.controls.color_id,
+      this.filtrosForm.controls.temporada_id,
+      this.filtrosForm.controls.coleccion_id,
+      this.filtrosForm.controls.sucursal_id,
+    ];
+
+    for (const control of controles) {
+      if (habilitados) {
+        control.enable({ emitEvent: false });
+      } else {
+        control.disable({ emitEvent: false });
+      }
+    }
   }
 
   private cargarProductos(): void {
@@ -315,6 +353,12 @@ export class CatalogoPage {
   }
 
   private sincronizarUrl(): void {
+    // En SSR no se inicia navegación secundaria: abortaría el render del
+    // servidor. La selección inicial ya se lee de ActivatedRoute.snapshot.
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     const filtros = this.construirFiltros();
     void this.router.navigate([], {
       relativeTo: this.route,

@@ -13,6 +13,49 @@
   gap: 0.6rem;
 }
 
+.destacados__skeleton {
+  flex: 0 0 auto;
+  width: min(72vw, 278px);
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-l);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(
+      100deg,
+      var(--surface) 30%,
+      var(--surface-3) 50%,
+      var(--surface) 70%
+    );
+  background-size: 220% 100%;
+  animation: destacados-shimmer 1.4s ease-in-out infinite;
+}
+
+.destacados__state,
+.destacados__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  color: var(--text-2);
+}
+
+.destacados__empty {
+  margin: 0;
+}
+
+@keyframes destacados-shimmer {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -120% 0;
+  }
+}
+
 .rail-btn {
   display: inline-grid;
   place-items: center;

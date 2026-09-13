@@ -30,7 +30,6 @@
       id="fc-categoria"
       class="fc__select"
       formControlName="categoria_id"
-      [disabled]="cargandoFiltros()"
     >
       <option [ngValue]="null">Todas las categorías</option>
       @for (categoria of filtros()?.categorias ?? []; track categoria.id) {
@@ -45,7 +44,6 @@
       id="fc-talla"
       class="fc__select"
       formControlName="talla_id"
-      [disabled]="cargandoFiltros()"
     >
       <option [ngValue]="null">Todas las tallas</option>
       @for (talla of filtros()?.tallas ?? []; track talla.id) {
@@ -60,7 +58,6 @@
       id="fc-color"
       class="fc__select"
       formControlName="color_id"
-      [disabled]="cargandoFiltros()"
     >
       <option [ngValue]="null">Todos los colores</option>
       @for (color of filtros()?.colores ?? []; track color.id) {
@@ -75,7 +72,6 @@
       id="fc-temporada"
       class="fc__select"
       formControlName="temporada_id"
-      [disabled]="cargandoFiltros()"
     >
       <option [ngValue]="null">Todas las temporadas</option>
       @for (temporada of filtros()?.temporadas ?? []; track temporada.id) {
@@ -90,7 +86,6 @@
       id="fc-coleccion"
       class="fc__select"
       formControlName="coleccion_id"
-      [disabled]="cargandoFiltros()"
     >
       <option [ngValue]="null">Todas las colecciones</option>
       @for (coleccion of filtros()?.colecciones ?? []; track coleccion.id) {
@@ -105,7 +100,6 @@
       id="fc-sucursal"
       class="fc__select"
       formControlName="sucursal_id"
-      [disabled]="cargandoFiltros()"
     >
       <option [ngValue]="null">Todas las sucursales</option>
       @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {

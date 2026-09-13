@@ -18,67 +18,36 @@
       }
     </button>
 
-    @if (product().image) {
-      <img
-        class="pcard__img"
-        [src]="product().image"
-        [alt]="product().name"
-        loading="lazy"
-        width="600"
-        height="800"
+    <a
+      class="pcard__media-link"
+      [routerLink]="['/catalogo/productos', producto().id]"
+      [attr.aria-label]="'Ver producto ' + producto().nombre"
+    >
+      <app-producto-media
+        [url]="producto().imagen_principal_url"
+        [nombre]="producto().nombre"
+        [alt]="'Imagen de ' + producto().nombre"
       />
-    } @else {
-      <div class="pcard__ph" aria-hidden="true">
-        <span class="pcard__ph-brand">VANTER</span>
-        <span class="pcard__ph-letter">{{ product().name.charAt(0) }}</span>
-        <span class="pcard__ph-line"></span>
-      </div>
-    }
-
-    @if (product().badge) {
-      <span class="pcard__badge" [class.pcard__badge--offer]="esOferta()">
-        {{ product().badge }}
-      </span>
-    }
+    </a>
   </div>
 
   <div class="pcard__body">
-    <p class="pcard__cat">{{ product().category }}</p>
-    <h3 class="pcard__name">{{ product().name }}</h3>
+    <p class="pcard__cat">{{ producto().categoria.nombre }}</p>
+    <a
+      class="pcard__name"
+      [routerLink]="['/catalogo/productos', producto().id]"
+    >
+      {{ producto().nombre }}
+    </a>
 
     <div class="pcard__meta">
-      <div class="pcard__prices">
-        <span class="pcard__price">Bs {{ product().price }}</span>
-        @if (product().oldPrice) {
-          <s class="pcard__old">Bs {{ product().oldPrice }}</s>
-        }
-      </div>
-
-      <ul class="pcard__colors" aria-label="Colores disponibles">
-        @for (color of product().colors; track $index) {
-          <li
-            class="pcard__dot"
-            [style.background]="color"
-            [attr.aria-label]="'Opción de color ' + ($index + 1)"
-          ></li>
-        }
-      </ul>
+      <span class="pcard__price">
+        Bs {{ producto().precio | number: '1.2-2' }}
+      </span>
     </div>
 
-    <button
-      type="button"
-      class="pcard__add"
-      [class.pcard__add--done]="agregado()"
-      (click)="agregarAlCarrito()"
-    >
-      @if (agregado()) {
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
-          <path d="M4.5 12.5l5 5 10-11"/>
-        </svg>
-        <span>Agregado</span>
-      } @else {
-        <span>+ Agregar</span>
-      }
+    <button type="button" class="pcard__add" (click)="solicitarAgregar()">
+      <span>+ Agregar</span>
     </button>
   </div>
 </article>

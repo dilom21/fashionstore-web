@@ -6,8 +6,10 @@
   >
     <div class="pc__media">
       <app-producto-media
+        [url]="producto().imagen_principal_url"
         [nombre]="producto().nombre"
-        [alt]="producto().nombre"
+        [alt]="'Imagen de ' + producto().nombre"
+        prioridad="lazy"
       />
     </div>
 

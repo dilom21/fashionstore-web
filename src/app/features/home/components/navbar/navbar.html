@@ -119,17 +119,18 @@
         }
       </div>
 
-      <button type="button" class="nav__icon" aria-label="Carrito de compras" (click)="cartCount.set(cartCount())">
+      <a
+        class="nav__icon"
+        routerLink="/catalogo"
+        aria-label="Explorar catálogo de compras"
+      >
         <span class="nav__icon-wrap">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
             <path d="M5 8h14l-1.2 11.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 8z"></path>
             <path d="M9 8V6a3 3 0 016 0v2"></path>
           </svg>
-          @if (cartCount() > 0) {
-            <span class="nav__cart-badge">{{ cartCount() }}</span>
-          }
         </span>
-      </button>
+      </a>
 
       <button
         type="button"
@@ -160,7 +161,7 @@
     (click)="closeOnBackdrop($event)"
   >
     <div class="search__panel">
-      <div class="search__field">
+      <form class="search__field" (submit)="buscar($event)">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
           <circle cx="11" cy="11" r="7"></circle>
           <path d="M20 20l-3.2-3.2"></path>
@@ -175,34 +176,28 @@
           aria-label="Buscar prendas"
           autocomplete="off"
         />
+        <button
+          type="submit"
+          class="search__submit"
+          [disabled]="query().trim().length === 0"
+        >
+          Buscar
+        </button>
         <button type="button" class="search__close" aria-label="Cerrar buscador" (click)="closeSearch()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M5 5l14 14M19 5L5 19"></path>
           </svg>
         </button>
-      </div>
+      </form>
 
       @if (query().trim().length > 0) {
         <div class="search__results">
-          @if (results().length > 0) {
-            <p class="search__hint">Resultados para “{{ query() }}”</p>
-            <ul class="search__list">
-              @for (item of results(); track item.id) {
-                <li>
-                  <button type="button" class="search__item" (click)="selectProduct()">
-                    <span class="search__thumb" aria-hidden="true">{{ item.name.charAt(0) }}</span>
-                    <span class="search__info">
-                      <span class="search__name">{{ item.name }}</span>
-                      <span class="search__cat">{{ item.category }}</span>
-                    </span>
-                    <span class="search__price">Bs {{ item.price }}</span>
-                  </button>
-                </li>
-              }
-            </ul>
-          } @else {
-            <p class="search__empty">Sin resultados para “{{ query() }}”.</p>
-          }
+          <p class="search__hint">
+            La búsqueda se realiza en el catálogo público.
+          </p>
+          <button type="button" class="search__go" (click)="buscar()">
+            Buscar “{{ query() }}” en el catálogo
+          </button>
         </div>
       } @else {
         <p class="search__empty">Escribe el nombre de una prenda o una categoría.</p>

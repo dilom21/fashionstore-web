@@ -111,23 +111,6 @@
   place-items: center;
 }
 
-.nav__cart-badge {
-  position: absolute;
-  top: -7px;
-  right: -9px;
-  display: grid;
-  place-items: center;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--grad-accent);
-  color: var(--on-accent);
-  font-size: 0.62rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
 .nav__burger {
   display: none;
   place-items: center;
@@ -217,6 +200,50 @@
   background: var(--surface-2);
 }
 
+.search__submit {
+  padding: 0 1rem;
+  min-height: 38px;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-size: 0.86rem;
+  font-weight: 800;
+  transition:
+    filter 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.search__submit:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.search__submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.search__go {
+  display: block;
+  width: calc(100% - 2.8rem);
+  margin: 0 1.4rem 1rem;
+  padding: 0.85rem 1.1rem;
+  text-align: left;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  font-weight: 700;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.search__go:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
 .search__results {
   max-height: 58vh;
   overflow-y: auto;
@@ -230,58 +257,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-3);
-}
-
-.search__item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-  padding: 0.7rem 1.4rem;
-  text-align: left;
-  transition: background-color 0.2s ease;
-}
-
-.search__item:hover {
-  background: var(--surface);
-}
-
-.search__thumb {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  border-radius: var(--radius-s);
-  background:
-    radial-gradient(120% 100% at 80% 0%, rgb(168 85 247 / 22%), transparent 60%),
-    var(--surface-3);
-  color: var(--text-3);
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.search__info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.search__name {
-  font-weight: 700;
-  color: var(--text);
-}
-
-.search__cat {
-  font-size: 0.82rem;
-  color: var(--text-3);
-}
-
-.search__price {
-  margin-left: auto;
-  font-weight: 800;
-  color: var(--accent-text);
-  white-space: nowrap;
 }
 
 .search__empty {

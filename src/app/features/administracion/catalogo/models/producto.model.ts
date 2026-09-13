@@ -20,6 +20,13 @@ export interface Producto {
   estado: boolean;
   categoria_id: number;
   categoria: CategoriaResumen;
+  /**
+   * URL absoluta de la imagen principal del producto (campo aditivo de
+   * GET /productos). Es `null` cuando el producto no tiene una imagen
+   * principal marcada en el backend. La URL ya viene resuelta: el frontend no
+   * debe construirla ni asumir nombres de archivo.
+   */
+  imagen_principal_url: string | null;
 }
 
 /**

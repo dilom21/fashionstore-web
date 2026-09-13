@@ -209,7 +209,7 @@
 }
 
 .cat__skeleton-media {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   background: linear-gradient(
     100deg,
     var(--surface-2) 30%,

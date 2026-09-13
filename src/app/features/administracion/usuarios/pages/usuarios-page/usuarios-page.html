@@ -39,7 +39,7 @@
 
     <label class="usuarios__select">
       <span class="usuarios__select-label">Rol</span>
-      <select formControlName="rolId" [disabled]="cargandoCatalogos() || roles().length === 0">
+      <select formControlName="rolId">
         <option [ngValue]="null">Todos los roles</option>
         @for (rol of roles(); track rol.id) {
           <option [ngValue]="rol.id">{{ rol.nombre }}</option>

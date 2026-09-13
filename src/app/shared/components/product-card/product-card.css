@@ -25,61 +25,31 @@
 /* ===== Zona de imagen ===== */
 .pcard__media {
   position: relative;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
   background:
     radial-gradient(120% 90% at 85% 0%, rgb(168 85 247 / 18%), transparent 55%),
     linear-gradient(160deg, var(--surface-3), var(--surface) 70%);
 }
 
-.pcard__img {
+.pcard__media-link {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+}
+
+.pcard__media-link app-producto-media {
+  display: block;
+  width: 100%;
+  height: 100%;
   transition: transform 0.7s ease;
 }
 
-.pcard:hover .pcard__img {
+.pcard:hover .pcard__media-link app-producto-media {
   transform: scale(1.05);
 }
 
-/* Placeholder tipográfico mientras no hay imagen */
-.pcard__ph {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-}
-
-.pcard__ph-brand {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.32em;
-  color: var(--text-3);
-}
-
-.pcard__ph-letter {
-  font-size: clamp(3.2rem, 6vw, 4.6rem);
-  font-weight: 800;
-  line-height: 1;
-  background: linear-gradient(180deg, var(--text-2), transparent 160%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  opacity: 0.55;
-}
-
-.pcard__ph-line {
-  width: 46px;
-  height: 1px;
-  background: var(--grad-accent);
-  opacity: 0.7;
-}
-
-/* Favorito y badge */
+/* Favorito */
 .pcard__fav {
   position: absolute;
   top: 12px;
@@ -111,27 +81,6 @@
   border-color: rgb(255 77 141 / 50%);
 }
 
-.pcard__badge {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 2;
-  padding: 0.32rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  background: var(--grad-accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-accent);
-}
-
-.pcard__badge--offer {
-  background: #e11d48;
-  box-shadow: 0 10px 22px -12px rgb(225 29 72 / 60%);
-}
-
 /* ===== Cuerpo ===== */
 .pcard__body {
   display: flex;
@@ -153,6 +102,12 @@
   font-size: 1.08rem;
   font-weight: 700;
   letter-spacing: -0.01em;
+  color: var(--text);
+  transition: color 0.2s ease;
+}
+
+.pcard__name:hover {
+  color: var(--accent-text);
 }
 
 .pcard__meta {
@@ -163,33 +118,9 @@
   margin-top: 0.15rem;
 }
 
-.pcard__prices {
-  display: flex;
-  align-items: baseline;
-  gap: 0.55rem;
-}
-
 .pcard__price {
   font-size: 1.05rem;
   font-weight: 800;
-}
-
-.pcard__old {
-  color: var(--text-3);
-  font-size: 0.82rem;
-}
-
-.pcard__colors {
-  display: flex;
-  gap: 0.3rem;
-}
-
-.pcard__dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 1px solid var(--line-strong);
-  box-shadow: inset 0 0 0 2px var(--surface);
 }
 
 .pcard__add {
@@ -198,7 +129,7 @@
   justify-content: center;
   gap: 0.4rem;
   min-height: 2.7rem;
-  margin-top: 0.45rem;
+  margin-top: auto;
   border-radius: 999px;
   border: 1px solid var(--line-strong);
   font-size: 0.88rem;
@@ -214,15 +145,4 @@
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent-text);
-}
-
-.pcard__add--done {
-  border-color: transparent;
-  background: rgb(16 185 129 / 16%);
-  color: #34d399;
-}
-
-.pcard__add--done:hover {
-  color: #34d399;
-  background: rgb(16 185 129 / 22%);
 }

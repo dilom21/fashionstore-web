@@ -8,8 +8,10 @@
  * Carpetas:
  *   hero/hero-main.jpg            → portada principal de la landing
  *   categories/cat-*.jpg          → tarjetas de categoría
- *   products/prod-*.jpg           → fotografías de producto
  *   lookbook/look-*.jpg           → editorial de campaña (añadir cuando haya)
+ *
+ * Las imágenes de producto ya NO viven aquí: las tarjetas de producto usan
+ * `producto.imagen_principal_url` del catálogo público (CU09).
  */
 export const IMAGES = {
   hero: {
@@ -22,24 +24,6 @@ export const IMAGES = {
     chaquetas: '/images/categories/cat-chaquetas.jpg',
     sueters: '/images/categories/cat-sueters.jpg',
     accesorios: '/images/categories/cat-accesorios.jpg',
-  },
-  products: {
-    chaquetaClasica: '/images/categories/cat-chaquetas.jpg',
-    camisaOxford: '/images/products/prod-camisa.jpg',
-    poleraEssential: '/images/products/prod-polera.jpg',
-    jeanSlim: '/images/products/prod-jean.jpg',
-    sueterPremium: '/images/categories/cat-sueters.jpg',
-    pantalonCasual: '',
-    camisaLino: '/images/products/prod-camisa.jpg',
-    poloPremium: '/images/products/prod-polera.jpg',
-    buzoOversize: '/images/categories/cat-sueters.jpg',
-    chaquetaBomber: '/images/categories/cat-chaquetas.jpg',
-    pantalonChino: '/images/products/prod-jean.jpg',
-    poleraTermica: '/images/products/prod-polera.jpg',
-    camisaSlimFit: '/images/products/prod-camisa.jpg',
-    jeanRecto: '/images/products/prod-jean.jpg',
-    abrigoLargo: '/images/categories/cat-chaquetas.jpg',
-    packPoleras: '/images/products/prod-polera.jpg',
   },
   lookbook: {
     look1: '/images/hero/hero-main.jpg',

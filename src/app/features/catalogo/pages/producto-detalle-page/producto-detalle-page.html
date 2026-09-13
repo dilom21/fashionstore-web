@@ -41,29 +41,64 @@
       </div>
     } @else if (producto(); as productoActual) {
       <div class="pdet__layout">
-        <section class="pdet__gallery" aria-label="Imágenes del producto">
-          <div class="pdet__media">
+        <section
+          class="pdet__gallery"
+          aria-roledescription="carrusel"
+          [attr.aria-label]="
+            'Imágenes de ' + productoActual.nombre + ' (' +
+            (totalImagenes() > 0 ? indiceActivo() + 1 : 0) + ' de ' +
+            totalImagenes() + ')'
+          "
+        >
+          <div
+            class="pdet__media"
+            tabindex="0"
+            (keydown)="onGaleriaKeydown($event)"
+          >
             <app-producto-media
               [url]="imagenActiva()?.url"
               [nombre]="productoActual.nombre"
-              [alt]="productoActual.nombre"
+              [alt]="'Imagen ' + (indiceActivo() + 1) + ' de ' + productoActual.nombre"
               prioridad="eager"
             />
             @if (imagenActiva()?.es_principal) {
               <span class="pdet__principal">Imagen principal</span>
             }
+
+            @if (totalImagenes() > 1) {
+              <button
+                type="button"
+                class="pdet__nav pdet__nav--prev"
+                aria-label="Imagen anterior"
+                (click)="imagenAnterior()"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M14.5 5 8 12l6.5 7"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="pdet__nav pdet__nav--next"
+                aria-label="Imagen siguiente"
+                (click)="imagenSiguiente()"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M9.5 5 16 12l-6.5 7"></path>
+                </svg>
+              </button>
+            }
           </div>
 
-          @if (recursosImagenes().length > 1) {
+          @if (totalImagenes() > 1) {
             <ul class="pdet__thumbs" aria-label="Miniaturas">
               @for (recurso of recursosImagenes(); track recurso.id; let i = $index) {
                 <li>
                   <button
                     type="button"
                     class="pdet__thumb"
-                    [class.pdet__thumb--activa]="i === indiceImagen()"
+                    [class.pdet__thumb--activa]="i === indiceActivo()"
                     [attr.aria-label]="'Ver imagen ' + (i + 1)"
-                    [attr.aria-current]="i === indiceImagen()"
+                    [attr.aria-current]="i === indiceActivo()"
                     (click)="seleccionarImagen(i)"
                   >
                     <app-producto-media
@@ -72,6 +107,21 @@
                       [alt]="'Miniatura ' + (i + 1) + ' de ' + productoActual.nombre"
                     />
                   </button>
+                </li>
+              }
+            </ul>
+
+            <ul class="pdet__dots" aria-label="Indicadores de imagen">
+              @for (recurso of recursosImagenes(); track recurso.id; let i = $index) {
+                <li>
+                  <button
+                    type="button"
+                    class="pdet__dot"
+                    [class.pdet__dot--activa]="i === indiceActivo()"
+                    [attr.aria-label]="'Ir a la imagen ' + (i + 1)"
+                    [attr.aria-current]="i === indiceActivo()"
+                    (click)="seleccionarImagen(i)"
+                  ></button>
                 </li>
               }
             </ul>
