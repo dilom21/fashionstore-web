@@ -1,0 +1,260 @@
+/* Tabla / Kardex de Movimientos de inventario (CU14) + skeleton + responsive. */
+
+.mov__table-wrap {
+  overflow-x: auto;
+}
+
+.mov__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.mov__table th {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mov__table td {
+  padding: 1rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.mov__table tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.mov__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.mov__table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+}
+
+/* ===== Fecha ===== */
+.mov__fecha {
+  white-space: nowrap;
+}
+
+.mov__fecha-dia {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mov__fecha-hora {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Producto / variante ===== */
+.mov__producto {
+  min-width: 230px;
+}
+
+.mov__producto-nombre {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.mov__producto-sku {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mov__producto-variante {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-3);
+  font-size: 0.8rem;
+}
+
+/* ===== Cantidad ===== */
+.mov__th-num {
+  text-align: right;
+}
+
+.mov__cantidad {
+  text-align: right;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mov__cantidad-uds {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ===== Origen, usuario y sucursal ===== */
+.mov__origen {
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.mov__usuario {
+  color: var(--text-3);
+}
+
+.mov__sucursal-celda {
+  color: var(--text-2);
+}
+
+/* ===== Detalle ===== */
+.mov__detalle-celda {
+  text-align: right;
+}
+
+.mov__detalle-btn {
+  min-height: 30px;
+  padding: 0.2rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.mov__detalle-btn:hover {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ===== Skeleton de carga ===== */
+.mov__skel-row td {
+  padding-top: 1.15rem;
+  padding-bottom: 1.15rem;
+}
+
+.mov__skel {
+  display: block;
+  width: 100%;
+  min-width: 54px;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 0%,
+    var(--surface-3) 50%,
+    var(--surface-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: mov-shimmer 1.15s ease-in-out infinite;
+}
+
+@keyframes mov-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ===== Responsive: tabla como tarjetas ===== */
+@media (max-width: 900px) {
+  .mov__table-wrap {
+    overflow: visible;
+  }
+
+  .mov__table,
+  .mov__table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .mov__table thead {
+    display: none;
+  }
+
+  .mov__table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0.8rem;
+  }
+
+  .mov__table tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.95rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background: var(--surface-2);
+  }
+
+  .mov__table tbody tr:hover {
+    background: var(--surface-2);
+  }
+
+  .mov__table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0;
+    border: 0;
+    color: var(--text);
+    text-align: left;
+  }
+
+  .mov__table td::before {
+    content: attr(data-label);
+    flex: 0 0 96px;
+    color: var(--text-3);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .mov__producto,
+  .mov__fecha {
+    min-width: 0;
+  }
+
+  .mov__producto-nombre,
+  .mov__producto-sku,
+  .mov__producto-variante,
+  .mov__fecha-dia,
+  .mov__fecha-hora {
+    text-align: right;
+  }
+
+  .mov__detalle-celda {
+    justify-content: flex-end;
+  }
+
+  .mov__skel-row {
+    display: none;
+  }
+}

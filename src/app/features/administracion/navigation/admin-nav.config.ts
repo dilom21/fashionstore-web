@@ -113,6 +113,26 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
         estado: 'funcional',
         permiso: 'INVENTARIO:SUCURSALES_CIUDADES',
       },
+      {
+        id: 'consultar-inventario',
+        label: 'Consultar inventario',
+        icon: 'inventario',
+        route: '/admin/inventario/consultar',
+        descripcion:
+          'Consulta las existencias de prendas por sucursal, producto, categoría, talla, color y temporada.',
+        estado: 'funcional',
+        permiso: 'INVENTARIO:CONSULTAR',
+      },
+      {
+        id: 'movimientos-inventario',
+        label: 'Movimientos de inventario',
+        icon: 'bitacora',
+        route: '/admin/inventario/movimientos',
+        descripcion:
+          'Consulta el historial (kardex) de entradas, salidas, reservas, liberaciones y devoluciones.',
+        estado: 'funcional',
+        permiso: 'INVENTARIO:MOVIMIENTOS',
+      },
     ],
   },
   {

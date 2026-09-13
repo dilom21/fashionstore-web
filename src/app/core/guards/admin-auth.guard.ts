@@ -5,16 +5,21 @@ import { Observable, catchError, map, of } from 'rxjs';
 import { AuthService } from '../../features/autenticacion-seguridad/auth/services/auth.service';
 
 /**
- * Guard del área administrativa (/admin/**), exclusiva de ADMINISTRADOR.
+ * Guard del área de gestión (/admin/**).
  *
- * - Personal con rol ADMINISTRADOR: permite el acceso.
- * - Personal con otro rol: redirige a /dashboard.
+ * Da acceso a:
+ * - ADMINISTRADOR: todo el panel.
+ * - ENCARGADO_SUCURSAL: entra al panel para usar CU13 (Consultar inventario);
+ *   el menú se filtra por rol y el resto de pantallas quedan protegidas por el
+ *   backend (401/403).
+ *
+ * - Personal con otro rol (p. ej. CAJERO): redirige a /dashboard.
  * - Cliente autenticado: redirige a "/".
  * - Sin sesión: redirige a /auth/personal/login.
  * - Con JWT pero sesión aún no restaurada: restaura antes de decidir.
  *
- * Es protección de frontend/UX: el backend exige rol ADMINISTRADOR en cada
- * endpoint (401/403) y sigue siendo la autorización real.
+ * Es protección de frontend/UX: el backend exige el rol en cada endpoint
+ * (401/403) y sigue siendo la autorización real.
  */
 export const adminAuthGuard: CanActivateFn = ():
   | boolean
@@ -26,7 +31,7 @@ export const adminAuthGuard: CanActivateFn = ():
   const usuario = authService.usuarioActual();
   if (usuario !== null) {
     if (usuario.contexto === 'personal') {
-      return authService.esAdministrador()
+      return authService.puedeConsultarInventario()
         ? true
         : router.parseUrl('/dashboard');
     }
@@ -51,7 +56,7 @@ export const adminAuthGuard: CanActivateFn = ():
       if (actual.contexto === 'cliente') {
         return router.parseUrl('/');
       }
-      return authService.esAdministrador()
+      return authService.puedeConsultarInventario()
         ? true
         : router.parseUrl('/dashboard');
     }),

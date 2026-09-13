@@ -63,18 +63,16 @@ export class PersonalLogin {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.mensajeError.set(null));
 
-    // Personal ya autenticado (o sesión restaurada): va al panel. Un
-    // ADMINISTRADOR entra directo a Gestión de Usuarios; el resto al dashboard.
+    // Personal ya autenticado (o sesión restaurada): va a su panel.
+    // - ADMINISTRADOR: entra directo a Gestión de Usuarios.
+    // - ENCARGADO_SUCURSAL: entra a CU13 (Consultar inventario).
+    // - Resto (p. ej. CAJERO): al dashboard.
     effect(() => {
       if (
         this.authService.contexto() === 'personal' &&
         this.authService.autenticado()
       ) {
-        void this.router.navigateByUrl(
-          this.authService.esAdministrador()
-            ? '/admin/usuarios'
-            : '/dashboard',
-        );
+        void this.router.navigateByUrl(this.destinoPersonal());
       }
     });
   }
@@ -145,6 +143,17 @@ export class PersonalLogin {
       return 'Ingresa tu contraseña.';
     }
     return null;
+  }
+
+  /** Destino del personal autenticado según su rol (frontend/UX). */
+  private destinoPersonal(): string {
+    if (this.authService.esAdministrador()) {
+      return '/admin/usuarios';
+    }
+    if (this.authService.esEncargadoSucursal()) {
+      return '/admin/inventario/consultar';
+    }
+    return '/dashboard';
   }
 
   private mensajeParaError(error: unknown): string {

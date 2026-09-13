@@ -30,6 +30,9 @@ export const AUTH_TOKEN_STORAGE_KEY = 'vanter_access_token';
 /** Nombre exacto del rol administrativo (backend: app.core.dependencies). */
 export const ROL_ADMINISTRADOR = 'ADMINISTRADOR';
 
+/** Nombre exacto del rol de encargado de sucursal (backend: app.core.dependencies). */
+export const ROL_ENCARGADO_SUCURSAL = 'ENCARGADO_SUCURSAL';
+
 /** Usuario que puede estar autenticado en memoria. */
 type UsuarioSesion = UsuarioAuth | ClienteAuth | PersonalAuth;
 
@@ -65,6 +68,36 @@ export class AuthService {
     () =>
       this._usuarioActual()?.rol?.trim().toUpperCase() === ROL_ADMINISTRADOR,
   );
+
+  /** true si el usuario autenticado tiene rol ENCARGADO_SUCURSAL. */
+  readonly esEncargadoSucursal = computed(
+    () =>
+      this._usuarioActual()?.rol?.trim().toUpperCase() ===
+      ROL_ENCARGADO_SUCURSAL,
+  );
+
+  /**
+   * true si el usuario puede consultar inventario por sucursal (CU13):
+   * ADMINISTRADOR o ENCARGADO_SUCURSAL. La autorización real la aplica el
+   * backend (401/403) y, para el encargado, limita el alcance a su sucursal.
+   */
+  readonly puedeConsultarInventario = computed(
+    () => this.esAdministrador() || this.esEncargadoSucursal(),
+  );
+
+  /**
+   * sucursal_id del personal si está disponible en la sesión.
+   *
+   * Solo llega en la respuesta del login (PersonalAuth): GET /auth/me no lo
+   * incluye, por lo que tras un refresco puede ser null. El backend limita por
+   * sí mismo el alcance del encargado, así que este dato es solo informativo.
+   */
+  readonly sucursalId = computed<number | null>(() => {
+    const usuario = this._usuarioActual();
+    return usuario !== null && 'sucursal_id' in usuario
+      ? usuario.sucursal_id
+      : null;
+  });
 
   /**
    * Inicia sesión como cliente.
