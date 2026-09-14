@@ -70,6 +70,53 @@
   font-size: 0.85rem;
 }
 
+/* ===== Sucursal de compra (CU15) ===== */
+.cat__buy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.7rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.cat__buy-label {
+  color: var(--text-3);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cat__buy-select {
+  max-width: 220px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cat__buy-select:focus {
+  outline: none;
+}
+
+@media (max-width: 760px) {
+  .cat__buy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cat__buy-select {
+    width: 100%;
+    max-width: none;
+  }
+}
+
 /* ===== Layout ===== */
 .cat__layout {
   display: grid;

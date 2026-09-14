@@ -296,6 +296,199 @@
   background: #f87171;
 }
 
+/* ===== Selección de talla/color (CU15) ===== */
+.pdet__chip--opcion {
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.pdet__chip--opcion:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.pdet__chip--opcion:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
+.pdet__chip--activo {
+  border-color: transparent;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  box-shadow: var(--shadow-accent);
+}
+
+/* ===== Agregar al carrito (CU15) ===== */
+.pdet__buy {
+  margin-top: 1.4rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.pdet__buy-title {
+  font-size: 1.02rem;
+  letter-spacing: -0.015em;
+}
+
+.pdet__buy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.9rem;
+}
+
+.pdet__buy-label {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.pdet__buy-select {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.6rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pdet__buy-select:focus {
+  outline: none;
+  border-color: var(--accent-3);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.pdet__qty {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.pdet__qty-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 36px;
+  color: var(--text-2);
+  font-size: 1.1rem;
+  font-weight: 700;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.pdet__qty-btn:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.pdet__qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pdet__qty-valor {
+  min-width: 38px;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdet__buy-totales {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.pdet__buy-totales dt {
+  color: var(--text-3);
+  font-size: 0.78rem;
+}
+
+.pdet__buy-totales dd {
+  margin: 0.15rem 0 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdet__buy-hint {
+  margin-top: 0.85rem;
+  color: var(--text-3);
+  font-size: 0.84rem;
+}
+
+.pdet__buy-hint--error {
+  color: #fb7185;
+  font-weight: 600;
+}
+
+.pdet__buy-hint--ok {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+html[data-theme='light'] .pdet__buy-hint--ok {
+  color: #15803d;
+}
+
+html[data-theme='light'] .pdet__buy-hint--error {
+  color: #be123c;
+}
+
+.pdet__buy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 1rem;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-accent);
+  transition:
+    filter 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.pdet__buy-btn:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+.pdet__buy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* ===== Estados ===== */
 .pdet__loading {
   display: flex;

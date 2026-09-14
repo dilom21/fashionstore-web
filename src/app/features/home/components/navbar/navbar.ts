@@ -12,6 +12,8 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { ToastHost } from '../../../../shared/components/toast-host/toast-host';
+import { CarritoService } from '../../../carrito/services/carrito.service';
 import { AuthService } from '../../../../features/autenticacion-seguridad/auth/services/auth.service';
 
 interface NavLink {
@@ -40,13 +42,14 @@ const NAV_LINKS: NavLink[] = [
  */
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink],
+  imports: [RouterLink, ToastHost],
   styleUrl: './navbar.css',
   templateUrl: './navbar.html',
 })
 export class Navbar implements OnDestroy {
   readonly themeService = inject(ThemeService);
   readonly authService = inject(AuthService);
+  readonly carritoService = inject(CarritoService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -110,6 +113,11 @@ export class Navbar implements OnDestroy {
       };
       document.addEventListener('keydown', this.keyHandler);
       document.addEventListener('pointerdown', this.outsideHandler);
+
+      // El badge de la bolsa refleja el nº de carritos activos del cliente.
+      if (this.authService.esCliente()) {
+        this.carritoService.refrescarContador();
+      }
     });
   }
 
@@ -156,10 +164,11 @@ export class Navbar implements OnDestroy {
     this.accountOpen.set(false);
   }
 
-  /** Cierra la sesión local y vuelve al inicio. */
+  /** Cierra la sesión local, limpia el carrito en memoria y vuelve al inicio. */
   cerrarSesion(): void {
     this.accountOpen.set(false);
     this.authService.cerrarSesion();
+    this.carritoService.limpiar();
     void this.router.navigateByUrl('/');
   }
 

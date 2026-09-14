@@ -1,0 +1,168 @@
+<app-navbar />
+
+<main class="cdet">
+  <div class="vm-container">
+    <a class="cdet__back" routerLink="/carritos">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M14.5 5 8 12l6.5 7"></path>
+      </svg>
+      Tus carritos
+    </a>
+
+    @if (cargando()) {
+      <div class="cdet__loading" role="status">
+        <span class="cdet__spinner" aria-hidden="true"></span>
+        <span>Cargando tu carrito…</span>
+      </div>
+    } @else if (error(); as mensaje) {
+      <div class="cdet__state" role="alert">
+        <p class="cdet__state-title">No pudimos cargar el carrito</p>
+        <p class="cdet__state-text">{{ mensaje }}</p>
+        <div class="cdet__state-actions">
+          <button type="button" class="cdet__btn cdet__btn--primary" (click)="reintentar()">
+            Reintentar
+          </button>
+          <a class="cdet__btn" routerLink="/carritos">Ver mis carritos</a>
+        </div>
+      </div>
+    } @else if (detalle(); as carrito) {
+      <header class="cdet__head">
+        <div>
+          <span class="vm-eyebrow">Tu carrito</span>
+          <h1 class="cdet__title">Tu carrito</h1>
+          <p class="cdet__sucursal">
+            Comprando en <strong>{{ carrito.sucursal_nombre }}</strong>
+          </p>
+        </div>
+        <span class="cdet__unidades">{{ unidades() }} unidad(es)</span>
+      </header>
+
+      <p class="cdet__notice" role="note">
+        Guardamos tu carrito durante 2 horas desde tu última actividad.
+      </p>
+
+      <div class="cdet__layout">
+        <section class="cdet__lines" aria-label="Prendas del carrito">
+          @for (item of items(); track item.detalle_id) {
+            <article class="cdet__line">
+              <div class="cdet__media">
+                @if (item.imagen_principal) {
+                  <img
+                    class="cdet__img"
+                    [src]="item.imagen_principal"
+                    [alt]="item.producto_nombre"
+                    loading="lazy"
+                  />
+                } @else {
+                  <span class="cdet__img cdet__img--vacia" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                      <path d="m3 16 5-5 4 4 3-3 6 6"></path>
+                    </svg>
+                  </span>
+                }
+              </div>
+
+              <div class="cdet__info">
+                <h2 class="cdet__nombre">{{ item.producto_nombre }}</h2>
+                <p class="cdet__variante">
+                  Talla: {{ item.talla_nombre }} · Color: {{ item.color_nombre }}
+                </p>
+                <p class="cdet__secundario">SKU: {{ item.sku }}</p>
+                <p class="cdet__secundario">{{ item.temporada_nombre }}</p>
+                <p class="cdet__precio">
+                  Bs {{ item.precio_unitario | number: '1.2-2' }}
+                </p>
+              </div>
+
+              <div class="cdet__acciones">
+                <div class="cdet__qty">
+                  <button
+                    type="button"
+                    class="cdet__qty-btn"
+                    [disabled]="bloqueado(item)"
+                    [attr.aria-label]="'Disminuir cantidad de ' + item.producto_nombre"
+                    (click)="disminuir(item)"
+                  >
+                    −
+                  </button>
+                  <span class="cdet__qty-valor" aria-live="polite">
+                    {{ item.cantidad }}
+                  </span>
+                  <button
+                    type="button"
+                    class="cdet__qty-btn"
+                    [disabled]="bloqueado(item)"
+                    [attr.aria-label]="'Aumentar cantidad de ' + item.producto_nombre"
+                    (click)="aumentar(item)"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <p class="cdet__subtotal">
+                  <span>Subtotal</span>
+                  <strong>Bs {{ item.subtotal_linea | number: '1.2-2' }}</strong>
+                </p>
+
+                <button
+                  type="button"
+                  class="cdet__eliminar"
+                  [disabled]="bloqueado(item)"
+                  (click)="solicitarEliminar(item)"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </article>
+          }
+        </section>
+
+        <aside class="cdet__resumen" aria-label="Resumen del carrito">
+          <h2 class="cdet__resumen-title">Resumen</h2>
+
+          <dl class="cdet__resumen-data">
+            <div>
+              <dt>Unidades</dt>
+              <dd>{{ unidades() }}</dd>
+            </div>
+            <div>
+              <dt>Sucursal</dt>
+              <dd>{{ carrito.sucursal_nombre }}</dd>
+            </div>
+          </dl>
+
+          <p class="cdet__total">
+            <span>Total</span>
+            <strong>Bs {{ subtotal() | number: '1.2-2' }}</strong>
+          </p>
+
+          <button type="button" class="cdet__pagar" (click)="irAPagar()">
+            IR A PAGAR
+          </button>
+
+          <button type="button" class="cdet__seguir" (click)="buscarMasProductos()">
+            Buscar más productos
+          </button>
+
+          <p class="cdet__vigencia">
+            Actualizado el
+            {{ carrito.fecha_actualizacion | date: 'dd/MM/yyyy HH:mm' }}
+          </p>
+        </aside>
+      </div>
+    }
+  </div>
+</main>
+
+@if (pendienteEliminarLinea(); as pendiente) {
+  <app-confirm-dialog
+    titulo="¿Eliminar esta prenda?"
+    mensaje="Se quitará esta prenda del carrito. Si era la última, el carrito se eliminará."
+    confirmarLabel="Eliminar"
+    cancelarLabel="Cancelar"
+    [peligro]="true"
+    (confirmado)="confirmarEliminar()"
+    (cancelado)="cancelarEliminar()"
+  />
+}

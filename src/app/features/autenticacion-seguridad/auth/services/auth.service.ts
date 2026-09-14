@@ -63,6 +63,9 @@ export class AuthService {
     () => this._usuarioActual()?.contexto ?? null,
   );
 
+  /** true si el usuario autenticado es un CLIENTE (área pública de compra). */
+  readonly esCliente = computed(() => this.contexto() === 'cliente');
+
   /** true si el usuario autenticado tiene rol ADMINISTRADOR. */
   readonly esAdministrador = computed(
     () =>

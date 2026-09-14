@@ -159,7 +159,19 @@
             @if (tallas().length > 0) {
               <ul class="pdet__chips" aria-label="Tallas disponibles">
                 @for (talla of tallas(); track talla.id) {
-                  <li class="pdet__chip">{{ talla.nombre }}</li>
+                  <li
+                    class="pdet__chip pdet__chip--opcion"
+                    [class.pdet__chip--activo]="tallaElegida() === talla.id"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-pressed]="tallaElegida() === talla.id"
+                    [attr.aria-label]="'Talla ' + talla.nombre"
+                    (click)="seleccionarTalla(talla.id)"
+                    (keydown.enter)="seleccionarTalla(talla.id)"
+                    (keydown.space)="seleccionarTalla(talla.id)"
+                  >
+                    {{ talla.nombre }}
+                  </li>
                 }
               </ul>
             } @else {
@@ -172,7 +184,19 @@
             @if (colores().length > 0) {
               <ul class="pdet__chips" aria-label="Colores disponibles">
                 @for (color of colores(); track color.id) {
-                  <li class="pdet__chip">{{ color.nombre }}</li>
+                  <li
+                    class="pdet__chip pdet__chip--opcion"
+                    [class.pdet__chip--activo]="colorElegido() === color.id"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-pressed]="colorElegido() === color.id"
+                    [attr.aria-label]="'Color ' + color.nombre"
+                    (click)="seleccionarColor(color.id)"
+                    (keydown.enter)="seleccionarColor(color.id)"
+                    (keydown.space)="seleccionarColor(color.id)"
+                  >
+                    {{ color.nombre }}
+                  </li>
                 }
               </ul>
             } @else {
@@ -189,6 +213,93 @@
               <span>Sin stock disponible por el momento</span>
             }
           </div>
+
+          <section class="pdet__buy" aria-label="Agregar al carrito">
+            <h2 class="pdet__buy-title">Agregar al carrito</h2>
+
+            <div class="pdet__buy-row">
+              <span class="pdet__buy-label">Comprando en</span>
+              <select
+                class="pdet__buy-select"
+                [value]="sucursalCompra.sucursalId() ?? ''"
+                (change)="cambiarSucursalCompra($event)"
+                aria-label="Sucursal de compra"
+              >
+                <option value="">Elegir sucursal…</option>
+                @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {
+                  <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="pdet__buy-row">
+              <span class="pdet__buy-label">Cantidad</span>
+              <div class="pdet__qty">
+                <button
+                  type="button"
+                  class="pdet__qty-btn"
+                  [disabled]="cantidad() <= 1"
+                  aria-label="Disminuir cantidad"
+                  (click)="cambiarCantidad(-1)"
+                >
+                  −
+                </button>
+                <span class="pdet__qty-valor" aria-live="polite">
+                  {{ cantidad() }}
+                </span>
+                <button
+                  type="button"
+                  class="pdet__qty-btn"
+                  [disabled]="stockElegido() > 0 && cantidad() >= stockElegido()"
+                  aria-label="Aumentar cantidad"
+                  (click)="cambiarCantidad(1)"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <dl class="pdet__buy-totales">
+              <div>
+                <dt>Precio unitario</dt>
+                <dd>Bs {{ productoActual.precio | number: '1.2-2' }}</dd>
+              </div>
+              <div>
+                <dt>Total</dt>
+                <dd>Bs {{ totalInformado() | number: '1.2-2' }}</dd>
+              </div>
+            </dl>
+
+            @if (sucursalCompra.sucursalId() === null) {
+              <p class="pdet__buy-hint">Elige una sucursal para comprar.</p>
+            } @else if (varianteElegida() === null) {
+              <p class="pdet__buy-hint">
+                Elige talla y color para ver la disponibilidad.
+              </p>
+            } @else if (stockElegido() <= 0) {
+              <p class="pdet__buy-hint pdet__buy-hint--error">
+                Sin stock disponible
+              </p>
+            } @else {
+              <p class="pdet__buy-hint pdet__buy-hint--ok">
+                {{ stockElegido() }} unidad(es) disponibles en esta sucursal.
+              </p>
+            }
+
+            <button
+              type="button"
+              class="pdet__buy-btn"
+              [disabled]="!puedeAgregar()"
+              [attr.aria-busy]="agregando()"
+              (click)="agregarAlCarrito()"
+            >
+              @if (agregando()) {
+                AGREGANDO…
+              } @else {
+                AGREGAR AL CARRITO
+              }
+            </button>
+          </section>
         </section>
       </div>
 
@@ -200,3 +311,14 @@
     }
   </div>
 </main>
+
+@if (mostrarAvisoIdentificacion()) {
+  <app-confirm-dialog
+    titulo="Identifícate para continuar"
+    mensaje="Identifícate para agregar prendas a tu carrito."
+    confirmarLabel="Iniciar sesión"
+    cancelarLabel="Cancelar"
+    (confirmado)="irAlLogin()"
+    (cancelado)="cerrarAvisoIdentificacion()"
+  />
+}

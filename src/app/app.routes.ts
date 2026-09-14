@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 import { personalAuthGuard } from './core/guards/personal-auth.guard';
 
 /**
@@ -40,6 +41,23 @@ export const routes: Routes = [
       import('./features/autenticacion-seguridad/auth/pages/login/login').then(
         (m) => m.Login,
       ),
+  },
+  // ===== CU15 - Carrito de compras (solo CLIENTE autenticado) =====
+  {
+    path: 'carritos',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import('./features/carrito/pages/carritos-page/carritos-page').then(
+        (m) => m.CarritosPage,
+      ),
+  },
+  {
+    path: 'carritos/:carrito_id',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/carrito/pages/carrito-detalle-page/carrito-detalle-page'
+      ).then((m) => m.CarritoDetallePage),
   },
   {
     path: 'auth',

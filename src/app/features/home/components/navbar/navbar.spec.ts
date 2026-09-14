@@ -17,7 +17,10 @@ describe('Navbar', () => {
     await TestBed.configureTestingModule({
       imports: [Navbar],
       providers: [
-        provideRouter([{ path: 'catalogo', component: CatalogoStub }]),
+        provideRouter([
+          { path: 'catalogo', component: CatalogoStub },
+          { path: 'carritos', component: CatalogoStub },
+        ]),
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -45,13 +48,14 @@ describe('Navbar', () => {
     expect(router.url).toBe('/catalogo');
   });
 
-  it('la bolsa lleva al catálogo público y no promete un carrito inexistente', () => {
+  it('la bolsa lleva a "Tus carritos" (CU15) y sin sesión no muestra badge', () => {
     const bolsa = fixture.nativeElement.querySelector(
-      'a[aria-label="Explorar catálogo de compras"]',
+      'a[aria-label="Ver mis carritos"]',
     ) as HTMLAnchorElement;
 
     expect(bolsa).toBeTruthy();
-    expect(bolsa.getAttribute('href')).toBe('/catalogo');
+    expect(bolsa.getAttribute('href')).toBe('/carritos');
+    // Sin cliente autenticado no se muestra el contador de carritos.
     expect(fixture.nativeElement.querySelector('.nav__cart-badge')).toBeNull();
   });
 

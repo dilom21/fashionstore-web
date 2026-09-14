@@ -19,6 +19,15 @@ export const serverRoutes: ServerRoute[] = [
     path: 'catalogo/**',
     renderMode: RenderMode.Server,
   },
+  // Carrito del cliente (CU15): requiere sesión; nunca se prerenderiza.
+  {
+    path: 'carritos',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'carritos/**',
+    renderMode: RenderMode.Server,
+  },
   {
     path: '**',
     renderMode: RenderMode.Prerender,

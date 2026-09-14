@@ -14,6 +14,7 @@ import { Subject, debounceTime, distinctUntilChanged, map } from 'rxjs';
 
 import { Producto, ProductoListarFiltros } from '../../../administracion/catalogo/models/producto.model';
 import { ProductosService } from '../../../administracion/catalogo/services/productos.service';
+import { SucursalCompraService } from '../../../carrito/services/sucursal-compra.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import { FiltrosCatalogo } from '../../components/filtros-catalogo/filtros-catalogo';
 import { ProductoCardPublico } from '../../components/producto-card-publico/producto-card-publico';
@@ -56,6 +57,9 @@ export class CatalogoPage {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
+
+  /** Sucursal de compra elegida por el cliente (contexto CU15, no filtra). */
+  readonly sucursalCompra = inject(SucursalCompraService);
 
   readonly productos = signal<Producto[]>([]);
   readonly cargando = signal(false);
@@ -270,6 +274,27 @@ export class CatalogoPage {
       sucursal_id: valores.sucursal_id ?? undefined,
       con_stock: valores.con_stock ? true : undefined,
     };
+  }
+
+  /**
+   * Establece la sucursal de COMPRA del cliente (CU15).
+   *
+   * Solo define el contexto de compra: no crea carrito ni altera los filtros
+   * del catálogo. Cambiar de sucursal no elimina carritos ya creados.
+   */
+  cambiarSucursalCompra(evento: Event): void {
+    const valor = (evento.target as HTMLSelectElement).value;
+    if (valor === '') {
+      this.sucursalCompra.limpiar();
+      return;
+    }
+    const sucursalId = Number(valor);
+    const sucursal = (this.filtros()?.sucursales ?? []).find(
+      (opcion) => opcion.id === sucursalId,
+    );
+    if (sucursal) {
+      this.sucursalCompra.seleccionar(sucursal.id, sucursal.nombre);
+    }
   }
 
   /**

@@ -34,6 +34,21 @@
         }
       </button>
 
+      <label class="cat__buy">
+        <span class="cat__buy-label">Comprando en</span>
+        <select
+          class="cat__buy-select"
+          [value]="sucursalCompra.sucursalId() ?? ''"
+          (change)="cambiarSucursalCompra($event)"
+          aria-label="Sucursal de compra"
+        >
+          <option value="">Elegir sucursal…</option>
+          @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {
+            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+          }
+        </select>
+      </label>
+
       @if (!cargando() && !error()) {
         <span class="cat__count">{{ productos().length }} producto(s)</span>
       }
