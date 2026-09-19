@@ -10,5 +10,7 @@
  * (p. ej. producción en Render), los valores se separarán por entorno.
  */
 export const environment = {
-  apiUrl: 'https://fashionstore-api-qv8n.onrender.com',
+  production: false,
+  //apiUrl: 'https://fashionstore-api-qv8n.onrender.com',
+  apiUrl: 'http://127.0.0.1:8000'
 };
