@@ -49,9 +49,9 @@
         </svg>
       </span>
       <span class="dash__eyebrow">VANTER MEN · Acceso personal verificado</span>
-      <h1 class="dash__title">Sistema en construcción</h1>
+      <h1 class="dash__title">Panel del personal</h1>
       <p class="dash__text">
-        Estamos preparando las herramientas administrativas de VANTER MEN.
+        Accede a los módulos habilitados para tu rol.
       </p>
 
       <dl class="dash__meta">
@@ -65,16 +65,56 @@
         </div>
       </dl>
 
-      @if (esAdministrador()) {
-        <a routerLink="/admin/usuarios" class="dash__admin-cta">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-            <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"></path>
-          </svg>
-          Gestionar usuarios
-        </a>
-      }
+      <div class="dash__acciones">
+        @if (esAdministrador()) {
+          <a routerLink="/admin/usuarios" class="dash__cta">
+            <span class="dash__cta-icono" aria-hidden="true">
+              <app-admin-icon icono="usuarios" />
+            </span>
+            <span class="dash__cta-body">
+              <span class="dash__cta-titulo">Gestionar usuarios</span>
+              <span class="dash__cta-texto">
+                Cuentas del personal, roles y permisos.
+              </span>
+            </span>
+            <app-admin-icon class="dash__cta-flecha" icono="arrow-right" />
+          </a>
+        }
+
+        @if (puedeGestionarReservas()) {
+          <a routerLink="/admin/reservas" class="dash__cta">
+            <span class="dash__cta-icono" aria-hidden="true">
+              <app-admin-icon icono="reservas" />
+            </span>
+            <span class="dash__cta-body">
+              <span class="dash__cta-titulo">Reservas de sucursal</span>
+              <span class="dash__cta-texto">
+                Consulta, confirma y cancela las reservas de la sucursal.
+              </span>
+            </span>
+            <app-admin-icon class="dash__cta-flecha" icono="arrow-right" />
+          </a>
+        }
+
+        @if (puedeAtenderReservas()) {
+          <a
+            routerLink="/personal/reservas/atencion"
+            class="dash__cta dash__cta--destacada"
+          >
+            <span class="dash__cta-icono" aria-hidden="true">
+              <app-admin-icon icono="check" />
+            </span>
+            <span class="dash__cta-body">
+              <span class="dash__cta-titulo">Atender reservas</span>
+              <span class="dash__cta-texto">
+                Consulta reservas confirmadas y registra la atención del
+                cliente.
+              </span>
+            </span>
+            <app-admin-icon class="dash__cta-flecha" icono="arrow-right" />
+          </a>
+        }
+      </div>
     </section>
   </main>
 </div>

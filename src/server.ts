@@ -36,6 +36,20 @@ app.use(
 );
 
 /**
+ * Un cliente que cancela la petición (recarga, navegación, cierre de pestaña o
+ * recarga en caliente del dev-server) hace que Angular SSR aborte el render y
+ * rechace con `AbortError`. No es un fallo de la aplicación: el cliente ya no
+ * espera respuesta, así que se descarta sin registrar la traza.
+ */
+function esAbortoDeCliente(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { name?: unknown }).name === 'AbortError'
+  );
+}
+
+/**
  * Handle all other requests by rendering the Angular application.
  */
 app.use((req, res, next) => {
@@ -44,8 +58,31 @@ app.use((req, res, next) => {
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next(),
     )
-    .catch(next);
+    .catch((error: unknown) => {
+      if (esAbortoDeCliente(error)) {
+        return;
+      }
+      next(error);
+    });
 });
+
+/**
+ * Red de seguridad: cualquier `AbortError` que llegue por el canal de errores de
+ * Express (desconexión del cliente) se descarta sin imprimir la traza.
+ */
+app.use(
+  (
+    error: unknown,
+    _req: express.Request,
+    _res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    if (esAbortoDeCliente(error)) {
+      return;
+    }
+    next(error);
+  },
+);
 
 /**
  * Start the server if this module is the main entry point, or it is ran via PM2.

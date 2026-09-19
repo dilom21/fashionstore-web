@@ -1,0 +1,155 @@
+<app-navbar />
+
+<main class="rdt">
+  <div class="vm-container">
+    <a class="rdt__back" routerLink="/reservas">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M14.5 5 8 12l6.5 7"></path>
+      </svg>
+      Mis reservas
+    </a>
+
+    @if (cargando()) {
+      <div class="rdt__loading" role="status">
+        <span class="rdt__spinner" aria-hidden="true"></span>
+        <span>Cargando tu reserva…</span>
+      </div>
+    } @else if (error(); as mensaje) {
+      <div class="rdt__state" role="alert">
+        <p class="rdt__state-title">No pudimos cargar la reserva</p>
+        <p class="rdt__state-text">{{ mensaje }}</p>
+        <div class="rdt__state-actions">
+          <button type="button" class="rdt__btn rdt__btn--primary" (click)="reintentar()">
+            Reintentar
+          </button>
+          <a class="rdt__btn" routerLink="/reservas">Ir a mis reservas</a>
+        </div>
+      </div>
+    } @else if (reserva(); as reservaActual) {
+      <header class="rdt__head">
+        <div>
+          <span class="vm-eyebrow">Tu reserva</span>
+          <h1 class="rdt__title">
+            Reserva #{{ reservaActual.reserva_id }}
+          </h1>
+        </div>
+        <span class="rdt__badge rdt__badge--{{ claseEstado() }}">
+          {{ reservaActual.estado }}
+        </span>
+      </header>
+
+      <div class="rdt__layout">
+        <div class="rdt__main">
+          <section class="rdt__card" aria-label="Datos de la reserva">
+            <h2 class="rdt__card-title">Datos de la reserva</h2>
+
+            <dl class="rdt__data">
+              <div>
+                <dt>Sucursal</dt>
+                <dd>{{ reservaActual.sucursal_nombre }}</dd>
+              </div>
+              <div>
+                <dt>Fecha de reserva</dt>
+                <dd>{{ fechaReserva() }}</dd>
+              </div>
+              <div>
+                <dt>Fecha y hora de atención</dt>
+                <dd>{{ fechaAtencion() }}</dd>
+              </div>
+              <div>
+                <dt>Unidades apartadas</dt>
+                <dd>{{ unidades() }}</dd>
+              </div>
+            </dl>
+
+            @if (reservaActual.observacion) {
+              <p class="rdt__obs">
+                <span class="rdt__obs-label">Observación</span>
+                {{ reservaActual.observacion }}
+              </p>
+            }
+          </section>
+
+          <section class="rdt__card" aria-label="Prendas reservadas">
+            <h2 class="rdt__card-title">Prendas reservadas</h2>
+
+            <ul class="rdt__items">
+              @for (item of items(); track item.detalle_id) {
+                <li class="rdt__item">
+                  <div class="rdt__media">
+                    @if (item.imagen_principal) {
+                      <img
+                        class="rdt__img"
+                        [src]="item.imagen_principal"
+                        [alt]="item.producto_nombre"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <span class="rdt__img rdt__img--vacia" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                          <path d="m3 16 5-5 4 4 3-3 6 6"></path>
+                        </svg>
+                      </span>
+                    }
+                  </div>
+
+                  <div class="rdt__item-info">
+                    <h3 class="rdt__item-nombre">{{ item.producto_nombre }}</h3>
+                    <p class="rdt__item-variante">
+                      Talla: {{ item.talla_nombre }} · Color:
+                      {{ item.color_nombre }}
+                    </p>
+                    <p class="rdt__item-sec">SKU: {{ item.sku }}</p>
+                    <p class="rdt__item-sec">{{ item.temporada_nombre }}</p>
+                  </div>
+
+                  <span class="rdt__item-qty">{{ item.cantidad }} u.</span>
+                </li>
+              }
+            </ul>
+          </section>
+        </div>
+
+        <aside class="rdt__aside" aria-label="Acciones de la reserva">
+          <h2 class="rdt__card-title">Acciones</h2>
+
+          <a class="rdt__btn rdt__btn--ghost rdt__btn--block" routerLink="/catalogo">
+            Explorar catálogo
+          </a>
+
+          @if (puedeCancelar()) {
+            <button
+              type="button"
+              class="rdt__btn rdt__btn--danger rdt__btn--block"
+              [disabled]="cancelando()"
+              (click)="solicitarCancelar()"
+            >
+              @if (cancelando()) {
+                CANCELANDO…
+              } @else {
+                CANCELAR RESERVA
+              }
+            </button>
+          }
+
+          <button type="button" class="rdt__link-btn" (click)="irAMisReservas()">
+            Ver todas mis reservas
+          </button>
+        </aside>
+      </div>
+    }
+  </div>
+</main>
+
+@if (mostrandoConfirmacion()) {
+  <app-confirm-dialog
+    titulo="¿Cancelar esta reserva?"
+    mensaje="Las prendas dejarán de estar apartadas."
+    confirmarLabel="Cancelar reserva"
+    cancelarLabel="Volver"
+    [peligro]="true"
+    (confirmado)="confirmarCancelar()"
+    (cancelado)="cancelarCancelacion()"
+  />
+}

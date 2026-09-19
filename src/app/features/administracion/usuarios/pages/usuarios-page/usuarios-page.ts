@@ -54,7 +54,10 @@ export class UsuariosPage {
 
   readonly filtros = new FormGroup({
     buscar: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(150)] }),
-    rolId: new FormControl<number | null>(null),
+    rolId: new FormControl<number | null>({
+      value: null,
+      disabled: true,
+    }),
     estado: new FormControl<'activos' | 'inactivos' | ''>(''),
     sucursalId: new FormControl<number | null>(null),
   });
@@ -184,28 +187,37 @@ export class UsuariosPage {
   }
 
   private cargarCatalogos(): void {
-    this.cargandoCatalogos.set(true);
-    this.errorCatalogos.set(null);
+  this.cargandoCatalogos.set(true);
+  this.errorCatalogos.set(null);
+  this.actualizarEstadoFiltroRol();
 
-    const roles$ = this.rolesService.listarRolesAsignablesInternos();
-    const sucursales$ = this.sucursalesService.listarSucursalesActivas();
+  const roles$ = this.rolesService.listarRolesAsignablesInternos();
+  const sucursales$ = this.sucursalesService.listarSucursalesActivas();
 
-    roles$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (roles) => this.roles.set(roles),
-      error: (error: unknown) => this.manejarError(error, 'catalogos'),
-    });
+  roles$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    next: (roles) => {
+      this.roles.set(roles);
+      this.actualizarEstadoFiltroRol();
+    },
+    error: (error: unknown) => {
+      this.actualizarEstadoFiltroRol();
+      this.manejarError(error, 'catalogos');
+    },
+  });
 
-    sucursales$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (sucursales) => {
-        this.sucursales.set(sucursales);
-        this.cargandoCatalogos.set(false);
-      },
-      error: (error: unknown) => {
-        this.cargandoCatalogos.set(false);
-        this.manejarError(error, 'catalogos');
-      },
-    });
-  }
+  sucursales$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    next: (sucursales) => {
+      this.sucursales.set(sucursales);
+      this.cargandoCatalogos.set(false);
+      this.actualizarEstadoFiltroRol();
+    },
+    error: (error: unknown) => {
+      this.cargandoCatalogos.set(false);
+      this.actualizarEstadoFiltroRol();
+      this.manejarError(error, 'catalogos');
+    },
+  });
+}
 
   private manejarError(error: unknown, destino: 'lista' | 'catalogos'): void {
     const traducido = traducirErrorHttp(error);
@@ -220,4 +232,15 @@ export class UsuariosPage {
     }
     this.errorLista.set(traducido.mensaje);
   }
+
+  private actualizarEstadoFiltroRol(): void {
+  const control = this.filtros.controls.rolId;
+
+    if (this.cargandoCatalogos() || this.roles().length === 0) {
+      control.disable({ emitEvent: false });
+    } else {
+      control.enable({ emitEvent: false });
+    }
+  }
+
 }

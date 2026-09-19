@@ -20,10 +20,37 @@
       </div>
     </header>
 
-    <div class="vm-hscroll nuevos__track" #track>
-      @for (product of products; track product.id) {
-        <app-product-card class="nuevos__item" [product]="product" />
-      }
-    </div>
+    @if (cargando()) {
+      <div
+        class="vm-hscroll nuevos__track"
+        role="status"
+        aria-label="Cargando nuevos ingresos"
+      >
+        @for (item of [1, 2, 3, 4]; track item) {
+          <div class="nuevos__skeleton" aria-hidden="true"></div>
+        }
+      </div>
+    } @else if (error(); as mensaje) {
+      <div class="nuevos__state" role="alert">
+        <p>{{ mensaje }}</p>
+        <button type="button" class="rail-btn" (click)="reintentar()">
+          Reintentar
+        </button>
+      </div>
+    } @else if (productos().length === 0) {
+      <p class="nuevos__empty">
+        Todavía no hay productos publicados en el catálogo.
+      </p>
+    } @else {
+      <div class="vm-hscroll nuevos__track" #track>
+        @for (producto of productos(); track producto.id) {
+          <app-product-card
+            class="nuevos__item"
+            [producto]="producto"
+            (agregar)="onAgregar($event)"
+          />
+        }
+      </div>
+    }
   </div>
 </section>

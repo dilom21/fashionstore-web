@@ -113,16 +113,58 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
         estado: 'funcional',
         permiso: 'INVENTARIO:SUCURSALES_CIUDADES',
       },
+      {
+        id: 'consultar-inventario',
+        label: 'Consultar inventario',
+        icon: 'inventario',
+        route: '/admin/inventario/consultar',
+        descripcion:
+          'Consulta las existencias de prendas por sucursal, producto, categoría, talla, color y temporada.',
+        estado: 'funcional',
+        permiso: 'INVENTARIO:CONSULTAR',
+      },
+      {
+        id: 'movimientos-inventario',
+        label: 'Movimientos de inventario',
+        icon: 'bitacora',
+        route: '/admin/inventario/movimientos',
+        descripcion:
+          'Consulta el historial (kardex) de entradas, salidas, reservas, liberaciones y devoluciones.',
+        estado: 'funcional',
+        permiso: 'INVENTARIO:MOVIMIENTOS',
+      },
     ],
   },
   {
     id: 'reservas',
     label: 'Reservas',
     icon: 'reservas',
-    route: '/admin/reservas',
-    descripcion: 'Reservas de prendas para probar en sucursal.',
-    estado: 'proximamente',
+    descripcion: 'Gestión y atención de las reservas de prendas.',
     permiso: 'RESERVAS',
+    children: [
+      {
+        id: 'reservas-sucursal',
+        label: 'Gestionar reservas de sucursal',
+        icon: 'lista',
+        route: '/admin/reservas',
+        descripcion:
+          'Consulta, confirma y cancela las reservas de prendas de las sucursales (CU17).',
+        estado: 'funcional',
+        permiso: 'RESERVAS',
+      },
+      {
+        id: 'reservas-atencion',
+        label: 'Atender reservas',
+        icon: 'check',
+        // CU18 vive en su propio shell operativo (/personal), no en /admin; la
+        // agrupación del menú es visual, no exige compartir prefijo de URL.
+        route: '/personal/reservas/atencion',
+        descripcion:
+          'Atiende al cliente que llega a la sucursal con una reserva confirmada (CU18).',
+        estado: 'funcional',
+        permiso: 'RESERVAS',
+      },
+    ],
   },
   {
     id: 'ventas',

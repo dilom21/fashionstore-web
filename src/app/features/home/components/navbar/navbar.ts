@@ -11,14 +11,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Product } from '../../../../shared/models/product';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { ToastHost } from '../../../../shared/components/toast-host/toast-host';
+import { CarritoService } from '../../../carrito/services/carrito.service';
 import { AuthService } from '../../../../features/autenticacion-seguridad/auth/services/auth.service';
-import {
-  FEATURED_PRODUCTS,
-  NEW_ARRIVALS,
-  SEASON_OFFERS,
-} from '../../data/products';
 
 interface NavLink {
   label: string;
@@ -39,17 +35,21 @@ const NAV_LINKS: NavLink[] = [
 
 /**
  * Barra de navegación principal: logo, enlaces, buscador modal,
- * cambio de tema claro/oscuro y accesos (usuario / carrito).
+ * cambio de tema claro/oscuro y accesos (usuario / catálogo).
+ *
+ * El buscador no tiene un motor propio: redirige a la búsqueda pública real
+ * del catálogo (CU09) mediante `/catalogo?buscar=<termino>`.
  */
 @Component({
   selector: 'app-navbar',
-  imports: [RouterLink],
+  imports: [RouterLink, ToastHost],
   styleUrl: './navbar.css',
   templateUrl: './navbar.html',
 })
 export class Navbar implements OnDestroy {
   readonly themeService = inject(ThemeService);
   readonly authService = inject(AuthService);
+  readonly carritoService = inject(CarritoService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -57,7 +57,6 @@ export class Navbar implements OnDestroy {
   readonly menuOpen = signal(false);
   readonly searchOpen = signal(false);
   readonly query = signal('');
-  readonly cartCount = signal(0);
   readonly accountOpen = signal(false);
 
   readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
@@ -81,26 +80,6 @@ export class Navbar implements OnDestroy {
       return `Hola, ${usuario.nombre}`;
     }
     return 'Mi cuenta';
-  });
-
-  private readonly allProducts: Product[] = [
-    ...FEATURED_PRODUCTS,
-    ...NEW_ARRIVALS,
-    ...SEASON_OFFERS,
-  ];
-
-  readonly results = computed(() => {
-    const term = this.query().trim().toLowerCase();
-    if (!term) {
-      return [];
-    }
-    return this.allProducts
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.category.toLowerCase().includes(term),
-      )
-      .slice(0, 8);
   });
 
   private keyHandler: ((event: KeyboardEvent) => void) | null = null;
@@ -134,6 +113,11 @@ export class Navbar implements OnDestroy {
       };
       document.addEventListener('keydown', this.keyHandler);
       document.addEventListener('pointerdown', this.outsideHandler);
+
+      // El badge de la bolsa refleja el nº de carritos activos del cliente.
+      if (this.authService.esCliente()) {
+        this.carritoService.refrescarContador();
+      }
     });
   }
 
@@ -180,10 +164,11 @@ export class Navbar implements OnDestroy {
     this.accountOpen.set(false);
   }
 
-  /** Cierra la sesión local y vuelve al inicio. */
+  /** Cierra la sesión local, limpia el carrito en memoria y vuelve al inicio. */
   cerrarSesion(): void {
     this.accountOpen.set(false);
     this.authService.cerrarSesion();
+    this.carritoService.limpiar();
     void this.router.navigateByUrl('/');
   }
 
@@ -219,9 +204,20 @@ export class Navbar implements OnDestroy {
     this.query.set((event.target as HTMLInputElement).value);
   }
 
-  selectProduct(): void {
-    // Sin detalle de producto todavía: la búsqueda es demostrativa.
+  /**
+   * Envía la búsqueda a la experiencia pública real del catálogo (CU09).
+   * No hay motor de búsqueda paralelo ni resultados sobre datos mock.
+   */
+  buscar(event?: Event): void {
+    event?.preventDefault();
+    const termino = this.query().trim();
+    if (!termino) {
+      return;
+    }
     this.closeSearch();
+    void this.router.navigate(['/catalogo'], {
+      queryParams: { buscar: termino },
+    });
   }
 
   private setBodyScrollLock(lock: boolean): void {

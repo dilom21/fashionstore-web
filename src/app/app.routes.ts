@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 import { personalAuthGuard } from './core/guards/personal-auth.guard';
 
 /**
@@ -41,6 +42,50 @@ export const routes: Routes = [
         (m) => m.Login,
       ),
   },
+  // ===== CU15 - Carrito de compras (solo CLIENTE autenticado) =====
+  {
+    path: 'carritos',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import('./features/carrito/pages/carritos-page/carritos-page').then(
+        (m) => m.CarritosPage,
+      ),
+  },
+  {
+    path: 'carritos/:carrito_id',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/carrito/pages/carrito-detalle-page/carrito-detalle-page'
+      ).then((m) => m.CarritoDetallePage),
+  },
+  // ===== CU16 - Reservas de prendas (solo CLIENTE autenticado) =====
+  // `reservas/nueva/:carrito_id` se declara ANTES de `reservas/:reserva_id`
+  // para que "nueva" no se interprete como un reserva_id.
+  {
+    path: 'reservas',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import('./features/reservas/pages/reservas-page/reservas-page').then(
+        (m) => m.ReservasPage,
+      ),
+  },
+  {
+    path: 'reservas/nueva/:carrito_id',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/reservas/pages/crear-reserva-page/crear-reserva-page'
+      ).then((m) => m.CrearReservaPage),
+  },
+  {
+    path: 'reservas/:reserva_id',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/reservas/pages/reserva-detalle-page/reserva-detalle-page'
+      ).then((m) => m.ReservaDetallePage),
+  },
   {
     path: 'auth',
     loadChildren: () =>
@@ -61,6 +106,14 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/administracion/administracion.routes').then(
         (m) => m.administracionRoutes,
+      ),
+  },
+  // ===== CU18 - Atender reserva de prendas (ENCARGADO_SUCURSAL / CAJERO) =====
+  {
+    path: 'personal',
+    loadChildren: () =>
+      import('./features/atencion-reservas/atencion-reservas.routes').then(
+        (m) => m.atencionReservasRoutes,
       ),
   },
   { path: '**', redirectTo: '' },

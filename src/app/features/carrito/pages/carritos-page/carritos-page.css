@@ -1,0 +1,289 @@
+:host {
+  display: block;
+}
+
+.cars {
+  width: 100%;
+  max-width: calc(var(--container) + var(--gutter) * 2);
+  margin-inline: auto;
+  padding: clamp(1.8rem, 4vw, 3rem) var(--gutter) clamp(3rem, 6vw, 5rem);
+}
+
+/* ===== Cabecera ===== */
+.cars__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.cars__title {
+  margin-top: 0.6rem;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  letter-spacing: -0.025em;
+}
+
+.cars__subtitle {
+  margin-top: 0.45rem;
+  max-width: 62ch;
+  color: var(--text-2);
+  font-size: 0.98rem;
+}
+
+.cars__count {
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--accent-strong);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cars__notice {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text-3);
+  font-size: 0.86rem;
+}
+
+.cars__notice svg {
+  flex-shrink: 0;
+  color: var(--accent-text);
+}
+
+/* ===== Grid de carritos ===== */
+.cars__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1.4rem;
+}
+
+.cars__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  transition:
+    border-color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.cars__card:hover {
+  border-color: var(--accent-strong);
+  transform: translateY(-2px);
+}
+
+.cars__card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cars__card-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  flex-shrink: 0;
+}
+
+.cars__card-title {
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+}
+
+.cars__card-data {
+  display: flex;
+  gap: 1.6rem;
+  margin: 0;
+}
+
+.cars__card-data dt {
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cars__card-data dd {
+  margin: 0.15rem 0 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cars__card-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  color: var(--text-3);
+  font-size: 0.85rem;
+}
+
+.cars__card-total strong {
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.cars__card-fecha {
+  color: var(--text-3);
+  font-size: 0.78rem;
+}
+
+.cars__card-actions {
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 0.15rem;
+}
+
+/* ===== Botones ===== */
+.cars__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    filter 0.2s ease;
+}
+
+.cars__btn--primary {
+  flex: 1;
+  border-color: transparent;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.cars__btn--primary:hover {
+  filter: brightness(1.07);
+}
+
+.cars__btn--danger {
+  border-color: rgb(248 113 113 / 35%);
+  background: rgb(190 18 60 / 12%);
+  color: #fb7185;
+}
+
+.cars__btn--danger:hover:not(:disabled) {
+  background: rgb(190 18 60 / 24%);
+}
+
+.cars__btn--danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cars__more {
+  display: inline-flex;
+  margin-top: 1.4rem;
+  color: var(--accent-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.cars__more:hover {
+  text-decoration: underline;
+}
+
+/* ===== Estados ===== */
+.cars__state {
+  display: grid;
+  place-items: center;
+  gap: 0.7rem;
+  margin-top: 1.4rem;
+  padding: clamp(2.6rem, 7vw, 4.5rem) 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  text-align: center;
+}
+
+.cars__state-icon {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  margin-bottom: 0.3rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: var(--surface-2);
+  color: var(--accent-text);
+}
+
+.cars__state-title {
+  font-size: 1.15rem;
+  letter-spacing: -0.015em;
+}
+
+.cars__state-text {
+  max-width: 46ch;
+  color: var(--text-3);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.cars__state .cars__btn {
+  margin-top: 0.5rem;
+}
+
+.cars__skeleton {
+  height: 240px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: linear-gradient(
+    100deg,
+    var(--surface) 30%,
+    var(--surface-2) 50%,
+    var(--surface) 70%
+  );
+  background-size: 220% 100%;
+  animation: cars-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes cars-shimmer {
+  from {
+    background-position: 220% 0;
+  }
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .cars__card-actions {
+    flex-direction: column;
+  }
+}

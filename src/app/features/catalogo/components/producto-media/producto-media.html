@@ -3,7 +3,10 @@
     class="media__img"
     [src]="url()"
     [alt]="alt()"
+    width="1200"
+    height="1500"
     [attr.loading]="prioridad()"
+    [attr.fetchpriority]="prioridad() === 'eager' ? 'high' : 'auto'"
     decoding="async"
     (error)="marcarRota()"
   />

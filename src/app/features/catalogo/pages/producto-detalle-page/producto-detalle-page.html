@@ -41,29 +41,64 @@
       </div>
     } @else if (producto(); as productoActual) {
       <div class="pdet__layout">
-        <section class="pdet__gallery" aria-label="Imágenes del producto">
-          <div class="pdet__media">
+        <section
+          class="pdet__gallery"
+          aria-roledescription="carrusel"
+          [attr.aria-label]="
+            'Imágenes de ' + productoActual.nombre + ' (' +
+            (totalImagenes() > 0 ? indiceActivo() + 1 : 0) + ' de ' +
+            totalImagenes() + ')'
+          "
+        >
+          <div
+            class="pdet__media"
+            tabindex="0"
+            (keydown)="onGaleriaKeydown($event)"
+          >
             <app-producto-media
               [url]="imagenActiva()?.url"
               [nombre]="productoActual.nombre"
-              [alt]="productoActual.nombre"
+              [alt]="'Imagen ' + (indiceActivo() + 1) + ' de ' + productoActual.nombre"
               prioridad="eager"
             />
             @if (imagenActiva()?.es_principal) {
               <span class="pdet__principal">Imagen principal</span>
             }
+
+            @if (totalImagenes() > 1) {
+              <button
+                type="button"
+                class="pdet__nav pdet__nav--prev"
+                aria-label="Imagen anterior"
+                (click)="imagenAnterior()"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M14.5 5 8 12l6.5 7"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="pdet__nav pdet__nav--next"
+                aria-label="Imagen siguiente"
+                (click)="imagenSiguiente()"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M9.5 5 16 12l-6.5 7"></path>
+                </svg>
+              </button>
+            }
           </div>
 
-          @if (recursosImagenes().length > 1) {
+          @if (totalImagenes() > 1) {
             <ul class="pdet__thumbs" aria-label="Miniaturas">
               @for (recurso of recursosImagenes(); track recurso.id; let i = $index) {
                 <li>
                   <button
                     type="button"
                     class="pdet__thumb"
-                    [class.pdet__thumb--activa]="i === indiceImagen()"
+                    [class.pdet__thumb--activa]="i === indiceActivo()"
                     [attr.aria-label]="'Ver imagen ' + (i + 1)"
-                    [attr.aria-current]="i === indiceImagen()"
+                    [attr.aria-current]="i === indiceActivo()"
                     (click)="seleccionarImagen(i)"
                   >
                     <app-producto-media
@@ -72,6 +107,21 @@
                       [alt]="'Miniatura ' + (i + 1) + ' de ' + productoActual.nombre"
                     />
                   </button>
+                </li>
+              }
+            </ul>
+
+            <ul class="pdet__dots" aria-label="Indicadores de imagen">
+              @for (recurso of recursosImagenes(); track recurso.id; let i = $index) {
+                <li>
+                  <button
+                    type="button"
+                    class="pdet__dot"
+                    [class.pdet__dot--activa]="i === indiceActivo()"
+                    [attr.aria-label]="'Ir a la imagen ' + (i + 1)"
+                    [attr.aria-current]="i === indiceActivo()"
+                    (click)="seleccionarImagen(i)"
+                  ></button>
                 </li>
               }
             </ul>
@@ -109,7 +159,19 @@
             @if (tallas().length > 0) {
               <ul class="pdet__chips" aria-label="Tallas disponibles">
                 @for (talla of tallas(); track talla.id) {
-                  <li class="pdet__chip">{{ talla.nombre }}</li>
+                  <li
+                    class="pdet__chip pdet__chip--opcion"
+                    [class.pdet__chip--activo]="tallaElegida() === talla.id"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-pressed]="tallaElegida() === talla.id"
+                    [attr.aria-label]="'Talla ' + talla.nombre"
+                    (click)="seleccionarTalla(talla.id)"
+                    (keydown.enter)="seleccionarTalla(talla.id)"
+                    (keydown.space)="seleccionarTalla(talla.id)"
+                  >
+                    {{ talla.nombre }}
+                  </li>
                 }
               </ul>
             } @else {
@@ -122,7 +184,19 @@
             @if (colores().length > 0) {
               <ul class="pdet__chips" aria-label="Colores disponibles">
                 @for (color of colores(); track color.id) {
-                  <li class="pdet__chip">{{ color.nombre }}</li>
+                  <li
+                    class="pdet__chip pdet__chip--opcion"
+                    [class.pdet__chip--activo]="colorElegido() === color.id"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-pressed]="colorElegido() === color.id"
+                    [attr.aria-label]="'Color ' + color.nombre"
+                    (click)="seleccionarColor(color.id)"
+                    (keydown.enter)="seleccionarColor(color.id)"
+                    (keydown.space)="seleccionarColor(color.id)"
+                  >
+                    {{ color.nombre }}
+                  </li>
                 }
               </ul>
             } @else {
@@ -139,6 +213,93 @@
               <span>Sin stock disponible por el momento</span>
             }
           </div>
+
+          <section class="pdet__buy" aria-label="Agregar al carrito">
+            <h2 class="pdet__buy-title">Agregar al carrito</h2>
+
+            <div class="pdet__buy-row">
+              <span class="pdet__buy-label">Comprando en</span>
+              <select
+                class="pdet__buy-select"
+                [value]="sucursalCompra.sucursalId() ?? ''"
+                (change)="cambiarSucursalCompra($event)"
+                aria-label="Sucursal de compra"
+              >
+                <option value="">Elegir sucursal…</option>
+                @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {
+                  <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="pdet__buy-row">
+              <span class="pdet__buy-label">Cantidad</span>
+              <div class="pdet__qty">
+                <button
+                  type="button"
+                  class="pdet__qty-btn"
+                  [disabled]="cantidad() <= 1"
+                  aria-label="Disminuir cantidad"
+                  (click)="cambiarCantidad(-1)"
+                >
+                  −
+                </button>
+                <span class="pdet__qty-valor" aria-live="polite">
+                  {{ cantidad() }}
+                </span>
+                <button
+                  type="button"
+                  class="pdet__qty-btn"
+                  [disabled]="stockElegido() > 0 && cantidad() >= stockElegido()"
+                  aria-label="Aumentar cantidad"
+                  (click)="cambiarCantidad(1)"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <dl class="pdet__buy-totales">
+              <div>
+                <dt>Precio unitario</dt>
+                <dd>Bs {{ productoActual.precio | number: '1.2-2' }}</dd>
+              </div>
+              <div>
+                <dt>Total</dt>
+                <dd>Bs {{ totalInformado() | number: '1.2-2' }}</dd>
+              </div>
+            </dl>
+
+            @if (sucursalCompra.sucursalId() === null) {
+              <p class="pdet__buy-hint">Elige una sucursal para comprar.</p>
+            } @else if (varianteElegida() === null) {
+              <p class="pdet__buy-hint">
+                Elige talla y color para ver la disponibilidad.
+              </p>
+            } @else if (stockElegido() <= 0) {
+              <p class="pdet__buy-hint pdet__buy-hint--error">
+                Sin stock disponible
+              </p>
+            } @else {
+              <p class="pdet__buy-hint pdet__buy-hint--ok">
+                {{ stockElegido() }} unidad(es) disponibles en esta sucursal.
+              </p>
+            }
+
+            <button
+              type="button"
+              class="pdet__buy-btn"
+              [disabled]="!puedeAgregar()"
+              [attr.aria-busy]="agregando()"
+              (click)="agregarAlCarrito()"
+            >
+              @if (agregando()) {
+                AGREGANDO…
+              } @else {
+                AGREGAR AL CARRITO
+              }
+            </button>
+          </section>
         </section>
       </div>
 
@@ -150,3 +311,14 @@
     }
   </div>
 </main>
+
+@if (mostrarAvisoIdentificacion()) {
+  <app-confirm-dialog
+    titulo="Identifícate para continuar"
+    mensaje="Identifícate para agregar prendas a tu carrito."
+    confirmarLabel="Iniciar sesión"
+    cancelarLabel="Cancelar"
+    (confirmado)="irAlLogin()"
+    (cancelado)="cerrarAvisoIdentificacion()"
+  />
+}

@@ -1,0 +1,37 @@
+@if (toastService.toasts().length > 0) {
+  <div class="toasts" role="status" aria-live="polite" aria-atomic="false">
+    @for (toast of toastService.toasts(); track toast.id) {
+      <div class="toasts__item toasts__item--{{ toast.tipo }}">
+        <span class="toasts__icon" aria-hidden="true">
+          @if (toast.tipo === 'ok') {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M8.5 12.2l2.4 2.4 4.6-5"></path>
+            </svg>
+          } @else if (toast.tipo === 'error') {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 8v4.5M12 15.6v.1"></path>
+            </svg>
+          } @else {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 11v5M12 8v.1"></path>
+            </svg>
+          }
+        </span>
+        <span class="toasts__text">{{ toast.mensaje }}</span>
+        <button
+          type="button"
+          class="toasts__close"
+          aria-label="Cerrar aviso"
+          (click)="toastService.cerrar(toast.id)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </div>
+    }
+  </div>
+}

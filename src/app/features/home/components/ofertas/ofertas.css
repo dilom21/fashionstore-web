@@ -21,20 +21,29 @@
   opacity: 0.8;
 }
 
-.ofertas__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.25rem;
+.ofertas__cta {
+  margin-top: clamp(1.2rem, 3vw, 2rem);
 }
 
-@media (max-width: 1080px) {
-  .ofertas__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.ofertas__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.9rem;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-accent);
+  transition:
+    transform 0.22s ease,
+    filter 0.22s ease;
 }
 
-@media (max-width: 640px) {
-  .ofertas__grid {
-    grid-template-columns: 1fr;
-  }
+.ofertas__btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
 }

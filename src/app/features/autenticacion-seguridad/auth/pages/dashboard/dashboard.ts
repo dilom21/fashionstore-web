@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
+import { AdminIcon } from '../../../../administracion/components/admin-icon/admin-icon';
 import { AuthService } from '../../services/auth.service';
 
 /**
@@ -11,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink],
+  imports: [RouterLink, AdminIcon],
   styleUrl: './dashboard.css',
   templateUrl: './dashboard.html',
 })
@@ -24,6 +25,22 @@ export class Dashboard {
     () => this.authService.usuarioActual()?.correo ?? null,
   );
   readonly esAdministrador = computed(() => this.authService.esAdministrador());
+
+  /**
+   * CU18: ADMINISTRADOR, ENCARGADO_SUCURSAL y CAJERO pueden atender reservas;
+   * CLIENTE no (misma allowlist que el backend, solo UX).
+   */
+  readonly puedeAtenderReservas = computed(() =>
+    this.authService.puedeAtenderReservas(),
+  );
+
+  /**
+   * CU17 (gestión de reservas de sucursal): ADMINISTRADOR y ENCARGADO_SUCURSAL.
+   * El CAJERO no accede al panel administrativo.
+   */
+  readonly puedeGestionarReservas = computed(
+    () => this.authService.esAdministrador() || this.authService.esEncargadoSucursal(),
+  );
   readonly nombreCompleto = computed(() => {
     const usuario = this.authService.usuarioActual();
     if (usuario === null || !('nombre' in usuario) || !usuario.nombre) {

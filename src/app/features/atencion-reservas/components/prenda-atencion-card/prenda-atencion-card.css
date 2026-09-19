@@ -1,0 +1,198 @@
+.par {
+  display: grid;
+  grid-template-columns: auto 64px minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface-2);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.par:hover {
+  border-color: var(--accent-strong);
+}
+
+/* Desmarcada: se atenúa pero nunca se oculta. */
+.par--inactiva {
+  border-style: dashed;
+  opacity: 0.62;
+}
+
+.par--inactiva:hover {
+  border-color: var(--line);
+}
+
+.par__check {
+  display: grid;
+  place-items: center;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.par__check-input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.par__check-input:disabled {
+  cursor: not-allowed;
+}
+
+.par__media {
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+
+.par__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.par__img--vacia {
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+}
+
+.par__img--vacia app-admin-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.par__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.par__nombre {
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.par__meta {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.par__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--accent-strong);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.par__badge app-admin-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== Control de cantidad ===== */
+.par__compra {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.par__compra-label {
+  color: var(--text-2);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.par__control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.par__btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-2);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.par__btn app-admin-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.par__btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.par__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.par__cantidad {
+  min-width: 34px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1080px) {
+  .par {
+    grid-template-columns: auto 56px minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .par__media {
+    width: 56px;
+    height: 56px;
+  }
+
+  .par__compra {
+    grid-column: 2 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--line);
+  }
+}

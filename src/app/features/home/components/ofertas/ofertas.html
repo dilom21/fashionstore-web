@@ -3,16 +3,23 @@
     <div class="ofertas__panel">
       <header class="vm-head">
         <div>
-          <span class="vm-eyebrow">Descuentos por tiempo limitado</span>
+          <span class="vm-eyebrow">Precios vigentes</span>
           <h2 class="vm-title">Ofertas de temporada</h2>
-          <p class="vm-lede">Precios especiales en una selección de prendas seleccionadas.</p>
+          <p class="vm-lede">
+            Explora el catálogo para descubrir los precios publicados por
+            VANTER MEN. Las promociones se mostrarán aquí cuando exista un
+            contrato público de promociones activas.
+          </p>
         </div>
       </header>
 
-      <div class="ofertas__grid">
-        @for (product of products; track product.id) {
-          <app-product-card [product]="product" />
-        }
+      <div class="ofertas__cta">
+        <a class="ofertas__btn" routerLink="/catalogo">
+          Explorar catálogo
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9.5 5 16 12l-6.5 7"></path>
+          </svg>
+        </a>
       </div>
     </div>
   </div>

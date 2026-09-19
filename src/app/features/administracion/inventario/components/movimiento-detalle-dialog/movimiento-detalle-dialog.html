@@ -1,0 +1,87 @@
+@if (movimiento(); as movimiento) {
+  <div class="mdd" (click)="cerrar()">
+    <div
+      class="mdd__card"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Detalle del movimiento de inventario"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="mdd__close" (click)="cerrar()" aria-label="Cerrar">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+
+      <div class="mdd__icon" aria-hidden="true">
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.9"
+        >
+          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+          <path d="M14 3v6h6" />
+          <path d="M9 13h6M9 17h4" />
+        </svg>
+      </div>
+
+      <p class="mdd__eyebrow">Movimiento #{{ movimiento.movimiento_id }}</p>
+      <h2 class="mdd__title">{{ movimiento.producto_nombre }}</h2>
+
+      <dl class="mdd__lista">
+        <div class="mdd__fila">
+          <dt>Variante</dt>
+          <dd>
+            {{ movimiento.sku }} · {{ movimiento.talla_nombre }} ·
+            {{ movimiento.color_nombre }}
+          </dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Movimiento</dt>
+          <dd>
+            <app-movimiento-badge [tipo]="movimiento.tipo" />
+          </dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Fecha</dt>
+          <dd>{{ movimiento.fecha_hora | date : 'dd/MM/yyyy HH:mm' }}</dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Cantidad</dt>
+          <dd>{{ movimiento.cantidad }} uds.</dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Sucursal</dt>
+          <dd>{{ movimiento.sucursal_nombre }}</dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Origen</dt>
+          <dd>{{ origen() }}</dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Usuario</dt>
+          <dd>{{ movimiento.usuario_correo ?? '—' }}</dd>
+        </div>
+        <div class="mdd__fila">
+          <dt>Observación</dt>
+          <dd class="mdd__obs">{{ movimiento.observaciones ?? '—' }}</dd>
+        </div>
+      </dl>
+
+      <div class="mdd__actions">
+        <button type="button" class="mdd__btn" (click)="cerrar()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}
