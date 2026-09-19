@@ -1,0 +1,243 @@
+/* ===== Tabla de reservas ===== */
+.rsg__tabla-wrap {
+  overflow-x: auto;
+}
+
+.rsg__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.rsg__tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.8rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-3);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rsg__th-num {
+  text-align: right;
+}
+
+.rsg__fila {
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.rsg__fila td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.rsg__fila:last-child td {
+  border-bottom: 0;
+}
+
+.rsg__fila:hover td {
+  background: var(--surface-2);
+}
+
+/* Fila seleccionada: resaltado magenta */
+.rsg__fila--activa td {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.rsg__fila--activa td:first-child {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.rsg__fila--activa .rsg__codigo {
+  color: var(--accent-text);
+}
+
+.rsg__codigo {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rsg__cliente {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rsg__cliente-tel {
+  display: block;
+  color: var(--text-3);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rsg__num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rsg__celda-acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.rsg__ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.rsg__ver:hover,
+.rsg__fila--activa .rsg__ver {
+  color: var(--accent-text);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ===== Badges de estado ===== */
+.rsg__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.65rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rsg__badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.rsg__badge--pendiente {
+  border-color: rgb(251 191 36 / 35%);
+  background: rgb(120 53 15 / 14%);
+  color: #fbbf24;
+}
+
+.rsg__badge--confirmada {
+  border-color: rgb(96 165 250 / 35%);
+  background: rgb(30 64 175 / 16%);
+  color: #60a5fa;
+}
+
+.rsg__badge--atendida {
+  border-color: rgb(52 211 153 / 35%);
+  background: rgb(6 78 59 / 18%);
+  color: #34d399;
+}
+
+.rsg__badge--cancelada {
+  border-color: rgb(251 113 133 / 35%);
+  background: rgb(159 18 57 / 14%);
+  color: #fb7185;
+}
+
+.rsg__badge--vencida {
+  border-color: rgb(161 161 170 / 32%);
+  background: rgb(63 63 70 / 22%);
+  color: #a1a1aa;
+}
+
+.rsg__badge--desconocido {
+  color: var(--text-3);
+}
+
+/* ===== Tabla apilada en pantallas estrechas ===== */
+@media (max-width: 900px) {
+  .rsg__tabla thead {
+    display: none;
+  }
+
+  .rsg__tabla,
+  .rsg__tabla tbody,
+  .rsg__fila,
+  .rsg__fila td {
+    display: block;
+    width: 100%;
+  }
+
+  .rsg__fila {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .rsg__fila:last-child {
+    border-bottom: 0;
+  }
+
+  .rsg__fila td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0.9rem;
+    border: 0;
+    text-align: left;
+  }
+
+  .rsg__fila td::before {
+    content: attr(data-label);
+    color: var(--text-3);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .rsg__fila--activa {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .rsg__fila--activa td:first-child {
+    box-shadow: none;
+  }
+
+  .rsg__celda-acciones {
+    justify-content: flex-end;
+  }
+
+  .rsg__num {
+    text-align: right;
+  }
+
+  .rsg__cliente,
+  .rsg__cliente-tel {
+    text-align: right;
+  }
+}

@@ -153,6 +153,8 @@ export class PersonalLogin {
     if (this.authService.esEncargadoSucursal()) {
       return '/admin/inventario/consultar';
     }
+    // Resto del personal (p. ej. CAJERO): al dashboard, donde tiene visible la
+    // tarjeta de atención de reservas (CU18).
     return '/dashboard';
   }
 

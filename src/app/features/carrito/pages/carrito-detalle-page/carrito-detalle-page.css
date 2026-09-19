@@ -319,6 +319,28 @@
   filter: brightness(1.07);
 }
 
+/* ===== Reservar prendas (CU16) ===== */
+.cdet__reservar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 1rem;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-accent);
+  transition: filter 0.22s ease;
+}
+
+.cdet__reservar:hover {
+  filter: brightness(1.07);
+}
+
 .cdet__seguir {
   display: flex;
   align-items: center;

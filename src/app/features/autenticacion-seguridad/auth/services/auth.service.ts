@@ -33,6 +33,9 @@ export const ROL_ADMINISTRADOR = 'ADMINISTRADOR';
 /** Nombre exacto del rol de encargado de sucursal (backend: app.core.dependencies). */
 export const ROL_ENCARGADO_SUCURSAL = 'ENCARGADO_SUCURSAL';
 
+/** Nombre exacto del rol de cajero (backend: app.core.dependencies). */
+export const ROL_CAJERO = 'CAJERO';
+
 /** Usuario que puede estar autenticado en memoria. */
 type UsuarioSesion = UsuarioAuth | ClienteAuth | PersonalAuth;
 
@@ -84,8 +87,27 @@ export class AuthService {
    * ADMINISTRADOR o ENCARGADO_SUCURSAL. La autorización real la aplica el
    * backend (401/403) y, para el encargado, limita el alcance a su sucursal.
    */
+  /**
+   * true si el usuario autenticado tiene rol CAJERO.
+   */
+  readonly esCajero = computed(
+    () => this._usuarioActual()?.rol?.trim().toUpperCase() === ROL_CAJERO,
+  );
+
   readonly puedeConsultarInventario = computed(
     () => this.esAdministrador() || this.esEncargadoSucursal(),
+  );
+
+  /**
+   * true si el usuario puede atender reservas en sucursal (CU18):
+   * ADMINISTRADOR (cualquier sucursal), ENCARGADO_SUCURSAL o CAJERO (su
+   * sucursal). CLIENTE queda fuera.
+   *
+   * La autorización real la aplica el backend (403) con su propia allowlist;
+   * esto es solo UX (menú, guard y rutas).
+   */
+  readonly puedeAtenderReservas = computed(
+    () => this.esAdministrador() || this.esEncargadoSucursal() || this.esCajero(),
   );
 
   /**

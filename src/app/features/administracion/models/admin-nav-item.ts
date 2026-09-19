@@ -35,7 +35,27 @@ export type IconoUi =
   | 'menu'
   | 'close'
   | 'tool'
-  | 'arrow-right';
+  | 'arrow-right'
+  // Iconos semánticos de pantallas administrativas (mismo trazo lineal que
+  // los de navegación). Se añaden aquí para no duplicar SVG en las páginas.
+  | 'lista'
+  | 'estado'
+  | 'usuario'
+  | 'telefono'
+  | 'ubicacion'
+  | 'calendario'
+  | 'reloj'
+  | 'paquete'
+  | 'comentario'
+  | 'buscar'
+  | 'numero'
+  | 'check'
+  | 'cancelar'
+  | 'actualizar'
+  | 'alerta'
+  | 'mas'
+  | 'menos';
+
 
 export type IconoAdmin = IconoNav | IconoUi;
 

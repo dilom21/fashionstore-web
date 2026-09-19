@@ -14,6 +14,12 @@ export const serverRoutes: ServerRoute[] = [
     path: 'auth/personal/login',
     renderMode: RenderMode.Server,
   },
+  // Atención de reservas en sucursal (CU18): área operativa del personal
+  // (ENCARGADO_SUCURSAL / CAJERO); requiere sesión, nunca se prerenderiza.
+  {
+    path: 'personal/**',
+    renderMode: RenderMode.Server,
+  },
   // Catálogo público (CU09): datos dinámicos, se renderiza por petición.
   {
     path: 'catalogo/**',
@@ -26,6 +32,15 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'carritos/**',
+    renderMode: RenderMode.Server,
+  },
+  // Reservas del cliente (CU16): requieren sesión; nunca se prerenderizan.
+  {
+    path: 'reservas',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'reservas/**',
     renderMode: RenderMode.Server,
   },
   {

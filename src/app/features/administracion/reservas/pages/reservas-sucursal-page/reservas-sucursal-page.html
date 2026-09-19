@@ -1,0 +1,584 @@
+<div class="rsg">
+  <header class="rsg__head">
+    <div>
+      <span class="rsg__eyebrow">
+        <app-admin-icon icono="sucursales" />
+        Gestión de sucursal
+      </span>
+      <h1 class="rsg__title">Reservas de sucursal</h1>
+      <p class="rsg__subtitle">
+        @if (esAdministrador()) {
+          Consulta y gestiona las reservas registradas para las sucursales.
+        } @else {
+          Gestiona las reservas de tu sucursal.
+        }
+      </p>
+    </div>
+    <button type="button" class="rsg__refresh" (click)="refrescar()">
+      <app-admin-icon icono="actualizar" />
+      Actualizar
+    </button>
+  </header>
+
+  <form
+    class="rsg__filtros"
+    [formGroup]="filtrosForm"
+    (ngSubmit)="refrescar()"
+    novalidate
+    aria-label="Filtros de reservas"
+  >
+    @if (esAdministrador()) {
+      <label class="rsg__field">
+        <span class="rsg__label">
+          <app-admin-icon class="rsg__label-icono" icono="ubicacion" />
+          Sucursal
+        </span>
+        <select formControlName="sucursalId">
+          <option [ngValue]="null">Todas las sucursales</option>
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <div class="rsg__field rsg__field--readonly">
+        <span class="rsg__label">
+          <app-admin-icon class="rsg__label-icono" icono="ubicacion" />
+          Sucursal
+        </span>
+        <strong class="rsg__readonly">
+          {{ sucursalAsignada() ?? 'Sucursal asignada' }}
+        </strong>
+      </div>
+    }
+
+    <label class="rsg__field">
+      <span class="rsg__label">
+        <app-admin-icon class="rsg__label-icono" icono="estado" />
+        Estado
+      </span>
+      <select formControlName="estado">
+        <option [ngValue]="null">Todos los estados</option>
+        @for (estado of estados; track estado.valor) {
+          <option [ngValue]="estado.valor">{{ estado.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="rsg__field rsg__field--buscar">
+      <span class="rsg__label">Cliente o código</span>
+      <span class="rsg__control">
+        <app-admin-icon class="rsg__control-icono" icono="buscar" />
+        <input
+          type="search"
+          formControlName="buscar"
+          placeholder="Nombre, apellido o RES-00001"
+          autocomplete="off"
+        />
+      </span>
+    </label>
+
+    <label class="rsg__field rsg__field--fecha">
+      <span class="rsg__label">Atención desde</span>
+      <span class="rsg__control">
+        <app-admin-icon class="rsg__control-icono" icono="calendario" />
+        <input
+          type="date"
+          formControlName="fechaDesde"
+          [attr.aria-invalid]="rangoInvalido()"
+        />
+      </span>
+    </label>
+
+    <label class="rsg__field rsg__field--fecha">
+      <span class="rsg__label">Atención hasta</span>
+      <span class="rsg__control">
+        <app-admin-icon class="rsg__control-icono" icono="calendario" />
+        <input
+          type="date"
+          formControlName="fechaHasta"
+          [attr.aria-invalid]="rangoInvalido()"
+        />
+      </span>
+    </label>
+
+    <button
+      type="button"
+      class="rsg__clear"
+      [disabled]="!hayFiltros()"
+      (click)="limpiarFiltros()"
+    >
+      <app-admin-icon icono="close" />
+      Limpiar
+    </button>
+  </form>
+
+  @if (rangoInvalido()) {
+    <p class="rsg__notice rsg__notice--warn" role="alert">
+      <app-admin-icon class="rsg__notice-icono" icono="alerta" />
+      La fecha inicial no puede ser posterior a la fecha final.
+    </p>
+  }
+
+  <section class="rsg__resumen" aria-label="Resumen de reservas">
+    <article class="rsg__kpi">
+      <span class="rsg__kpi-icono" aria-hidden="true">
+        <app-admin-icon icono="lista" />
+      </span>
+      <span class="rsg__kpi-label">Total de reservas</span>
+      <strong class="rsg__kpi-valor">{{ resumen().total }}</strong>
+    </article>
+    <article class="rsg__kpi rsg__kpi--pendiente">
+      <span class="rsg__kpi-icono" aria-hidden="true">
+        <app-admin-icon icono="reloj" />
+      </span>
+      <span class="rsg__kpi-label">Pendientes</span>
+      <strong class="rsg__kpi-valor">{{ resumen().pendientes }}</strong>
+    </article>
+    <article class="rsg__kpi rsg__kpi--confirmada">
+      <span class="rsg__kpi-icono" aria-hidden="true">
+        <app-admin-icon icono="check" />
+      </span>
+      <span class="rsg__kpi-label">Confirmadas</span>
+      <strong class="rsg__kpi-valor">{{ resumen().confirmadas }}</strong>
+    </article>
+    <article class="rsg__kpi rsg__kpi--cancelada">
+      <span class="rsg__kpi-icono" aria-hidden="true">
+        <app-admin-icon icono="cancelar" />
+      </span>
+      <span class="rsg__kpi-label">Canceladas</span>
+      <strong class="rsg__kpi-valor">{{ resumen().canceladas }}</strong>
+    </article>
+  </section>
+
+  <div class="rsg__layout" [class.rsg__layout--con-detalle]="panelAbierto()">
+    <section class="rsg__master" aria-label="Listado de reservas">
+      @if (errorLista(); as mensaje) {
+        <div class="rsg__estado rsg__estado--error" role="alert">
+          <span
+            class="rsg__estado-icon rsg__estado-icon--error"
+            aria-hidden="true"
+          >
+            <app-admin-icon icono="alerta" />
+          </span>
+          <p class="rsg__estado-title">No pudimos cargar las reservas</p>
+          <p class="rsg__estado-text">{{ mensaje }}</p>
+          <button
+            type="button"
+            class="rsg__btn rsg__btn--primary"
+            (click)="reintentarLista()"
+          >
+            Reintentar
+          </button>
+        </div>
+      } @else if (cargandoLista() && reservas().length === 0) {
+        <div class="rsg__loading" role="status">
+          <span class="rsg__spinner" aria-hidden="true"></span>
+          <span>Cargando reservas…</span>
+        </div>
+      } @else if (reservas().length === 0) {
+        <div class="rsg__estado">
+          <span class="rsg__estado-icon" aria-hidden="true">
+            <app-admin-icon icono="lista" />
+          </span>
+          <p class="rsg__estado-title">
+            @if (hayFiltros()) {
+              No se encontraron reservas con los filtros seleccionados.
+            } @else {
+              No hay reservas registradas.
+            }
+          </p>
+          <p class="rsg__estado-text">
+            Cuando un cliente reserve prendas, aparecerán aquí.
+          </p>
+          @if (hayFiltros()) {
+            <button type="button" class="rsg__btn" (click)="limpiarFiltros()">
+              Limpiar filtros
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="rsg__tabla-wrap">
+          <table class="rsg__tabla">
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Cliente</th>
+                <th scope="col">Reserva</th>
+                <th scope="col">Atención</th>
+                <th scope="col" class="rsg__th-num">Líneas / Uds.</th>
+                <th scope="col">Estado</th>
+                <th scope="col"><span class="rsg__sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (reserva of reservas(); track reserva.reserva_id) {
+                <tr
+                  class="rsg__fila"
+                  [class.rsg__fila--activa]="esFilaSeleccionada(reserva.reserva_id)"
+                  [attr.aria-selected]="esFilaSeleccionada(reserva.reserva_id)"
+                  (click)="seleccionar(reserva)"
+                >
+                  <td data-label="Código" class="rsg__codigo">
+                    {{ codigoReserva(reserva.reserva_id) }}
+                  </td>
+                  <td data-label="Cliente">
+                    <span class="rsg__cliente">{{ nombreCliente(reserva) }}</span>
+                    @if (reserva.cliente_telefono) {
+                      <span class="rsg__cliente-tel">
+                        {{ reserva.cliente_telefono }}
+                      </span>
+                    }
+                  </td>
+                  <td data-label="Reserva">
+                    {{ fechaReserva(reserva.fecha_reserva) }}
+                  </td>
+                  <td data-label="Atención">
+                    {{ fechaAtencion(reserva.fecha_atencion) }}
+                  </td>
+                  <td data-label="Líneas / Uds." class="rsg__num">
+                    {{ reserva.cantidad_lineas }} /
+                    {{ reserva.cantidad_unidades }}
+                  </td>
+                  <td data-label="Estado">
+                    <span
+                      class="rsg__badge rsg__badge--{{ claseEstado(reserva.estado) }}"
+                    >
+                      {{ reserva.estado }}
+                    </span>
+                  </td>
+                  <td data-label="Acciones" class="rsg__celda-acciones">
+                    <button
+                      type="button"
+                      class="rsg__ver"
+                      [attr.aria-label]="
+                        'Ver detalle de ' + codigoReserva(reserva.reserva_id)
+                      "
+                    >
+                      Ver detalle
+                      <app-admin-icon
+                        class="rsg__ver-icono"
+                        icono="chevron-right"
+                      />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="rsg__pie">
+          <span class="rsg__rango">
+            Mostrando {{ inicioVisible() }}–{{ finVisible() }} de {{ total() }}
+            reserva(s)
+          </span>
+
+          <label class="rsg__pie-tamano">
+            <span class="rsg__label">Por página</span>
+            <select
+              [value]="limit()"
+              (change)="cambiarLimite($event)"
+              [disabled]="cargandoLista()"
+              aria-label="Reservas por página"
+            >
+              @for (opcion of opcionesLimite; track opcion) {
+                <option [value]="opcion">{{ opcion }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="rsg__pagina">
+            <button
+              type="button"
+              class="rsg__pagina-btn"
+              [disabled]="!hayAnterior()"
+              aria-label="Página anterior"
+              (click)="irAnterior()"
+            >
+              <app-admin-icon icono="chevron-left" />
+              Anterior
+            </button>
+            <span class="rsg__pagina-info">
+              Página <strong>{{ paginaActual() }}</strong> de
+              {{ totalPaginas() || 1 }}
+            </span>
+            <button
+              type="button"
+              class="rsg__pagina-btn"
+              [disabled]="!haySiguiente()"
+              aria-label="Página siguiente"
+              (click)="irSiguiente()"
+            >
+              <app-admin-icon icono="chevron-right" />
+              Siguiente
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+
+    <aside
+      class="rsg__detalle"
+      [class.rsg__detalle--abierto]="panelAbierto()"
+      [attr.aria-hidden]="!panelAbierto()"
+      aria-label="Detalle de reserva"
+    >
+      @if (seleccionada(); as reserva) {
+        <div class="rsg__detalle-inner">
+          <header class="rsg__detalle-head">
+            <div>
+              <span class="rsg__detalle-eyebrow">
+                <app-admin-icon
+                  class="rsg__detalle-eyebrow-icono"
+                  icono="lista"
+                />
+                Detalle de reserva
+              </span>
+              <h2 class="rsg__detalle-code">
+                <app-admin-icon
+                  class="rsg__detalle-code-icono"
+                  icono="numero"
+                />
+                {{ codigoReserva(reserva.reserva_id) }}
+              </h2>
+            </div>
+            <div class="rsg__detalle-head-acciones">
+              <span
+                class="rsg__badge rsg__badge--{{
+                  claseEstado(detalle()?.estado ?? reserva.estado)
+                }}"
+              >
+                {{ detalle()?.estado ?? reserva.estado }}
+              </span>
+              <button
+                type="button"
+                class="rsg__cerrar"
+                aria-label="Cerrar detalle"
+                (click)="cerrarDetalle()"
+              >
+                <app-admin-icon icono="close" />
+              </button>
+            </div>
+          </header>
+
+          @if (cargandoDetalle()) {
+            <div class="rsg__detalle-loading" role="status">
+              <span class="rsg__spinner" aria-hidden="true"></span>
+              <span>Cargando detalle…</span>
+            </div>
+          } @else if (errorDetalle(); as mensaje) {
+            <div class="rsg__estado rsg__estado--error" role="alert">
+              <span
+                class="rsg__estado-icon rsg__estado-icon--error"
+                aria-hidden="true"
+              >
+                <app-admin-icon icono="alerta" />
+              </span>
+              <p class="rsg__estado-title">No pudimos cargar el detalle</p>
+              <p class="rsg__estado-text">{{ mensaje }}</p>
+              <button
+                type="button"
+                class="rsg__btn rsg__btn--primary"
+                (click)="reintentarDetalle()"
+              >
+                Reintentar
+              </button>
+            </div>
+          } @else if (detalle(); as reservaDetalle) {
+            <dl class="rsg__detalle-datos">
+              <div>
+                <dt>
+                  <app-admin-icon class="rsg__campo-icono" icono="usuario" />
+                  Cliente
+                </dt>
+                <dd>{{ nombreCliente(reservaDetalle) }}</dd>
+              </div>
+              @if (reservaDetalle.cliente_telefono) {
+                <div>
+                  <dt>
+                    <app-admin-icon class="rsg__campo-icono" icono="telefono" />
+                    Teléfono
+                  </dt>
+                  <dd>{{ reservaDetalle.cliente_telefono }}</dd>
+                </div>
+              }
+              <div>
+                <dt>
+                  <app-admin-icon class="rsg__campo-icono" icono="ubicacion" />
+                  Sucursal
+                </dt>
+                <dd>{{ reservaDetalle.sucursal_nombre }}</dd>
+              </div>
+              <div>
+                <dt>
+                  <app-admin-icon class="rsg__campo-icono" icono="calendario" />
+                  Fecha de reserva
+                </dt>
+                <dd>{{ fechaReserva(reservaDetalle.fecha_reserva) }}</dd>
+              </div>
+              <div>
+                <dt>
+                  <app-admin-icon class="rsg__campo-icono" icono="reloj" />
+                  Fecha y hora de atención
+                </dt>
+                <dd>{{ fechaAtencion(reservaDetalle.fecha_atencion) }}</dd>
+              </div>
+              <div>
+                <dt>
+                  <app-admin-icon class="rsg__campo-icono" icono="paquete" />
+                  Unidades apartadas
+                </dt>
+                <dd>{{ reservaDetalle.cantidad_total_unidades }}</dd>
+              </div>
+              @if (reservaDetalle.observacion) {
+                <div class="rsg__detalle-obs">
+                  <dt>
+                    <app-admin-icon class="rsg__campo-icono" icono="comentario" />
+                    Observación
+                  </dt>
+                  <dd>{{ reservaDetalle.observacion }}</dd>
+                </div>
+              }
+            </dl>
+
+            <h3 class="rsg__detalle-sub">
+              <app-admin-icon
+                class="rsg__detalle-sub-icono"
+                icono="productos"
+              />
+              Prendas reservadas
+            </h3>
+            <ul class="rsg__prendas">
+              @for (item of reservaDetalle.items; track item.detalle_id) {
+                <li class="rsg__prenda">
+                  <div class="rsg__prenda-media">
+                    @if (item.imagen_principal) {
+                      <img
+                        class="rsg__prenda-img"
+                        [src]="item.imagen_principal"
+                        [alt]="item.producto_nombre"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <span
+                        class="rsg__prenda-img rsg__prenda-img--vacia"
+                        aria-hidden="true"
+                      >
+                        <app-admin-icon icono="productos" />
+                      </span>
+                    }
+                  </div>
+                  <div class="rsg__prenda-info">
+                    <span class="rsg__prenda-nombre">
+                      {{ item.producto_nombre }}
+                    </span>
+                    <span class="rsg__prenda-sec">
+                      {{ item.talla_nombre }} · {{ item.color_nombre }}
+                    </span>
+                    <span class="rsg__prenda-sec">SKU: {{ item.sku }}</span>
+                    <span class="rsg__prenda-sec">
+                      {{ item.temporada_nombre }}
+                    </span>
+                  </div>
+                  <span class="rsg__prenda-qty">{{ item.cantidad }} u.</span>
+                </li>
+              }
+            </ul>
+
+            <footer class="rsg__detalle-acciones">
+              @if (puedeAtender() && reservaDetalle.estado === 'CONFIRMADA') {
+                <button
+                  type="button"
+                  class="rsg__btn rsg__btn--atender rsg__btn--block"
+                  [disabled]="procesando() !== null"
+                  (click)="atenderReserva()"
+                >
+                  <app-admin-icon icono="arrow-right" />
+                  Atender reserva
+                </button>
+              }
+
+              @if (puedeConfirmar(reservaDetalle.estado)) {
+                <button
+                  type="button"
+                  class="rsg__btn rsg__btn--primary rsg__btn--block"
+                  [disabled]="procesando() !== null"
+                  (click)="solicitarConfirmar()"
+                >
+                  @if (procesando() === 'confirmar') {
+                    Confirmando…
+                  } @else {
+                    <app-admin-icon icono="check" />
+                    Confirmar reserva
+                  }
+                </button>
+              }
+
+              @if (puedeCancelar(reservaDetalle.estado)) {
+                <button
+                  type="button"
+                  class="rsg__btn rsg__btn--danger rsg__btn--block"
+                  [disabled]="procesando() !== null"
+                  (click)="solicitarCancelar()"
+                >
+                  @if (procesando() === 'cancelar') {
+                    Cancelando…
+                  } @else {
+                    <app-admin-icon icono="cancelar" />
+                    Cancelar reserva
+                  }
+                </button>
+              }
+
+              @if (reservaDetalle.estado === 'CONFIRMADA') {
+                <p class="rsg__detalle-nota">
+                  Reserva confirmada para la fecha de atención programada.
+                </p>
+              } @else if (
+                !puedeConfirmar(reservaDetalle.estado) &&
+                !puedeCancelar(reservaDetalle.estado)
+              ) {
+                <p class="rsg__detalle-nota">
+                  Esta reserva es de solo lectura.
+                </p>
+              }
+            </footer>
+          }
+        </div>
+      } @else {
+        <div class="rsg__detalle-vacio">
+          <span class="rsg__detalle-vacio-icon" aria-hidden="true">
+            <app-admin-icon icono="lista" />
+          </span>
+          <p class="rsg__detalle-vacio-title">Selecciona una reserva</p>
+          <p class="rsg__detalle-vacio-text">
+            Consulta aquí la información completa de la reserva.
+          </p>
+        </div>
+      }
+    </aside>
+  </div>
+</div>
+
+@if (confirmacion() === 'confirmar') {
+  <app-confirm-dialog
+    titulo="¿Confirmar esta reserva?"
+    mensaje="La reserva quedará confirmada para la fecha de atención programada."
+    confirmarLabel="Confirmar reserva"
+    cancelarLabel="Cancelar"
+    (confirmado)="confirmarAccion()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}
+
+@if (confirmacion() === 'cancelar') {
+  <app-confirm-dialog
+    titulo="¿Cancelar esta reserva?"
+    mensaje="Las prendas dejarán de estar apartadas para el cliente."
+    confirmarLabel="Cancelar reserva"
+    cancelarLabel="Volver"
+    [peligro]="true"
+    (confirmado)="confirmarAccion()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}

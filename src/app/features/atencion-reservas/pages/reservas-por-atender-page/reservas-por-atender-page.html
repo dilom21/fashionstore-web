@@ -1,0 +1,260 @@
+<div class="atn">
+  <header class="atn__head">
+    <div>
+      <span class="atn__eyebrow">
+        <app-admin-icon icono="reservas" />
+        Atención de reservas
+      </span>
+      <h1 class="atn__title">Reservas por atender</h1>
+      <p class="atn__subtitle">
+        Reservas confirmadas disponibles para atención.
+      </p>
+    </div>
+    <button type="button" class="atn__refresh" (click)="refrescar()">
+      <app-admin-icon icono="actualizar" />
+      Actualizar
+    </button>
+  </header>
+
+  <form
+    class="atn__filtros"
+    [formGroup]="filtrosForm"
+    (ngSubmit)="refrescar()"
+    novalidate
+    aria-label="Filtros de reservas por atender"
+  >
+    @if (esAdministrador()) {
+      <label class="atn__field">
+        <span class="atn__label">
+          <app-admin-icon class="atn__label-icono" icono="ubicacion" />
+          Sucursal
+        </span>
+        <select formControlName="sucursalId">
+          <option [ngValue]="null">Todas las sucursales</option>
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <div class="atn__field atn__field--readonly">
+        <span class="atn__label">
+          <app-admin-icon class="atn__label-icono" icono="ubicacion" />
+          Sucursal
+        </span>
+        <strong class="atn__readonly">
+          {{ sucursalAsignada() ?? 'Sucursal asignada' }}
+        </strong>
+      </div>
+    }
+
+    <label class="atn__field atn__field--buscar">
+      <span class="atn__label">Cliente o código</span>
+      <span class="atn__control">
+        <app-admin-icon class="atn__control-icono" icono="buscar" />
+        <input
+          type="search"
+          formControlName="buscar"
+          placeholder="Nombre, apellido o RES-00001"
+          autocomplete="off"
+        />
+      </span>
+    </label>
+
+    <label class="atn__field atn__field--fecha">
+      <span class="atn__label">Atención desde</span>
+      <span class="atn__control">
+        <app-admin-icon class="atn__control-icono" icono="calendario" />
+        <input
+          type="date"
+          formControlName="fechaDesde"
+          [attr.aria-invalid]="rangoInvalido()"
+        />
+      </span>
+    </label>
+
+    <label class="atn__field atn__field--fecha">
+      <span class="atn__label">Atención hasta</span>
+      <span class="atn__control">
+        <app-admin-icon class="atn__control-icono" icono="calendario" />
+        <input
+          type="date"
+          formControlName="fechaHasta"
+          [attr.aria-invalid]="rangoInvalido()"
+        />
+      </span>
+    </label>
+
+    <button
+      type="button"
+      class="atn__clear"
+      [disabled]="!hayFiltros()"
+      (click)="limpiarFiltros()"
+    >
+      <app-admin-icon icono="close" />
+      Limpiar
+    </button>
+  </form>
+
+  @if (rangoInvalido()) {
+    <p class="atn__notice atn__notice--warn" role="alert">
+      <app-admin-icon class="atn__notice-icono" icono="alerta" />
+      La fecha inicial no puede ser posterior a la fecha final.
+    </p>
+  }
+
+  <section class="atn__panel" aria-label="Reservas por atender">
+    @if (error(); as mensaje) {
+      <div class="atn__estado atn__estado--error" role="alert">
+        <span
+          class="atn__estado-icon atn__estado-icon--error"
+          aria-hidden="true"
+        >
+          <app-admin-icon icono="alerta" />
+        </span>
+        <p class="atn__estado-title">No pudimos cargar las reservas</p>
+        <p class="atn__estado-text">{{ mensaje }}</p>
+        <button type="button" class="atn__btn atn__btn--primary" (click)="reintentar()">
+          Reintentar
+        </button>
+      </div>
+    } @else if (cargando() && !hayResultados()) {
+      <div class="atn__loading" role="status">
+        <span class="atn__spinner" aria-hidden="true"></span>
+        <span>Cargando reservas…</span>
+      </div>
+    } @else if (!hayResultados()) {
+      <div class="atn__estado">
+        <span class="atn__estado-icon" aria-hidden="true">
+          <app-admin-icon icono="lista" />
+        </span>
+        <p class="atn__estado-title">
+          @if (hayFiltros()) {
+            No se encontraron reservas confirmadas con los filtros seleccionados.
+          } @else {
+            No hay reservas confirmadas por atender.
+          }
+        </p>
+        <p class="atn__estado-text">
+          Cuando la sucursal confirme una reserva, aparecerá aquí para su
+          atención.
+        </p>
+        @if (hayFiltros()) {
+          <button type="button" class="atn__btn" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="atn__tabla-wrap">
+        <table class="atn__tabla">
+          <thead>
+            <tr>
+              <th scope="col">Código</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Reserva</th>
+              <th scope="col">Atención</th>
+              <th scope="col" class="atn__th-num">Líneas / Uds.</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="atn__sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (reserva of reservas(); track reserva.reserva_id) {
+              <tr class="atn__fila">
+                <td data-label="Código" class="atn__codigo">
+                  {{ codigoReserva(reserva.reserva_id) }}
+                </td>
+                <td data-label="Cliente">
+                  <span class="atn__cliente">{{ nombreCliente(reserva) }}</span>
+                  @if (reserva.cliente_telefono) {
+                    <span class="atn__cliente-tel">
+                      {{ reserva.cliente_telefono }}
+                    </span>
+                  }
+                </td>
+                <td data-label="Reserva">
+                  {{ fechaReserva(reserva.fecha_reserva) }}
+                </td>
+                <td data-label="Atención">
+                  {{ fechaAtencion(reserva.fecha_atencion) }}
+                </td>
+                <td data-label="Líneas / Uds." class="atn__num">
+                  {{ reserva.cantidad_lineas }} / {{ reserva.cantidad_unidades }}
+                </td>
+                <td data-label="Estado">
+                  <span
+                    class="atn__badge atn__badge--{{ claseEstado(reserva.estado) }}"
+                  >
+                    {{ reserva.estado }}
+                  </span>
+                </td>
+                <td data-label="Acciones" class="atn__celda-acciones">
+                  <button
+                    type="button"
+                    class="atn__atender"
+                    (click)="atender(reserva)"
+                    [attr.aria-label]="
+                      'Atender ' + codigoReserva(reserva.reserva_id)
+                    "
+                  >
+                    <app-admin-icon icono="arrow-right" />
+                    Atender
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="atn__pie">
+        <span class="atn__rango">
+          Mostrando {{ inicioVisible() }}–{{ finVisible() }} de {{ total() }}
+          reserva(s)
+        </span>
+
+        <label class="atn__pie-tamano">
+          <span class="atn__label">Por página</span>
+          <select
+            [value]="limit()"
+            (change)="cambiarLimite($event)"
+            [disabled]="cargando()"
+            aria-label="Reservas por página"
+          >
+            @for (opcion of opcionesLimite; track opcion) {
+              <option [value]="opcion">{{ opcion }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="atn__pagina">
+          <button
+            type="button"
+            class="atn__pagina-btn"
+            [disabled]="!hayAnterior()"
+            aria-label="Página anterior"
+            (click)="irAnterior()"
+          >
+            <app-admin-icon icono="chevron-left" />
+            Anterior
+          </button>
+          <span class="atn__pagina-info">
+            Página <strong>{{ paginaActual() }}</strong> de
+            {{ totalPaginas() || 1 }}
+          </span>
+          <button
+            type="button"
+            class="atn__pagina-btn"
+            [disabled]="!haySiguiente()"
+            aria-label="Página siguiente"
+            (click)="irSiguiente()"
+          >
+            Siguiente
+            <app-admin-icon icono="chevron-right" />
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</div>

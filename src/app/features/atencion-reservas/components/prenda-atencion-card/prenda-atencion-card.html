@@ -1,0 +1,71 @@
+<article
+  class="par"
+  [class.par--inactiva]="!seleccionada()"
+  [class.par--bloqueada]="bloqueada()"
+>
+  <label class="par__check">
+    <input
+      class="par__check-input"
+      type="checkbox"
+      [checked]="seleccionada()"
+      [disabled]="bloqueada()"
+      (change)="alternar()"
+      [attr.aria-label]="
+        'Incluir ' + prenda().producto_nombre + ' en la compra'
+      "
+    />
+  </label>
+
+  <div class="par__media">
+    @if (prenda().imagen_principal) {
+      <img
+        class="par__img"
+        [src]="prenda().imagen_principal"
+        [alt]="prenda().producto_nombre"
+        loading="lazy"
+      />
+    } @else {
+      <span class="par__img par__img--vacia" aria-hidden="true">
+        <app-admin-icon icono="productos" />
+      </span>
+    }
+  </div>
+
+  <div class="par__info">
+    <h3 class="par__nombre">{{ prenda().producto_nombre }}</h3>
+    <p class="par__meta">
+      {{ prenda().talla_nombre }} · {{ prenda().color_nombre }}
+    </p>
+    <p class="par__meta">SKU: {{ prenda().sku }}</p>
+    <p class="par__meta">{{ prenda().temporada_nombre }}</p>
+    <span class="par__badge">
+      <app-admin-icon icono="paquete" />
+      Reservadas: {{ prenda().cantidad_reservada }}
+    </span>
+  </div>
+
+  <div class="par__compra">
+    <span class="par__compra-label">Comprar: {{ cantidad() }}</span>
+    <div class="par__control">
+      <button
+        type="button"
+        class="par__btn par__restar"
+        [disabled]="!puedeRestar()"
+        (click)="restar()"
+        [attr.aria-label]="'Quitar una unidad de ' + prenda().producto_nombre"
+      >
+        <app-admin-icon icono="menos" />
+      </button>
+      <span class="par__cantidad" aria-live="polite">{{ cantidad() }}</span>
+      <button
+        type="button"
+        class="par__btn par__sumar"
+        [disabled]="!puedeSumar()"
+        (click)="sumar()"
+        [attr.aria-label]="'Añadir una unidad de ' + prenda().producto_nombre"
+      >
+        <app-admin-icon icono="mas" />
+      </button>
+    </div>
+  </div>
+</article>

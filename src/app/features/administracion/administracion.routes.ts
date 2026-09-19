@@ -140,19 +140,13 @@ export const administracionRoutes: Routes = [
             './components/modulo-en-construccion/modulo-en-construccion'
           ).then((m) => m.ModuloEnConstruccion),
       },
+      // ===== CU17 - Gestionar reservas de sucursal (funcional) =====
       {
         path: 'reservas',
-        data: {
-          modulo: 'RESERVAS',
-          titulo: 'Reservas',
-          descripcion:
-            'Reservas de prendas para probar en sucursal.',
-          icono: 'reservas',
-        },
         loadComponent: () =>
           import(
-            './components/modulo-en-construccion/modulo-en-construccion'
-          ).then((m) => m.ModuloEnConstruccion),
+            './reservas/pages/reservas-sucursal-page/reservas-sucursal-page'
+          ).then((m) => m.ReservasSucursalPage),
       },
       {
         path: 'ventas',

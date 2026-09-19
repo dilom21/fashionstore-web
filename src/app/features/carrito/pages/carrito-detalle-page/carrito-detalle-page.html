@@ -137,6 +137,14 @@
             <strong>Bs {{ subtotal() | number: '1.2-2' }}</strong>
           </p>
 
+          <!-- CU16: la reserva usa el carrito completo (no se eligen prendas). -->
+          <a
+            class="cdet__reservar"
+            [routerLink]="['/reservas/nueva', carrito.carrito_id]"
+          >
+            RESERVAR PRENDAS
+          </a>
+
           <button type="button" class="cdet__pagar" (click)="irAPagar()">
             IR A PAGAR
           </button>

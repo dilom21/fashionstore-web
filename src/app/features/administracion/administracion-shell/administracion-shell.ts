@@ -9,26 +9,42 @@ import { Router, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../autenticacion-seguridad/auth/services/auth.service';
 import { AdminSidebar } from '../components/admin-sidebar/admin-sidebar';
+import { AdminNavItem } from '../models/admin-nav-item';
 import { ADMIN_NAV_ITEMS, filtrarItemsNav } from '../navigation/admin-nav.config';
 
 /**
  * Rutas del panel reservadas para ENCARGADO_SUCURSAL (CU13 - Consultar
- * inventario y CU14 - Movimientos de inventario). El resto de módulos quedan
- * ocultos para su rol.
+ * inventario, CU14 - Movimientos de inventario, CU17 - Gestionar reservas de
+ * sucursal y CU18 - Atender reservas). El resto de módulos quedan ocultos para
+ * su rol.
  */
 const RUTAS_ENCARGADO_SUCURSAL = new Set([
   '/admin/inventario/consultar',
   '/admin/inventario/movimientos',
+  '/admin/reservas',
+  // CU18 se ofrece en el submenú Reservas; su pantalla vive en /personal pero
+  // se renderiza dentro de este mismo layout.
+  '/personal/reservas/atencion',
 ]);
+
+/**
+ * Rutas visibles para CAJERO: únicamente CU18. No accede al panel
+ * administrativo (adminAuthGuard lo devuelve a /dashboard si lo intenta), por
+ * lo que solo ve el grupo Reservas con la opción Atender reservas.
+ */
+const RUTAS_CAJERO = new Set(['/personal/reservas/atencion']);
 
 /**
  * Contenedor (shell) del área administrativa (/admin).
  *
  * Layout de escritorio: sidebar lateral fija + contenido (router-outlet).
  * La sidebar es reutilizable (app-admin-sidebar) y se alimenta de la
- * configuración ADMIN_NAV_ITEMS filtrada por rol. El acceso lo controla
- * adminAuthGuard en la ruta: ADMINISTRADOR (todo el panel) y
- * ENCARGADO_SUCURSAL (solo CU13).
+ * configuración ADMIN_NAV_ITEMS filtrada por rol.
+ *
+ * Es el layout principal del sistema y lo comparten:
+ * - /admin/** (CU03-CU17), protegido por adminAuthGuard;
+ * - /personal/reservas/atencion(/:id) (CU18), protegido por
+ *   atencionReservasGuard y visible también para CAJERO (con el menú filtrado).
  */
 @Component({
   selector: 'app-administracion-shell',
@@ -43,19 +59,35 @@ export class AdministracionShell {
   /**
    * Navegación real del panel (lista única de módulos).
    *
-   * Se filtra por rol reutilizando `filtrarItemsNav`: el ADMINISTRADOR ve todo
-   * y el ENCARGADO_SUCURSAL solo las opciones de su alcance (CU13).
+   * Se filtra por rol reutilizando `filtrarItemsNav` (los grupos sin hijos
+   * visibles se descartan solos):
+   * - ADMINISTRADOR: todo el panel.
+   * - ENCARGADO_SUCURSAL: CU13, CU14, CU17 y CU18.
+   * - CAJERO: solo CU18 (Reservas → Atender reservas).
+   *
+   * Esto es visibilidad, no autorización: cada ruta sigue protegida por su
+   * guard y el backend es la autoridad final (403).
    */
   readonly navItems = computed(() => {
     if (this.authService.esAdministrador()) {
       return ADMIN_NAV_ITEMS;
     }
+    if (this.authService.esCajero()) {
+      return this.filtrarPorRutas(RUTAS_CAJERO);
+    }
+    if (this.authService.esEncargadoSucursal()) {
+      return this.filtrarPorRutas(RUTAS_ENCARGADO_SUCURSAL);
+    }
+    return [];
+  });
+
+  /** Opciones (y grupos) cuyas rutas pertenecen al conjunto permitido. */
+  private filtrarPorRutas(rutas: ReadonlySet<string>): AdminNavItem[] {
     return filtrarItemsNav(
       ADMIN_NAV_ITEMS,
-      (item) =>
-        item.route !== undefined && RUTAS_ENCARGADO_SUCURSAL.has(item.route),
+      (item) => item.route !== undefined && rutas.has(item.route),
     );
-  });
+  }
 
   readonly correo = computed(
     () => this.authService.usuarioActual()?.correo ?? null,

@@ -1,0 +1,383 @@
+<div class="atd">
+  <header class="atd__head">
+    <div>
+      <span class="atd__eyebrow">
+        <app-admin-icon icono="reservas" />
+        Atención de reservas
+      </span>
+      <h1 class="atd__title">
+        <app-admin-icon class="atd__title-icono" icono="numero" />
+        {{ codigoReserva(reservaId()) }}
+      </h1>
+      <p class="atd__subtitle">
+        Atiende al cliente en sucursal: ajusta las prendas que desea comprar y
+        confirma la acción.
+      </p>
+    </div>
+    <div class="atd__head-acciones">
+      <span
+        class="atd__badge atd__badge--{{
+          claseEstado(detalle()?.estado ?? 'desconocido')
+        }}"
+      >
+        {{ detalle()?.estado ?? '—' }}
+      </span>
+      <button type="button" class="atd__volver" (click)="volverAlListado()">
+        <app-admin-icon icono="chevron-left" />
+        Reservas por atender
+      </button>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <div class="atd__loading" role="status">
+      <span class="atd__spinner" aria-hidden="true"></span>
+      <span>Cargando reserva…</span>
+    </div>
+  } @else if (error(); as mensaje) {
+    <div class="atd__estado atd__estado--error" role="alert">
+      <span class="atd__estado-icon atd__estado-icon--error" aria-hidden="true">
+        <app-admin-icon icono="alerta" />
+      </span>
+      <p class="atd__estado-title">No pudimos cargar la reserva</p>
+      <p class="atd__estado-text">{{ mensaje }}</p>
+      <div class="atd__estado-acciones">
+        <button type="button" class="atd__btn atd__btn--primary" (click)="recargar()">
+          Reintentar
+        </button>
+        <button type="button" class="atd__btn atd__btn--ghost" (click)="volverAlListado()">
+          Volver a reservas por atender
+        </button>
+      </div>
+    </div>
+  } @else if (detalle(); as reserva) {
+    @if (soloLectura()) {
+      <p class="atd__aviso atd__aviso--ok" role="status">
+        <app-admin-icon icono="check" />
+        ATENCIÓN FINALIZADA · la reserva quedó en estado {{ reserva.estado }} y
+        es de solo lectura.
+      </p>
+    }
+
+    <div class="atd__layout">
+      <section class="atd__col" aria-label="Información y prendas de la reserva">
+        <article class="atd__card">
+          <h2 class="atd__card-title">
+            <app-admin-icon icono="lista" />
+            Información de la reserva
+          </h2>
+
+          <dl class="atd__datos">
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="numero" />
+                Código
+              </dt>
+              <dd>{{ codigoReserva(reserva.reserva_id) }}</dd>
+            </div>
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="estado" />
+                Estado
+              </dt>
+              <dd>
+                <span
+                  class="atd__badge atd__badge--{{ claseEstado(reserva.estado) }}"
+                >
+                  {{ reserva.estado }}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="usuario" />
+                Cliente
+              </dt>
+              <dd>{{ nombreCliente(reserva) }}</dd>
+            </div>
+            @if (reserva.cliente_telefono) {
+              <div>
+                <dt>
+                  <app-admin-icon class="atd__campo-icono" icono="telefono" />
+                  Teléfono
+                </dt>
+                <dd>{{ reserva.cliente_telefono }}</dd>
+              </div>
+            }
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="ubicacion" />
+                Sucursal
+              </dt>
+              <dd>{{ reserva.sucursal_nombre }}</dd>
+            </div>
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="calendario" />
+                Fecha de reserva
+              </dt>
+              <dd>{{ fechaReserva(reserva.fecha_reserva) }}</dd>
+            </div>
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="reloj" />
+                Fecha y hora de atención
+              </dt>
+              <dd>{{ fechaAtencion(reserva.fecha_atencion) }}</dd>
+            </div>
+            @if (reserva.observacion) {
+              <div class="atd__datos-obs">
+                <dt>
+                  <app-admin-icon class="atd__campo-icono" icono="comentario" />
+                  Observación
+                </dt>
+                <dd>{{ reserva.observacion }}</dd>
+              </div>
+            }
+          </dl>
+        </article>
+
+        <article class="atd__card">
+          <h2 class="atd__card-title">
+            <app-admin-icon icono="productos" />
+            Prendas reservadas
+          </h2>
+          <p class="atd__card-hint">
+            Marca las prendas que el cliente desea comprar y ajusta la cantidad
+            de cada una. La selección es solo de esta atención.
+          </p>
+
+          <div class="atd__prendas">
+            @for (item of reserva.items; track item.inventario_id) {
+              <app-prenda-atencion-card
+                [prenda]="item"
+                [seleccionada]="seleccionadaDe(item)"
+                [cantidad]="cantidadDe(item)"
+                [bloqueada]="soloLectura()"
+                (seleccionCambiada)="cambiarSeleccion(item, $event)"
+                (cantidadCambiada)="cambiarCantidad(item, $event)"
+              />
+            }
+          </div>
+        </article>
+      </section>
+
+      <aside class="atd__side" aria-label="Resumen de atención y acciones">
+        <article class="atd__card">
+          <h2 class="atd__card-title">
+            <app-admin-icon icono="paquete" />
+            Resumen de atención
+          </h2>
+
+          <dl class="atd__resumen">
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="lista" />
+                Líneas reservadas
+              </dt>
+              <dd>{{ totalLineas() }}</dd>
+            </div>
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="paquete" />
+                Unidades reservadas
+              </dt>
+              <dd>{{ totalReservado() }}</dd>
+            </div>
+            <div class="atd__resumen-compra">
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="check" />
+                A comprar
+              </dt>
+              <dd>{{ totalCompra() }}</dd>
+            </div>
+            <div>
+              <dt>
+                <app-admin-icon class="atd__campo-icono" icono="cancelar" />
+                No adquiridas
+              </dt>
+              <dd>{{ totalNoCompra() }}</dd>
+            </div>
+          </dl>
+
+          <ul class="atd__resumen-meta">
+            <li>
+              <app-admin-icon icono="ubicacion" />
+              {{ reserva.sucursal_nombre }}
+            </li>
+            <li>
+              <app-admin-icon icono="estado" />
+              Estado: {{ reserva.estado }}
+            </li>
+            <li>
+              <app-admin-icon icono="reloj" />
+              {{ fechaAtencion(reserva.fecha_atencion) }}
+            </li>
+            <li>
+              <app-admin-icon icono="comentario" />
+              {{ lineasAComprar() }} línea(s) seleccionada(s)
+            </li>
+          </ul>
+        </article>
+
+        <article class="atd__card">
+          <h2 class="atd__card-title">
+            <app-admin-icon icono="ventas" />
+            Acciones
+          </h2>
+
+          @if (soloLectura()) {
+            <p class="atd__accion-nota">
+              La atención ya fue finalizada. La reserva es de solo lectura.
+            </p>
+            <button
+              type="button"
+              class="atd__btn atd__btn--ghost atd__btn--block"
+              (click)="volverAlListado()"
+            >
+              <app-admin-icon icono="chevron-left" />
+              Volver a reservas por atender
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="atd__btn atd__btn--primary atd__btn--block"
+              [disabled]="procesando() !== null"
+              (click)="accionPrincipal()"
+            >
+              @if (procesando() === 'venta') {
+                Validando selección…
+              } @else if (procesando() === 'finalizar') {
+                Finalizando…
+              } @else if (haySeleccion()) {
+                <app-admin-icon icono="ventas" />
+                CONTINUAR A VENTA
+              } @else {
+                <app-admin-icon icono="cancelar" />
+                FINALIZAR SIN COMPRA
+              }
+            </button>
+
+            <p class="atd__accion-nota">
+              @if (haySeleccion()) {
+                {{ totalCompra() }} unidad(es) seleccionada(s) para venta.
+              } @else {
+                Sin unidades seleccionadas: se liberará toda la reserva.
+              }
+            </p>
+          }
+        </article>
+
+        <article class="atd__card">
+          <h2 class="atd__card-title">
+            <app-admin-icon icono="comentario" />
+            Observación de atención
+          </h2>
+          <textarea
+            class="atd__textarea"
+            [formControl]="observacion"
+            [attr.maxlength]="maxObservacion"
+            rows="4"
+            placeholder="Escribe una observación opcional..."
+          ></textarea>
+          <p class="atd__card-hint">
+            Se envía únicamente al finalizar sin compra ·
+            {{ observacion.value.length }}/{{ maxObservacion }}
+          </p>
+        </article>
+      </aside>
+    </div>
+  }
+
+  @if (resultado(); as venta) {
+    <div
+      class="atd__modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Selección validada"
+    >
+      <div class="atd__modal-caja">
+        <header class="atd__modal-head">
+          <span class="atd__modal-icono" aria-hidden="true">
+            <app-admin-icon icono="check" />
+          </span>
+          <div>
+            <h2 class="atd__modal-title">Selección validada</h2>
+            <p class="atd__modal-text">
+              Las prendas seleccionadas están listas para continuar al proceso
+              de venta.
+            </p>
+          </div>
+        </header>
+
+        <ul class="atd__modal-lista">
+          @for (linea of venta.items; track linea.inventario_id) {
+            @if (linea.cantidad_compra > 0) {
+              <li>
+                <span>{{ nombreItemDeInventario(linea.inventario_id) }}</span>
+                <strong>{{ linea.cantidad_compra }}</strong>
+              </li>
+            }
+          }
+        </ul>
+
+        <dl class="atd__modal-totales">
+          <div>
+            <dt>Unidades reservadas</dt>
+            <dd>{{ venta.total_unidades_reservadas }}</dd>
+          </div>
+          <div>
+            <dt>A comprar</dt>
+            <dd>{{ venta.total_unidades_compra }}</dd>
+          </div>
+          <div>
+            <dt>No adquiridas</dt>
+            <dd>{{ venta.total_unidades_no_compra }}</dd>
+          </div>
+        </dl>
+
+        <p class="atd__modal-aviso">
+          <app-admin-icon icono="alerta" />
+          La reserva continúa {{ venta.estado }}: esta validación no registra la
+          venta ni libera prendas.
+        </p>
+
+        <footer class="atd__modal-acciones">
+          <button
+            type="button"
+            class="atd__btn atd__btn--ghost"
+            (click)="cerrarResultado()"
+          >
+            Entendido
+          </button>
+          <button
+            type="button"
+            class="atd__btn atd__btn--primary"
+            [disabled]="ventaPendiente"
+          >
+            <app-admin-icon icono="ventas" />
+            Continuar a venta
+          </button>
+        </footer>
+
+        @if (ventaPendiente) {
+          <p class="atd__modal-nota">
+            Módulo de Venta/Pago pendiente de integración.
+          </p>
+        }
+      </div>
+    </div>
+  }
+
+  @if (confirmarFinalizar()) {
+    <app-confirm-dialog
+      titulo="¿Finalizar la atención sin compra?"
+      mensaje="El cliente fue atendido pero no adquirirá ninguna prenda. Todas las unidades reservadas serán liberadas."
+      confirmarLabel="Finalizar sin compra"
+      cancelarLabel="Volver"
+      [peligro]="true"
+      (confirmado)="finalizarSinCompra()"
+      (cancelado)="cancelarFinalizar()"
+    />
+  }
+</div>
