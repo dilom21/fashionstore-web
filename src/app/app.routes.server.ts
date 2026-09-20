@@ -43,6 +43,18 @@ export const serverRoutes: ServerRoute[] = [
     path: 'reservas/**',
     renderMode: RenderMode.Server,
   },
+  // Checkout de compra digital (CU19): requiere sesión y usa :carrito_id; se
+  // renderiza por petición, nunca se prerenderiza.
+  {
+    path: 'checkout/**',
+    renderMode: RenderMode.Server,
+  },
+  // Pago electrónico con Stripe (CU22): requiere sesión y usa :venta_id. Se
+  // renderiza por petición; Stripe.js jamás se inicializa en el servidor.
+  {
+    path: 'pagos/**',
+    renderMode: RenderMode.Server,
+  },
   {
     path: '**',
     renderMode: RenderMode.Prerender,

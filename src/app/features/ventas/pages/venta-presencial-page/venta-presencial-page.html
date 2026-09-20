@@ -1,0 +1,370 @@
+<div class="vp">
+  <header class="vp__head">
+    <div>
+      <span class="vp__eyebrow">
+        <app-admin-icon icono="ventas" />
+        Ventas y pagos
+      </span>
+      <h1 class="vp__title">
+        <app-admin-icon class="vp__title-icono" icono="ventas" />
+        Registrar venta presencial
+      </h1>
+      <p class="vp__subtitle">
+        Busca las prendas, revisa el stock de tu sucursal y registra la venta.
+        La venta queda <strong>PENDIENTE DE PAGO</strong>: el cobro se realiza en
+        la siguiente etapa.
+      </p>
+    </div>
+  </header>
+
+  @if (venta(); as ventaCreada) {
+    <section class="vp__ok" role="status">
+      <span class="vp__ok-icon" aria-hidden="true">
+        <app-admin-icon icono="check" />
+      </span>
+      <span class="vp__eyebrow">Venta registrada</span>
+      <h2 class="vp__ok-title">Venta #{{ ventaCreada.venta_id }}</h2>
+
+      @if (pago(); as pagoOk) {
+        <dl class="vp__ok-data">
+          <div>
+            <dt>Estado de la venta</dt>
+            <dd class="vp__estado">{{ estadoFinalVenta() }}</dd>
+          </div>
+          <div>
+            <dt>Pago</dt>
+            <dd>#{{ pagoOk.pago_id }}</dd>
+          </div>
+          <div>
+            <dt>Método</dt>
+            <dd>{{ etiquetaMetodo(pagoOk.metodo) }}</dd>
+          </div>
+          <div>
+            <dt>Monto</dt>
+            <dd>Bs {{ pagoOk.monto | number: '1.2-2' }}</dd>
+          </div>
+          <div>
+            <dt>Estado del pago</dt>
+            <dd class="vp__pago-ok">{{ pagoOk.estado_pago }}</dd>
+          </div>
+          <div>
+            <dt>Sucursal</dt>
+            <dd>{{ ventaCreada.sucursal_nombre }}</dd>
+          </div>
+        </dl>
+
+        <p class="vp__ok-hint">
+          Pago registrado. La venta quedó en estado
+          <strong>{{ pagoOk.estado_venta }}</strong> y ya no admite otro pago.
+        </p>
+
+        <div class="vp__ok-actions">
+          <button
+            type="button"
+            class="vp__btn vp__btn--primary"
+            (click)="nuevaVenta()"
+          >
+            <app-admin-icon icono="mas" />
+            Nueva venta
+          </button>
+        </div>
+      } @else {
+        <dl class="vp__ok-data">
+          <div>
+            <dt>Estado</dt>
+            <dd class="vp__estado">{{ estadoVenta() }}</dd>
+          </div>
+          <div>
+            <dt>Total</dt>
+            <dd>Bs {{ ventaCreada.total | number: '1.2-2' }}</dd>
+          </div>
+          <div>
+            <dt>Sucursal</dt>
+            <dd>{{ ventaCreada.sucursal_nombre }}</dd>
+          </div>
+          <div>
+            <dt>Unidades</dt>
+            <dd>{{ ventaCreada.cantidad_total_unidades }}</dd>
+          </div>
+        </dl>
+
+        <p class="vp__ok-hint">
+          La venta no registra pago todavía. Registra el pago presencial para
+          confirmarla.
+        </p>
+
+        <div class="vp__ok-actions">
+          <button
+            type="button"
+            class="vp__btn vp__btn--primary"
+            (click)="nuevaVenta()"
+          >
+            <app-admin-icon icono="mas" />
+            Nueva venta
+          </button>
+          <button
+            type="button"
+            class="vp__btn vp__btn--primary"
+            [disabled]="!puedePagar()"
+            (click)="abrirPago()"
+          >
+            <app-admin-icon icono="ventas" />
+            REGISTRAR PAGO
+          </button>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="vp__layout">
+      <section class="vp__col" aria-label="Búsqueda y disponibilidad">
+        <article class="vp__card">
+          <h2 class="vp__card-title">
+            <app-admin-icon icono="buscar" />
+            Buscar prenda
+          </h2>
+          <p class="vp__card-hint">
+            Busca por nombre de producto. Luego elige la variante por SKU, talla
+            o color.
+          </p>
+
+          <div class="vp__buscar">
+            <input
+              class="vp__input"
+              type="search"
+              placeholder="Ej.: camisa, polo, chaqueta…"
+              [value]="termino()"
+              (input)="actualizarTermino($any($event.target).value)"
+              (keyup.enter)="buscar()"
+              aria-label="Buscar producto"
+            />
+            <button
+              type="button"
+              class="vp__btn vp__btn--primary"
+              [disabled]="buscando()"
+              (click)="buscar()"
+            >
+              <app-admin-icon icono="buscar" />
+              {{ buscando() ? 'Buscando…' : 'Buscar' }}
+            </button>
+          </div>
+
+          @if (busquedaRealizada() && productos().length === 0) {
+            <p class="vp__vacio">
+              No encontramos productos con ese criterio. Prueba con otro nombre.
+            </p>
+          }
+
+          @if (productos().length > 0) {
+            <ul class="vp__resultados">
+              @for (producto of productos(); track producto.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="vp__resultado"
+                    [class.vp__resultado--activo]="productoSeleccionado()?.id === producto.id"
+                    (click)="seleccionarProducto(producto)"
+                  >
+                    <span class="vp__resultado-info">
+                      <strong>{{ producto.nombre }}</strong>
+                      <span>{{ producto.categoria?.nombre }}</span>
+                    </span>
+                    <span class="vp__resultado-precio">
+                      Bs {{ producto.precio | number: '1.2-2' }}
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        @if (productoSeleccionado(); as producto) {
+          <article class="vp__card">
+            <h2 class="vp__card-title">
+              <app-admin-icon icono="paquete" />
+              {{ producto.nombre }}
+            </h2>
+            <p class="vp__card-hint">
+              Disponibilidad por sucursal. El stock mostrado es el disponible
+              (actual menos reservado).
+            </p>
+
+            <input
+              class="vp__input vp__input--filtro"
+              type="search"
+              placeholder="Filtrar por SKU, talla o color…"
+              [value]="filtroVariantes()"
+              (input)="actualizarFiltroVariantes($any($event.target).value)"
+              aria-label="Filtrar variantes"
+            />
+
+            @if (cargandoVariantes()) {
+              <div class="vp__loading" role="status">
+                <span class="vp__spinner" aria-hidden="true"></span>
+                <span>Cargando disponibilidad…</span>
+              </div>
+            } @else if (candidatosFiltrados().length === 0) {
+              <p class="vp__vacio">
+                No hay variantes con stock disponible
+                {{ nombreSucursal() ? 'en esta sucursal' : '' }}.
+              </p>
+            } @else {
+              <ul class="vp__variantes">
+                @for (candidato of candidatosFiltrados(); track candidato.inventario_id) {
+                  <li class="vp__variante">
+                    <div class="vp__variante-info">
+                      <strong>{{ candidato.talla_nombre }} · {{ candidato.color_nombre }}</strong>
+                      <span>SKU: {{ candidato.sku }}</span>
+                      <span>{{ candidato.sucursal_nombre }}</span>
+                    </div>
+                    <div class="vp__variante-side">
+                      <span class="vp__stock">Stock: {{ candidato.stock_disponible }}</span>
+                      <span class="vp__precio">Bs {{ candidato.precio | number: '1.2-2' }}</span>
+                      <button
+                        type="button"
+                        class="vp__btn vp__btn--mini"
+                        [disabled]="venta() !== null"
+                        (click)="agregar(candidato)"
+                      >
+                        <app-admin-icon icono="mas" />
+                        Agregar
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </article>
+        }
+      </section>
+
+      <aside class="vp__side" aria-label="Venta en curso">
+        <article class="vp__card">
+          <h2 class="vp__card-title">
+            <app-admin-icon icono="lista" />
+            Venta en curso
+          </h2>
+
+          @if (lineas().length === 0) {
+            <p class="vp__vacio">
+              Aún no agregaste prendas. Busca un producto y agrega sus variantes.
+            </p>
+          } @else {
+            <ul class="vp__lineas">
+              @for (linea of lineas(); track linea.candidato.inventario_id) {
+                <li class="vp__linea">
+                  <div class="vp__linea-info">
+                    <strong>{{ linea.candidato.producto_nombre }}</strong>
+                    <span>
+                      {{ linea.candidato.talla_nombre }} ·
+                      {{ linea.candidato.color_nombre }} · SKU:
+                      {{ linea.candidato.sku }}
+                    </span>
+                    <span>{{ linea.candidato.sucursal_nombre }}</span>
+                  </div>
+                  <div class="vp__linea-side">
+                    <span class="vp__linea-precio">
+                      Bs {{ linea.candidato.precio | number: '1.2-2' }}
+                    </span>
+                    <div class="vp__cantidad">
+                      <button
+                        type="button"
+                        class="vp__qty"
+                        aria-label="Quitar una unidad"
+                        [disabled]="linea.cantidad <= 1"
+                        (click)="cambiarCantidad(linea.candidato.inventario_id, -1)"
+                      >
+                        <app-admin-icon icono="menos" />
+                      </button>
+                      <span class="vp__qty-valor">{{ linea.cantidad }}</span>
+                      <button
+                        type="button"
+                        class="vp__qty"
+                        aria-label="Agregar una unidad"
+                        [disabled]="linea.cantidad >= linea.candidato.stock_disponible"
+                        (click)="cambiarCantidad(linea.candidato.inventario_id, 1)"
+                      >
+                        <app-admin-icon icono="mas" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      class="vp__quitar"
+                      (click)="quitar(linea.candidato.inventario_id)"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <article class="vp__card">
+          <h2 class="vp__card-title">
+            <app-admin-icon icono="ventas" />
+            Resumen
+          </h2>
+
+          <dl class="vp__resumen">
+            <div>
+              <dt>Líneas</dt>
+              <dd>{{ lineas().length }}</dd>
+            </div>
+            <div>
+              <dt>Unidades</dt>
+              <dd>{{ unidades() }}</dd>
+            </div>
+            <div>
+              <dt>Sucursal</dt>
+              <dd>{{ nombreSucursal() ?? '—' }}</dd>
+            </div>
+          </dl>
+
+          <p class="vp__total">
+            <span>Total estimado</span>
+            <strong>Bs {{ totalEstimado() | number: '1.2-2' }}</strong>
+          </p>
+
+          <p class="vp__nota">
+            Venta anónima (sin cliente). El precio y el total definitivos los
+            calcula el servidor.
+          </p>
+
+          @if (error(); as mensaje) {
+            <p class="vp__error" role="alert">{{ mensaje }}</p>
+          }
+
+          <button
+            type="button"
+            class="vp__btn vp__btn--primary vp__btn--block"
+            [disabled]="!puedeRegistrar()"
+            [attr.aria-busy]="procesando()"
+            (click)="registrarVenta()"
+          >
+            @if (procesando()) {
+              REGISTRANDO…
+            } @else {
+              REGISTRAR VENTA
+            }
+          </button>
+        </article>
+      </aside>
+    </div>
+  }
+
+  @if (mostrarPago()) {
+    @if (venta(); as ventaPago) {
+      <app-pago-presencial-dialog
+        [ventaId]="ventaPago.venta_id"
+        [total]="ventaPago.total"
+        [estadoVenta]="ventaPago.estado"
+        [reservaId]="ventaPago.reserva_id"
+        (cerrado)="cerrarPago()"
+        (pagado)="onPagado($event)"
+        (sesionExpirada)="onSesionExpiradaPago()"
+      />
+    }
+  }
+</div>

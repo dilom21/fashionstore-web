@@ -1,0 +1,182 @@
+<div class="ppd" (click)="cerrar()">
+  <div
+    class="ppd__card"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Registrar pago presencial"
+    (click)="$event.stopPropagation()"
+  >
+    @if (resultado(); as pago) {
+      <header class="ppd__head">
+        <span class="ppd__icon ppd__icon--ok" aria-hidden="true">
+          <app-admin-icon icono="check" />
+        </span>
+        <div>
+          <h2 class="ppd__title">Pago registrado</h2>
+          <p class="ppd__text">
+            El pago presencial fue aprobado y el servidor confirmó la venta.
+          </p>
+        </div>
+      </header>
+
+      <dl class="ppd__datos">
+        <div>
+          <dt>Pago</dt>
+          <dd>#{{ pago.pago_id }}</dd>
+        </div>
+        <div>
+          <dt>Venta</dt>
+          <dd>#{{ pago.venta_id }}</dd>
+        </div>
+        <div>
+          <dt>Método</dt>
+          <dd>{{ etiqueta(pago.metodo) }}</dd>
+        </div>
+        <div>
+          <dt>Monto</dt>
+          <dd>Bs {{ pago.monto | number: '1.2-2' }}</dd>
+        </div>
+        <div>
+          <dt>Estado del pago</dt>
+          <dd class="ppd__aprobado">{{ pago.estado_pago }}</dd>
+        </div>
+        <div>
+          <dt>Estado final de la venta</dt>
+          <dd>{{ pago.estado_venta }}</dd>
+        </div>
+        @if (pago.reserva_id !== null) {
+          <div>
+            <dt>Reserva</dt>
+            <dd>#{{ pago.reserva_id }}</dd>
+          </div>
+        }
+        @if (pago.estado_reserva) {
+          <div>
+            <dt>Estado de la reserva</dt>
+            <dd>{{ pago.estado_reserva }}</dd>
+          </div>
+        }
+      </dl>
+
+      <p class="ppd__ok-nota">
+        <app-admin-icon icono="check" />
+        Ya no se puede registrar otro pago para esta venta.
+      </p>
+
+      <div class="ppd__acciones ppd__acciones--una">
+        <button
+          type="button"
+          class="ppd__btn ppd__btn--primary"
+          (click)="cerrar()"
+        >
+          Entendido
+        </button>
+      </div>
+    } @else {
+      <header class="ppd__head">
+        <span class="ppd__icon" aria-hidden="true">
+          <app-admin-icon icono="ventas" />
+        </span>
+        <div>
+          <h2 class="ppd__title">Registrar pago presencial</h2>
+          <p class="ppd__text">
+            Venta #{{ ventaId() }} · Total
+            <strong>Bs {{ total() | number: '1.2-2' }}</strong>
+          </p>
+        </div>
+      </header>
+
+      <p class="ppd__estado-actual">
+        Estado actual de la venta:
+        <strong>{{ estadoVentaFinal() }}</strong>
+      </p>
+
+      @if (confirmando()) {
+        <div
+          class="ppd__confirmacion"
+          role="alertdialog"
+          aria-label="Confirmar pago presencial"
+        >
+          <p class="ppd__confirmar-texto">
+            ¿Registrar el pago de
+            <strong>Bs {{ total() | number: '1.2-2' }}</strong> con
+            <strong>{{ etiquetaMetodoSeleccionado() }}</strong>?
+          </p>
+          <p class="ppd__confirmar-nota">
+            La acción es definitiva: el servidor confirmará la venta y no se
+            podrá registrar otro pago.
+          </p>
+        </div>
+      } @else {
+        <fieldset class="ppd__metodos">
+          <legend class="ppd__legend">Método de pago</legend>
+          @for (opcion of metodos; track opcion.valor) {
+            <label
+              class="ppd__metodo"
+              [class.ppd__metodo--activo]="metodo() === opcion.valor"
+            >
+              <input
+                type="radio"
+                name="metodo-pago-presencial"
+                [value]="opcion.valor"
+                [checked]="metodo() === opcion.valor"
+                [disabled]="procesando()"
+                (change)="seleccionarMetodo(opcion.valor)"
+              />
+              <span>{{ opcion.etiqueta }}</span>
+            </label>
+          }
+        </fieldset>
+      }
+
+      @if (error(); as mensaje) {
+        <p class="ppd__error" role="alert">{{ mensaje }}</p>
+      }
+
+      @if (confirmando()) {
+        <div class="ppd__acciones">
+          <button
+            type="button"
+            class="ppd__btn ppd__btn--ghost"
+            [disabled]="procesando()"
+            (click)="volverASeleccion()"
+          >
+            Volver
+          </button>
+          <button
+            type="button"
+            class="ppd__btn ppd__btn--primary"
+            [disabled]="!puedeConfirmar()"
+            [attr.aria-busy]="procesando()"
+            (click)="registrarPago()"
+          >
+            @if (procesando()) {
+              Procesando…
+            } @else {
+              CONFIRMAR PAGO
+            }
+          </button>
+        </div>
+      } @else {
+        <div class="ppd__acciones">
+          <button
+            type="button"
+            class="ppd__btn ppd__btn--ghost"
+            [disabled]="procesando()"
+            (click)="cerrar()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="ppd__btn ppd__btn--primary"
+            [disabled]="!puedeSolicitar()"
+            (click)="solicitarPago()"
+          >
+            REGISTRAR PAGO
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

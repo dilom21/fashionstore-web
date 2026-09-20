@@ -12,6 +12,10 @@ import { of, throwError } from 'rxjs';
 
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { PagoPresencialResponse } from '../../../ventas/models/pago-presencial.model';
+import { VentaPresencialResponse } from '../../../ventas/models/venta-presencial.model';
+import { PagoPresencialService } from '../../../ventas/services/pago-presencial.service';
+import { VentaPresencialService } from '../../../ventas/services/venta-presencial.service';
 import {
   AtencionReservaDetalle,
   AtencionReservaItem,
@@ -70,10 +74,43 @@ function detalle(
   };
 }
 
+function ventaPresencial(): VentaPresencialResponse {
+  return {
+    venta_id: 123,
+    cliente_id: 3,
+    empleado_id: 9,
+    sucursal_id: 2,
+    sucursal_nombre: 'Sucursal Centro',
+    reserva_id: 15,
+    canal: 'PRESENCIAL',
+    estado: 'PENDIENTE',
+    fecha_hora: '2026-09-19T10:00:00+00:00',
+    total: 599.8,
+    items: [],
+    cantidad_total_unidades: 6,
+  };
+}
+
+function pagoAprobado(): PagoPresencialResponse {
+  return {
+    pago_id: 7,
+    venta_id: 123,
+    metodo: 'EFECTIVO',
+    estado_pago: 'APROBADO',
+    monto: 599.8,
+    fecha: '2026-09-19T10:05:00+00:00',
+    estado_venta: 'COMPLETADA',
+    reserva_id: 15,
+    estado_reserva: 'ATENDIDA',
+  };
+}
+
 describe('AtenderReservaPage (CU18)', () => {
   let fixture: ComponentFixture<AtenderReservaPage>;
   let componente: AtenderReservaPage;
   let atencionService: any;
+  let ventaPresencialService: any;
+  let pagoService: any;
   let toast: any;
   let router: Router;
 
@@ -100,6 +137,12 @@ describe('AtenderReservaPage (CU18)', () => {
       ),
       finalizarSinCompra: vi.fn(() => of(detalle('ATENDIDA'))),
     };
+    ventaPresencialService = {
+      registrarVentaDesdeReserva: vi.fn(() => of(ventaPresencial())),
+    };
+    pagoService = {
+      registrarPresencial: vi.fn(() => of(pagoAprobado())),
+    };
     toast = { mostrar: vi.fn(), toasts: signal([]), cerrar: vi.fn() };
 
     await TestBed.configureTestingModule({
@@ -115,6 +158,11 @@ describe('AtenderReservaPage (CU18)', () => {
           },
         },
         { provide: AtencionReservasService, useValue: atencionService },
+        {
+          provide: VentaPresencialService,
+          useValue: ventaPresencialService,
+        },
+        { provide: PagoPresencialService, useValue: pagoService },
         {
           provide: AuthService,
           useValue: { cerrarSesion: vi.fn(), esEncargadoSucursal: () => true },
@@ -326,7 +374,15 @@ describe('AtenderReservaPage (CU18)', () => {
     });
   });
 
-  it('preparar venta no marca ATENDIDA ni simula una venta', async () => {
+  function ctaModal(etiqueta: string): HTMLButtonElement | undefined {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('.atd__modal-acciones button'),
+    ).find((boton) =>
+      ((boton as HTMLButtonElement).textContent ?? '').includes(etiqueta),
+    ) as HTMLButtonElement | undefined;
+  }
+
+  it('preparar venta no marca ATENDIDA ni registra la venta todavía', async () => {
     await setup();
 
     botonPrincipal()?.click();
@@ -340,28 +396,114 @@ describe('AtenderReservaPage (CU18)', () => {
     });
     // La reserva sigue CONFIRMADA: no se libera ni se atiende nada.
     expect(componente.detalle()?.estado).toBe('CONFIRMADA');
+    expect(ventaPresencialService.registrarVentaDesdeReserva).not.toHaveBeenCalled();
     expect(toast.mostrar).toHaveBeenCalledWith(
       'Selección validada. La reserva sigue confirmada.',
       'ok',
     );
 
     expect(texto()).toContain('Selección validada');
-    expect(texto()).toContain(
-      'Las prendas seleccionadas están listas para continuar al proceso de venta.',
-    );
-    expect(texto()).toContain('Módulo de Venta/Pago pendiente de integración.');
-
-    const cta = Array.from(
-      fixture.nativeElement.querySelectorAll('.atd__modal-acciones button'),
-    ).find((boton) =>
-      ((boton as HTMLButtonElement).textContent ?? '').includes(
-        'Continuar a venta',
-      ),
-    ) as HTMLButtonElement;
-    expect(cta.disabled).toBe(true);
+    expect(texto()).toContain('REGISTRAR VENTA');
+    // El CTA de CU20 queda habilitado (CU21 es el que falta).
+    expect(ctaModal('REGISTRAR VENTA')?.disabled).toBe(false);
 
     expect(texto()).not.toContain('ATENDIDA');
     expect(texto()).not.toContain('Venta realizada');
+  });
+
+  it('registrar venta envía reserva_id y solo las líneas con cantidad_compra > 0', async () => {
+    await setup();
+    atencionService.prepararVenta.mockReturnValue(
+      of({
+        reserva_id: 15,
+        sucursal_id: 2,
+        estado: 'CONFIRMADA',
+        items: [
+          {
+            inventario_id: 17,
+            cantidad_reservada: 3,
+            cantidad_compra: 2,
+            cantidad_no_compra: 1,
+          },
+          {
+            inventario_id: 318,
+            cantidad_reservada: 3,
+            cantidad_compra: 0,
+            cantidad_no_compra: 3,
+          },
+        ],
+        total_unidades_reservadas: 6,
+        total_unidades_compra: 2,
+        total_unidades_no_compra: 4,
+        venta_registrada: false,
+        reserva_modificada: false,
+      }),
+    );
+
+    botonPrincipal()?.click();
+    fixture.detectChanges();
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+
+    expect(ventaPresencialService.registrarVentaDesdeReserva).toHaveBeenCalledWith(
+      15,
+      [{ inventario_id: 17, cantidad: 2 }],
+    );
+  });
+
+  it('registrar venta muestra PENDIENTE DE PAGO y conserva la reserva CONFIRMADA', async () => {
+    await setup();
+
+    botonPrincipal()?.click();
+    fixture.detectChanges();
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+
+    expect(componente.ventaRegistrada()?.venta_id).toBe(123);
+    expect(texto()).toContain('Venta registrada');
+    expect(texto()).toContain('PENDIENTE DE PAGO');
+    expect(texto()).toContain('Bs 599.80');
+    // CU20 NO marca la reserva ATENDIDA ni libera nada.
+    expect(componente.detalle()?.estado).toBe('CONFIRMADA');
+    expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
+    // CU21: el CTA de pago queda habilitado; la reserva sigue CONFIRMADA.
+    expect(ctaModal('REGISTRAR PAGO')?.disabled).toBe(false);
+    expect(texto()).not.toContain('ATENDIDA');
+  });
+
+  it('un 409 al registrar la venta se informa y no altera la reserva', async () => {
+    await setup();
+    ventaPresencialService.registrarVentaDesdeReserva.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409 })),
+    );
+
+    botonPrincipal()?.click();
+    fixture.detectChanges();
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+
+    expect(toast.mostrar).toHaveBeenCalledWith(
+      'No fue posible registrar la venta. Revisa las cantidades.',
+      'error',
+    );
+    expect(componente.ventaRegistrada()).toBeNull();
+    expect(componente.detalle()?.estado).toBe('CONFIRMADA');
+  });
+
+  it('no permite un segundo registro de la misma selección', async () => {
+    await setup();
+
+    botonPrincipal()?.click();
+    fixture.detectChanges();
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+    // La venta ya se registró: un nuevo intento no vuelve a llamar al backend.
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+
+    expect(
+      ventaPresencialService.registrarVentaDesdeReserva,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it('finalizar sin compra pide confirmación obligatoria', async () => {
@@ -502,6 +644,91 @@ describe('AtenderReservaPage (CU18)', () => {
     expect(texto()).not.toContain('Cancelar reserva');
     expect(texto()).not.toContain('Marcar entregada');
     expect(texto()).not.toContain('Marcar lista');
+  });
+
+  // ===== CU21 - Pago presencial desde la reserva =====
+
+  async function conVentaDeReserva() {
+    await setup();
+    botonPrincipal()?.click();
+    fixture.detectChanges();
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+  }
+
+  it('el pago solo está disponible después de crear la venta', async () => {
+    await setup();
+    expect(componente.puedePagarReserva()).toBe(false);
+    expect(
+      fixture.nativeElement.querySelector('app-pago-presencial-dialog'),
+    ).toBeNull();
+
+    botonPrincipal()?.click();
+    fixture.detectChanges();
+    expect(componente.puedePagarReserva()).toBe(false);
+
+    ctaModal('REGISTRAR VENTA')?.click();
+    fixture.detectChanges();
+    expect(componente.puedePagarReserva()).toBe(true);
+  });
+
+  it('abre el diálogo de pago con el venta_id de la reserva', async () => {
+    await conVentaDeReserva();
+
+    componente.abrirPago();
+    fixture.detectChanges();
+
+    expect(componente.mostrarPago()).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('app-pago-presencial-dialog'),
+    ).not.toBeNull();
+    expect(texto()).toContain('Venta #123');
+  });
+
+  it('el pago exitoso deja la reserva ATENDIDA y no llama finalizar-sin-compra', async () => {
+    await conVentaDeReserva();
+    componente.abrirPago();
+    fixture.detectChanges();
+
+    componente.onPagado(pagoAprobado());
+    fixture.detectChanges();
+
+    expect(componente.pagoRegistrado()?.pago_id).toBe(7);
+    expect(componente.detalle()?.estado).toBe('ATENDIDA');
+    expect(componente.estadoReservaFinal()).toBe('ATENDIDA');
+    expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
+    // El modal de CU20 se cierra y la reserva queda en solo lectura.
+    expect(componente.resultado()).toBeNull();
+    expect(texto()).toContain('PAGO #7 REGISTRADO');
+    expect(texto()).toContain('ATENCIÓN FINALIZADA');
+    expect(toast.mostrar).toHaveBeenCalledWith(
+      'Pago #7 registrado. Reserva ATENDIDA.',
+      'ok',
+    );
+  });
+
+  it('no permite registrar dos veces el pago', async () => {
+    await conVentaDeReserva();
+    componente.onPagado(pagoAprobado());
+    fixture.detectChanges();
+
+    componente.abrirPago();
+    fixture.detectChanges();
+
+    expect(componente.mostrarPago()).toBe(false);
+  });
+
+  it('si el response no trae estado_reserva, recarga la reserva una vez', async () => {
+    await conVentaDeReserva();
+    const llamadasPrevias = atencionService.obtenerReserva.mock.calls.length;
+
+    componente.onPagado({ ...pagoAprobado(), estado_reserva: null });
+    fixture.detectChanges();
+
+    expect(atencionService.obtenerReserva.mock.calls.length).toBe(
+      llamadasPrevias + 1,
+    );
+    expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
   });
 });
 

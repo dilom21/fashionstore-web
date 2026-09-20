@@ -25,14 +25,20 @@ const RUTAS_ENCARGADO_SUCURSAL = new Set([
   // CU18 se ofrece en el submenú Reservas; su pantalla vive en /personal pero
   // se renderiza dentro de este mismo layout.
   '/personal/reservas/atencion',
+  // CU20 (venta presencial) vive en /personal/ventas/presencial.
+  '/personal/ventas/presencial',
 ]);
 
 /**
- * Rutas visibles para CAJERO: únicamente CU18. No accede al panel
- * administrativo (adminAuthGuard lo devuelve a /dashboard si lo intenta), por
- * lo que solo ve el grupo Reservas con la opción Atender reservas.
+ * Rutas visibles para CAJERO: CU18 (Atender reservas) y CU20 (Registrar venta
+ * presencial). No accede al panel administrativo (adminAuthGuard lo devuelve a
+ * /dashboard si lo intenta), por lo que solo ve los grupos Reservas y
+ * Ventas y Pagos con sus opciones operativas.
  */
-const RUTAS_CAJERO = new Set(['/personal/reservas/atencion']);
+const RUTAS_CAJERO = new Set([
+  '/personal/reservas/atencion',
+  '/personal/ventas/presencial',
+]);
 
 /**
  * Contenedor (shell) del área administrativa (/admin).
@@ -44,7 +50,9 @@ const RUTAS_CAJERO = new Set(['/personal/reservas/atencion']);
  * Es el layout principal del sistema y lo comparten:
  * - /admin/** (CU03-CU17), protegido por adminAuthGuard;
  * - /personal/reservas/atencion(/:id) (CU18), protegido por
- *   atencionReservasGuard y visible también para CAJERO (con el menú filtrado).
+ *   atencionReservasGuard y visible también para CAJERO (con el menú filtrado);
+ * - /personal/ventas/presencial (CU20), protegido por ventasPresencialesGuard
+ *   y visible también para ENCARGADO_SUCURSAL y CAJERO.
  */
 @Component({
   selector: 'app-administracion-shell',
@@ -62,8 +70,8 @@ export class AdministracionShell {
    * Se filtra por rol reutilizando `filtrarItemsNav` (los grupos sin hijos
    * visibles se descartan solos):
    * - ADMINISTRADOR: todo el panel.
-   * - ENCARGADO_SUCURSAL: CU13, CU14, CU17 y CU18.
-   * - CAJERO: solo CU18 (Reservas → Atender reservas).
+   * - ENCARGADO_SUCURSAL: CU13, CU14, CU17, CU18 y CU20.
+   * - CAJERO: CU18 y CU20 (Reservas y Ventas y Pagos).
    *
    * Esto es visibilidad, no autorización: cada ruta sigue protegida por su
    * guard y el backend es la autoridad final (403).

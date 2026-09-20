@@ -59,6 +59,21 @@
       </p>
     }
 
+    @if (pagoRegistrado(); as pagoOk) {
+      <p class="atd__aviso atd__aviso--ok" role="status">
+        <app-admin-icon icono="check" />
+        PAGO #{{ pagoOk.pago_id }} REGISTRADO · {{ pagoOk.estado_pago }}. Venta
+        #{{ pagoOk.venta_id }} · Reserva
+        {{ pagoOk.estado_reserva ?? reserva.estado }}.
+      </p>
+    } @else if (ventaRegistrada(); as ventaCreada) {
+      <p class="atd__aviso atd__aviso--ok" role="status">
+        <app-admin-icon icono="check" />
+        VENTA #{{ ventaCreada.venta_id }} REGISTRADA · PENDIENTE DE PAGO. La
+        reserva continúa {{ reserva.estado }}.
+      </p>
+    }
+
     <div class="atd__layout">
       <section class="atd__col" aria-label="Información y prendas de la reserva">
         <article class="atd__card">
@@ -242,7 +257,7 @@
             <button
               type="button"
               class="atd__btn atd__btn--primary atd__btn--block"
-              [disabled]="procesando() !== null"
+              [disabled]="procesando() !== null || ventaBloqueada()"
               (click)="accionPrincipal()"
             >
               @if (procesando() === 'venta') {
@@ -294,76 +309,136 @@
       class="atd__modal"
       role="dialog"
       aria-modal="true"
-      aria-label="Selección validada"
+      aria-label="Registrar venta presencial"
     >
       <div class="atd__modal-caja">
-        <header class="atd__modal-head">
-          <span class="atd__modal-icono" aria-hidden="true">
-            <app-admin-icon icono="check" />
-          </span>
-          <div>
-            <h2 class="atd__modal-title">Selección validada</h2>
-            <p class="atd__modal-text">
-              Las prendas seleccionadas están listas para continuar al proceso
-              de venta.
-            </p>
-          </div>
-        </header>
+        @if (ventaRegistrada(); as ventaCreada) {
+          <header class="atd__modal-head">
+            <span class="atd__modal-icono" aria-hidden="true">
+              <app-admin-icon icono="check" />
+            </span>
+            <div>
+              <h2 class="atd__modal-title">Venta registrada</h2>
+              <p class="atd__modal-text">
+                La venta quedó PENDIENTE DE PAGO. La reserva seguirá
+                {{ venta.estado }} hasta aprobar el pago.
+              </p>
+            </div>
+          </header>
 
-        <ul class="atd__modal-lista">
-          @for (linea of venta.items; track linea.inventario_id) {
-            @if (linea.cantidad_compra > 0) {
-              <li>
-                <span>{{ nombreItemDeInventario(linea.inventario_id) }}</span>
-                <strong>{{ linea.cantidad_compra }}</strong>
-              </li>
-            }
-          }
-        </ul>
+          <dl class="atd__modal-totales">
+            <div>
+              <dt>Venta</dt>
+              <dd>#{{ ventaCreada.venta_id }}</dd>
+            </div>
+            <div>
+              <dt>Estado</dt>
+              <dd>{{ estadoVentaRegistrada() }}</dd>
+            </div>
+            <div>
+              <dt>Total</dt>
+              <dd>Bs {{ ventaCreada.total | number: '1.2-2' }}</dd>
+            </div>
+          </dl>
 
-        <dl class="atd__modal-totales">
-          <div>
-            <dt>Unidades reservadas</dt>
-            <dd>{{ venta.total_unidades_reservadas }}</dd>
-          </div>
-          <div>
-            <dt>A comprar</dt>
-            <dd>{{ venta.total_unidades_compra }}</dd>
-          </div>
-          <div>
-            <dt>No adquiridas</dt>
-            <dd>{{ venta.total_unidades_no_compra }}</dd>
-          </div>
-        </dl>
-
-        <p class="atd__modal-aviso">
-          <app-admin-icon icono="alerta" />
-          La reserva continúa {{ venta.estado }}: esta validación no registra la
-          venta ni libera prendas.
-        </p>
-
-        <footer class="atd__modal-acciones">
-          <button
-            type="button"
-            class="atd__btn atd__btn--ghost"
-            (click)="cerrarResultado()"
-          >
-            Entendido
-          </button>
-          <button
-            type="button"
-            class="atd__btn atd__btn--primary"
-            [disabled]="ventaPendiente"
-          >
-            <app-admin-icon icono="ventas" />
-            Continuar a venta
-          </button>
-        </footer>
-
-        @if (ventaPendiente) {
-          <p class="atd__modal-nota">
-            Módulo de Venta/Pago pendiente de integración.
+          <p class="atd__modal-aviso">
+            <app-admin-icon icono="alerta" />
+            La reserva continúa {{ venta.estado }}: no se liberó ni descontó
+            stock.
           </p>
+
+          <footer class="atd__modal-acciones">
+            <button
+              type="button"
+              class="atd__btn atd__btn--ghost"
+              (click)="cerrarResultado()"
+            >
+              Entendido
+            </button>
+            <button
+              type="button"
+              class="atd__btn atd__btn--primary"
+              [disabled]="!puedePagarReserva()"
+              (click)="abrirPago()"
+            >
+              <app-admin-icon icono="ventas" />
+              REGISTRAR PAGO
+            </button>
+          </footer>
+        } @else {
+          <header class="atd__modal-head">
+            <span class="atd__modal-icono" aria-hidden="true">
+              <app-admin-icon icono="check" />
+            </span>
+            <div>
+              <h2 class="atd__modal-title">Selección validada</h2>
+              <p class="atd__modal-text">
+                Las prendas seleccionadas están listas para registrar la venta.
+              </p>
+            </div>
+          </header>
+
+          <ul class="atd__modal-lista">
+            @for (linea of venta.items; track linea.inventario_id) {
+              @if (linea.cantidad_compra > 0) {
+                <li>
+                  <span>{{ nombreItemDeInventario(linea.inventario_id) }}</span>
+                  <strong>{{ linea.cantidad_compra }}</strong>
+                </li>
+              }
+            }
+          </ul>
+
+          <dl class="atd__modal-totales">
+            <div>
+              <dt>Unidades reservadas</dt>
+              <dd>{{ venta.total_unidades_reservadas }}</dd>
+            </div>
+            <div>
+              <dt>A comprar</dt>
+              <dd>{{ venta.total_unidades_compra }}</dd>
+            </div>
+            <div>
+              <dt>No adquiridas</dt>
+              <dd>{{ venta.total_unidades_no_compra }}</dd>
+            </div>
+          </dl>
+
+          <p class="atd__modal-aviso">
+            <app-admin-icon icono="alerta" />
+            La reserva continúa {{ venta.estado }}: al registrar la venta no se
+            libera ni descuenta stock.
+          </p>
+
+          <footer class="atd__modal-acciones">
+            <button
+              type="button"
+              class="atd__btn atd__btn--ghost"
+              (click)="cerrarResultado()"
+            >
+              Entendido
+            </button>
+            <button
+              type="button"
+              class="atd__btn atd__btn--primary"
+              [disabled]="!puedeRegistrarVenta()"
+              [attr.aria-busy]="procesando() === 'registrar-venta'"
+              (click)="registrarVentaDesdeReserva()"
+            >
+              @if (procesando() === 'registrar-venta') {
+                Registrando…
+              } @else {
+                <app-admin-icon icono="ventas" />
+                REGISTRAR VENTA
+              }
+            </button>
+          </footer>
+
+          @if (lineasVenta().length === 0) {
+            <p class="atd__modal-nota">
+              No hay unidades seleccionadas para registrar.
+            </p>
+          }
         }
       </div>
     </div>
@@ -379,5 +454,19 @@
       (confirmado)="finalizarSinCompra()"
       (cancelado)="cancelarFinalizar()"
     />
+  }
+
+  @if (mostrarPago()) {
+    @if (ventaRegistrada(); as ventaPago) {
+      <app-pago-presencial-dialog
+        [ventaId]="ventaPago.venta_id"
+        [total]="ventaPago.total"
+        [estadoVenta]="ventaPago.estado"
+        [reservaId]="ventaPago.reserva_id"
+        (cerrado)="cerrarPago()"
+        (pagado)="onPagado($event)"
+        (sesionExpirada)="onSesionExpiradaPago()"
+      />
+    }
   }
 </div>

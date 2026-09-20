@@ -86,6 +86,28 @@ export const routes: Routes = [
         './features/reservas/pages/reserva-detalle-page/reserva-detalle-page'
       ).then((m) => m.ReservaDetallePage),
   },
+  // ===== CU19 - Realizar compra digital (solo CLIENTE autenticado) =====
+  // El checkout confirma la compra y crea la venta PENDIENTE (sin pago: CU22).
+  {
+    path: 'checkout/:carrito_id',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/ventas/pages/checkout-digital-page/checkout-digital-page'
+      ).then((m) => m.CheckoutDigitalPage),
+  },
+  // ===== CU22 - Procesar pago electrónico con Stripe (solo CLIENTE) =====
+  // Recibe el venta_id de la venta PENDIENTE creada por CU19. Permite recargar
+  // y recrear/reutilizar el PaymentIntent. Stripe.js solo se inicializa en el
+  // navegador (SSR-safe). Se declara antes del wildcard.
+  {
+    path: 'pagos/stripe/:venta_id',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/ventas/pages/pago-electronico-page/pago-electronico-page'
+      ).then((m) => m.PagoElectronicoPage),
+  },
   {
     path: 'auth',
     loadChildren: () =>
@@ -108,13 +130,19 @@ export const routes: Routes = [
         (m) => m.administracionRoutes,
       ),
   },
-  // ===== CU18 - Atender reserva de prendas (ENCARGADO_SUCURSAL / CAJERO) =====
+  // ===== Área operativa del personal (shell principal) =====
+  // CU18 - Atender reserva de prendas y CU20 - Registrar venta presencial
+  // comparten el prefijo /personal y el mismo AdministracionShell. Cada ruta
+  // conserva su propio guard semántico.
   {
     path: 'personal',
-    loadChildren: () =>
-      import('./features/atencion-reservas/atencion-reservas.routes').then(
-        (m) => m.atencionReservasRoutes,
-      ),
+    loadChildren: async () => {
+      const [atencion, ventas] = await Promise.all([
+        import('./features/atencion-reservas/atencion-reservas.routes'),
+        import('./features/ventas/ventas.routes'),
+      ]);
+      return [...atencion.atencionReservasRoutes, ...ventas.ventasRoutes];
+    },
   },
   { path: '**', redirectTo: '' },
 ];

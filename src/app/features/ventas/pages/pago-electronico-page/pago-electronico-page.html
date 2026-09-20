@@ -1,0 +1,370 @@
+<app-navbar />
+
+<main class="pago">
+  <div class="vm-container">
+    @if (idInvalido()) {
+      <section class="pago__state" role="alert">
+        <span class="vm-eyebrow">Pago electrónico</span>
+        <h1 class="pago__state-title">Pago no disponible</h1>
+        <p class="pago__state-text">
+          {{ error() ?? 'La venta indicada no es válida.' }}
+        </p>
+        <div class="pago__state-actions">
+          <a class="pago__btn pago__btn--primary" routerLink="/carritos">
+            Ver mis carritos
+          </a>
+        </div>
+      </section>
+    } @else if (pagoAprobado()) {
+      <section class="pago__state pago__state--ok" role="status">
+        <span class="pago__state-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+        </span>
+        <span class="vm-eyebrow">Pago aprobado</span>
+        <h1 class="pago__state-title">Compra completada</h1>
+        <p class="pago__state-text">
+          Confirmamos tu pago con tarjeta y la venta quedó finalizada.
+        </p>
+
+        <dl class="pago__data">
+          <div>
+            <dt>Venta</dt>
+            <dd>#{{ ventaId() }}</dd>
+          </div>
+          <div>
+            <dt>Monto</dt>
+            <dd>{{ moneda() }} {{ monto() | number: '1.2-2' }}</dd>
+          </div>
+          <div>
+            <dt>Estado del pago</dt>
+            <dd class="pago__estado">{{ estadoPago() }}</dd>
+          </div>
+          <div>
+            <dt>Estado de la venta</dt>
+            <dd class="pago__estado">{{ estadoVenta() }}</dd>
+          </div>
+        </dl>
+
+        <div class="pago__state-actions">
+          <button
+            type="button"
+            class="pago__btn pago__btn--primary"
+            (click)="irAlCatalogo()"
+          >
+            Volver al catálogo
+          </button>
+          <button
+            type="button"
+            class="pago__btn pago__btn--ghost"
+            (click)="irAMisCarritos()"
+          >
+            Ver mis carritos
+          </button>
+        </div>
+      </section>
+    } @else if (reembolsoEnProceso()) {
+      <section class="pago__state" role="status">
+        <span class="pago__state-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </span>
+        <span class="vm-eyebrow">Reembolso en proceso</span>
+        <h1 class="pago__state-title">Reembolso en proceso</h1>
+        <p class="pago__state-text">
+          La compra no pudo completarse.<br />
+          Estamos procesando la devolución de tu pago.<br />
+          No se te volverá a cobrar esta venta.
+        </p>
+
+        <dl class="pago__data">
+          <div>
+            <dt>Venta</dt>
+            <dd>#{{ ventaId() }}</dd>
+          </div>
+          <div>
+            <dt>Monto</dt>
+            <dd>{{ moneda() }} {{ monto() | number: '1.2-2' }}</dd>
+          </div>
+          <div>
+            <dt>Estado del pago</dt>
+            <dd class="pago__estado">{{ estadoPago() }}</dd>
+          </div>
+          <div>
+            <dt>Estado de la venta</dt>
+            <dd class="pago__estado">{{ estadoVenta() }}</dd>
+          </div>
+        </dl>
+
+        @if (esperandoWebhook()) {
+          <div class="pago__loading" role="status">
+            <span class="pago__spinner" aria-hidden="true"></span>
+            <span>Consultando el estado del reembolso…</span>
+          </div>
+        }
+
+        <div class="pago__state-actions">
+          @if (puedeConsultar() && !esperandoWebhook()) {
+            <button
+              type="button"
+              class="pago__btn pago__btn--primary"
+              (click)="consultarEstado()"
+            >
+              RECONSULTAR ESTADO
+            </button>
+          }
+          <button
+            type="button"
+            class="pago__btn pago__btn--ghost"
+            (click)="irAlCatalogo()"
+          >
+            Volver al catálogo
+          </button>
+          <button
+            type="button"
+            class="pago__btn pago__btn--ghost"
+            (click)="irAMisCarritos()"
+          >
+            Ver mis carritos
+          </button>
+        </div>
+      </section>
+    } @else if (reembolsado()) {
+      <section class="pago__state pago__state--ok" role="status">
+        <span class="pago__state-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+        </span>
+        <span class="vm-eyebrow">Pago reembolsado</span>
+        <h1 class="pago__state-title">Pago reembolsado</h1>
+        <p class="pago__state-text">
+          La compra no pudo completarse porque el producto ya no estaba
+          disponible.<br />
+          El pago fue devuelto correctamente.<br />
+          No se te volverá a cobrar.
+        </p>
+
+        <dl class="pago__data">
+          <div>
+            <dt>Venta</dt>
+            <dd>#{{ ventaId() }}</dd>
+          </div>
+          <div>
+            <dt>Monto</dt>
+            <dd>{{ moneda() }} {{ monto() | number: '1.2-2' }}</dd>
+          </div>
+          <div>
+            <dt>Estado del pago</dt>
+            <dd class="pago__estado">{{ estadoPago() }}</dd>
+          </div>
+          <div>
+            <dt>Estado de la venta</dt>
+            <dd class="pago__estado">{{ estadoVenta() }}</dd>
+          </div>
+        </dl>
+
+        <div class="pago__state-actions">
+          <button
+            type="button"
+            class="pago__btn pago__btn--primary"
+            (click)="irAlCatalogo()"
+          >
+            Volver al catálogo
+          </button>
+          <button
+            type="button"
+            class="pago__btn pago__btn--ghost"
+            (click)="irAMisCarritos()"
+          >
+            Ver mis carritos
+          </button>
+        </div>
+      </section>
+    } @else if (estadoDesconocido()) {
+      <section class="pago__state" role="status">
+        <span class="vm-eyebrow">Pago electrónico</span>
+        <h1 class="pago__state-title">No pudimos confirmar el estado</h1>
+        <p class="pago__state-text">
+          {{
+            mensajeEstado() ??
+              'Puedes reconsultar el estado de tu pago o volver al catálogo.'
+          }}
+        </p>
+        <div class="pago__state-actions">
+          <button
+            type="button"
+            class="pago__btn pago__btn--primary"
+            (click)="consultarEstado()"
+          >
+            RECONSULTAR ESTADO
+          </button>
+          <button
+            type="button"
+            class="pago__btn pago__btn--ghost"
+            (click)="irAlCatalogo()"
+          >
+            Volver al catálogo
+          </button>
+        </div>
+      </section>
+    } @else {
+      <a class="pago__back" routerLink="/carritos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M14.5 5 8 12l6.5 7"></path>
+        </svg>
+        Tus carritos
+      </a>
+
+      <header class="pago__head">
+        <span class="vm-eyebrow">Pago electrónico</span>
+        <h1 class="pago__title">Completa tu pago</h1>
+        <p class="pago__lead">
+          Los datos de tu tarjeta se procesan de forma segura con Stripe.
+          No almacenamos números de tarjeta ni códigos de seguridad.
+        </p>
+      </header>
+
+      <div class="pago__layout">
+        <section class="pago__card" aria-label="Datos de pago">
+          <h2 class="pago__card-title">Datos de pago</h2>
+
+          @if (pagoRechazado()) {
+            <div class="pago__resultado" role="alert">
+              <p class="pago__resultado-title">Pago rechazado</p>
+              <p class="pago__resultado-text">
+                {{ mensajeEstado() }}
+              </p>
+              @if (puedeReintentar()) {
+                <button
+                  type="button"
+                  class="pago__btn pago__btn--primary pago__btn--block"
+                  (click)="reintentar()"
+                >
+                  INTENTAR NUEVAMENTE
+                </button>
+              }
+            </div>
+          } @else if (cargandoIntent() || configurandoStripe()) {
+            <div class="pago__loading" role="status">
+              <span class="pago__spinner" aria-hidden="true"></span>
+              <span>
+                {{
+                  configurandoStripe()
+                    ? 'Configurando el pago seguro…'
+                    : 'Preparando el pago…'
+                }}
+              </span>
+            </div>
+          } @else if (intencion() === null) {
+            <div class="pago__resultado" role="alert">
+              <p class="pago__resultado-title">No pudimos iniciar el pago</p>
+              <p class="pago__resultado-text">
+                {{ error() ?? 'Intenta nuevamente en unos minutos.' }}
+              </p>
+              <button
+                type="button"
+                class="pago__btn pago__btn--ghost pago__btn--block"
+                (click)="reintentar()"
+              >
+                REINTENTAR
+              </button>
+            </div>
+          } @else {
+            @if (esperandoWebhook() || pendienteConsulta()) {
+              <div class="pago__resultado" role="status">
+                @if (esperandoWebhook()) {
+                  <span class="pago__spinner" aria-hidden="true"></span>
+                }
+                <p class="pago__resultado-title">
+                  {{
+                    esperandoWebhook()
+                      ? 'Confirmando pago…'
+                      : 'Pago en confirmación'
+                  }}
+                </p>
+                <p class="pago__resultado-text">
+                  {{ mensajeEstado() ?? 'El pago está siendo procesado.' }}
+                </p>
+                @if (error(); as mensaje) {
+                  <p class="pago__error" role="alert">{{ mensaje }}</p>
+                }
+                @if (puedeConsultar()) {
+                  <button
+                    type="button"
+                    class="pago__btn pago__btn--ghost pago__btn--block"
+                    (click)="consultarEstado()"
+                  >
+                    CONSULTAR ESTADO
+                  </button>
+                }
+              </div>
+            }
+
+            <div
+              id="payment-element"
+              #paymentElement
+              class="pago__element"
+              [class.pago__element--bloqueado]="
+                esperandoWebhook() || pendienteConsulta()
+              "
+            ></div>
+
+            @if (!esperandoWebhook() && !pendienteConsulta() && error(); as mensaje) {
+              <p class="pago__error" role="alert">{{ mensaje }}</p>
+            }
+
+            <button
+              type="button"
+              class="pago__btn pago__btn--primary pago__btn--block"
+              [disabled]="!puedePagar()"
+              [attr.aria-busy]="confirmandoStripe()"
+              (click)="pagar()"
+            >
+              @if (confirmandoStripe()) {
+                PROCESANDO…
+              } @else {
+                PAGAR {{ moneda() }} {{ monto() | number: '1.2-2' }}
+              }
+            </button>
+
+            <p class="pago__hint">
+              Al pagar aceptas el procesamiento seguro con Stripe. El pago se
+              confirma cuando el backend recibe la confirmación de Stripe.
+            </p>
+          }
+        </section>
+
+        <aside class="pago__resumen" aria-label="Resumen de la venta">
+          <h2 class="pago__card-title">Resumen</h2>
+
+          <dl class="pago__resumen-data">
+            <div>
+              <dt>Venta</dt>
+              <dd>#{{ ventaId() }}</dd>
+            </div>
+            <div>
+              <dt>Monto</dt>
+              <dd>{{ moneda() }} {{ monto() | number: '1.2-2' }}</dd>
+            </div>
+            <div>
+              <dt>Moneda</dt>
+              <dd>{{ moneda() }}</dd>
+            </div>
+            <div>
+              <dt>Estado inicial</dt>
+              <dd>{{ estadoPago() }}</dd>
+            </div>
+          </dl>
+
+          <p class="pago__vigencia">
+            El monto y la moneda los determina el backend a partir de la venta.
+          </p>
+        </aside>
+      </div>
+    }
+  </div>
+</main>

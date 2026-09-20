@@ -111,6 +111,19 @@ export class AuthService {
   );
 
   /**
+   * true si el usuario puede registrar ventas presenciales (CU20):
+   * ADMINISTRADOR (cualquier sucursal), ENCARGADO_SUCURSAL o CAJERO (su
+   * sucursal). CLIENTE queda fuera.
+   *
+   * Es un permiso SEMÁNTICO propio de CU20 (no se reutiliza el de CU18 aunque
+   * la allowlist de roles coincida). La autorización real la aplica el backend
+   * (403) con su propia allowlist; esto es solo UX (menú, guard y ruta).
+   */
+  readonly puedeRegistrarVentasPresenciales = computed(
+    () => this.esAdministrador() || this.esEncargadoSucursal() || this.esCajero(),
+  );
+
+  /**
    * sucursal_id del personal si está disponible en la sesión.
    *
    * Solo llega en la respuesta del login (PersonalAuth): GET /auth/me no lo

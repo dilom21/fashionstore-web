@@ -160,9 +160,13 @@ export class CarritoDetallePage implements OnInit {
     void this.router.navigate(['/catalogo']);
   }
 
-  /** CU15 no implementa checkout. */
+  /** CU19: lleva al checkout para confirmar la compra digital. */
   irAPagar(): void {
-    this.toast.mostrar('Disponible próximamente', 'info');
+    const carritoId = this.carritoId();
+    if (carritoId === null) {
+      return;
+    }
+    void this.router.navigate(['/checkout', carritoId]);
   }
 
   reintentar(): void {

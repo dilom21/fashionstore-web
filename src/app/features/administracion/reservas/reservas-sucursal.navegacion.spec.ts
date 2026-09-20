@@ -91,6 +91,7 @@ describe('CU17 - navegación, menú y roles (/admin/reservas)', () => {
     const auth = {
       esAdministrador: () => false,
       esEncargadoSucursal: () => true,
+      esCajero: () => false,
       usuarioActual: () => null,
       cerrarSesion: vi.fn(),
     };
@@ -112,6 +113,7 @@ describe('CU17 - navegación, menú y roles (/admin/reservas)', () => {
     expect(rutas).toContain('/personal/reservas/atencion');
     expect(rutas).toContain('/admin/inventario/consultar');
     expect(rutas).toContain('/admin/inventario/movimientos');
+    expect(rutas).toContain('/personal/ventas/presencial');
     expect(rutas).not.toContain('/admin/usuarios');
     expect(rutas).not.toContain('/admin/ventas');
 
@@ -125,7 +127,7 @@ describe('CU17 - navegación, menú y roles (/admin/reservas)', () => {
     ]);
   });
 
-  it('el CAJERO ve solo Reservas → Atender reservas (sin módulos administrativos)', async () => {
+  it('el CAJERO ve Reservas y Ventas y Pagos (CU18 y CU20), sin módulos administrativos', async () => {
     const auth = {
       esAdministrador: () => false,
       esEncargadoSucursal: () => false,
@@ -147,12 +149,19 @@ describe('CU17 - navegación, menú y roles (/admin/reservas)', () => {
     const fixture = TestBed.createComponent(AdministracionShell);
     const items = fixture.componentInstance.navItems();
 
-    // Un único grupo: Reservas, con una sola opción (CU18).
-    expect(items.map((item) => item.id)).toEqual(['reservas']);
+    // Dos grupos operativos: Reservas (CU18) y Ventas y Pagos (CU20).
+    expect(items.map((item) => item.id)).toEqual(['reservas', 'ventas']);
     expect(items[0].children?.map((hijo) => hijo.label)).toEqual([
       'Atender reservas',
     ]);
-    expect(rutasDeMenu(items)).toEqual(['/personal/reservas/atencion']);
+    expect(items[1].children?.map((hijo) => hijo.label)).toEqual([
+      'Registrar venta presencial',
+    ]);
+    expect(rutasDeMenu(items)).toEqual([
+      '/personal/reservas/atencion',
+      '/personal/ventas/presencial',
+    ]);
+    expect(rutasDeMenu(items)).not.toContain('/admin/ventas');
   });
 
   it('CAJERO no puede acceder a CU17 y se le redirige a /dashboard', () => {

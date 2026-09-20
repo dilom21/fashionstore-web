@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
@@ -24,10 +25,19 @@ import {
   formatearFechaHora,
 } from '../../../reservas/utils/reserva-fecha.util';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { PagoPresencialDialog } from '../../../ventas/components/pago-presencial-dialog/pago-presencial-dialog';
+import {
+  PagoPresencialResponse,
+  etiquetaMetodoPago,
+} from '../../../ventas/models/pago-presencial.model';
+import { VentaPresencialResponse } from '../../../ventas/models/venta-presencial.model';
+import { VentaPresencialService } from '../../../ventas/services/venta-presencial.service';
+import { traducirErrorVentaPresencial } from '../../../ventas/utils/venta-presencial-error.util';
 import { PrendaAtencionCard } from '../../components/prenda-atencion-card/prenda-atencion-card';
 import {
   AtencionReservaDetalle,
   AtencionReservaItem,
+  EstadoReservaAtencion,
   OBSERVACION_MAX_LENGTH,
   PrepararVentaItemRequest,
   PrepararVentaResponse,
@@ -44,7 +54,7 @@ interface EstadoLinea {
 }
 
 /** Acción en curso. */
-type AccionAtencion = 'venta' | 'finalizar';
+type AccionAtencion = 'venta' | 'finalizar' | 'registrar-venta';
 
 /**
  * CU18 - Atender reserva de prendas (/personal/reservas/atencion/:reserva_id).
@@ -62,12 +72,15 @@ type AccionAtencion = 'venta' | 'finalizar';
     AdminIcon,
     PrendaAtencionCard,
     ConfirmDialog,
+    PagoPresencialDialog,
+    DecimalPipe,
   ],
   styleUrl: './atender-reserva-page.css',
   templateUrl: './atender-reserva-page.html',
 })
 export class AtenderReservaPage implements OnInit {
   private readonly atencionService = inject(AtencionReservasService);
+  private readonly ventaPresencialService = inject(VentaPresencialService);
   private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -92,8 +105,18 @@ export class AtenderReservaPage implements OnInit {
   readonly confirmarFinalizar = signal(false);
   readonly resultado = signal<PrepararVentaResponse | null>(null);
 
-  /** Venta/Pago aún no está implementado: el CTA queda deshabilitado. */
-  readonly ventaPendiente = true;
+  /**
+   * Venta presencial (CU20) registrada para la selección validada.
+   *
+   * Mientras exista, la reserva sigue CONFIRMADA y la venta queda PENDIENTE:
+   * CU21 registrará el pago. Se conserva `venta_id`/`total`/`estado` para el
+   * siguiente caso de uso.
+   */
+  readonly ventaRegistrada = signal<VentaPresencialResponse | null>(null);
+
+  /** CU21: diálogo de pago presencial y su resultado aprobado. */
+  readonly mostrarPago = signal(false);
+  readonly pagoRegistrado = signal<PagoPresencialResponse | null>(null);
 
   readonly maxObservacion = OBSERVACION_MAX_LENGTH;
 
@@ -136,6 +159,47 @@ export class AtenderReservaPage implements OnInit {
 
   /** Con al menos una unidad seleccionada la acción principal es la venta. */
   readonly haySeleccion = computed(() => this.totalCompra() > 0);
+
+  /** Líneas normalizadas que sí se llevarán a la venta (cantidad_compra > 0). */
+  readonly lineasVenta = computed(() =>
+    (this.resultado()?.items ?? []).filter(
+      (linea) => linea.cantidad_compra > 0,
+    ),
+  );
+
+  /** CTA REGISTRAR VENTA: solo con selección validada, una sola vez. */
+  readonly puedeRegistrarVenta = computed(
+    () =>
+      this.resultado() !== null &&
+      this.ventaRegistrada() === null &&
+      this.procesando() === null &&
+      this.lineasVenta().length > 0,
+  );
+
+  /** Ya existe una venta para esta selección: no se permite re-registrar. */
+  readonly ventaBloqueada = computed(() => this.ventaRegistrada() !== null);
+
+  /**
+   * CU21: se puede pagar mientras exista una venta PENDIENTE sin pago aprobado
+   * y la reserva siga atendible (CONFIRMADA).
+   */
+  readonly puedePagarReserva = computed(
+    () =>
+      this.ventaRegistrada() !== null &&
+      this.pagoRegistrado() === null &&
+      !this.soloLectura(),
+  );
+
+  /** Estado de la reserva tras el pago (el backend lo devuelve). */
+  readonly estadoReservaFinal = computed(
+    () => this.pagoRegistrado()?.estado_reserva ?? this.detalle()?.estado ?? '',
+  );
+
+  /** Estado visual de la venta. `PENDIENTE` es un resultado correcto. */
+  readonly estadoVentaRegistrada = computed(() => {
+    const estado = (this.ventaRegistrada()?.estado ?? '').trim().toUpperCase();
+    return estado === 'PENDIENTE' ? 'PENDIENTE DE PAGO' : estado;
+  });
 
   constructor() {
     // La observación es texto libre: solo se envía al confirmar
@@ -289,7 +353,7 @@ export class AtenderReservaPage implements OnInit {
    * finaliza la atención sin compra (con confirmación).
    */
   accionPrincipal(): void {
-    if (this.soloLectura() || this.procesando() !== null) {
+    if (this.soloLectura() || this.procesando() !== null || this.ventaBloqueada()) {
       return;
     }
     if (this.haySeleccion()) {
@@ -344,6 +408,107 @@ export class AtenderReservaPage implements OnInit {
 
   cerrarResultado(): void {
     this.resultado.set(null);
+  }
+
+  // ===== CU20 - Registrar la venta de la selección validada =====
+
+  /**
+   * Registra la venta presencial a partir de la selección validada.
+   *
+   * Envía `reserva_id` + las líneas con `cantidad_compra > 0` mapeadas a
+   * `cantidad`. NO envía `cliente_id` (lo deriva el backend de la reserva).
+   * Tras el éxito la reserva SIGUE CONFIRMADA y no se libera ni descuenta nada.
+   */
+  registrarVentaDesdeReserva(): void {
+    const resultado = this.resultado();
+    if (resultado === null || !this.puedeRegistrarVenta()) {
+      return;
+    }
+
+    const items = this.lineasVenta().map((linea) => ({
+      inventario_id: linea.inventario_id,
+      cantidad: linea.cantidad_compra,
+    }));
+    if (items.length === 0) {
+      return;
+    }
+
+    this.procesando.set('registrar-venta');
+    this.ventaPresencialService
+      .registrarVentaDesdeReserva(resultado.reserva_id, items)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (venta) => {
+          this.procesando.set(null);
+          this.ventaRegistrada.set(venta);
+          // La reserva sigue CONFIRMADA: CU20 solo crea la venta PENDIENTE.
+          this.toast.mostrar(
+            `Venta #${venta.venta_id} registrada: PENDIENTE DE PAGO.`,
+            'ok',
+          );
+        },
+        error: (error: unknown) => {
+          this.procesando.set(null);
+          const traducido = traducirErrorVentaPresencial(error);
+          if (traducido.sesionExpirada) {
+            this.cerrarSesion();
+            return;
+          }
+          this.toast.mostrar(traducido.mensaje, 'error');
+        },
+      });
+  }
+
+  // ===== CU21 - Registrar pago presencial =====
+
+  /** Abre el diálogo de pago de la venta PENDIENTE recién registrada. */
+  abrirPago(): void {
+    if (!this.puedePagarReserva()) {
+      return;
+    }
+    this.mostrarPago.set(true);
+  }
+
+  cerrarPago(): void {
+    this.mostrarPago.set(false);
+  }
+
+  /**
+   * El pago fue APROBADO y el backend confirmó la venta (`sp_confirmar_venta`).
+   *
+   * Refleja el estado final de la reserva: si el response trae
+   * `estado_reserva` se usa directamente; si no, se recarga la reserva una
+   * sola vez tras el pago exitoso. NUNCA se llama a `finalizar-sin-compra` ni
+   * se toca stock desde el frontend.
+   */
+  onPagado(pago: PagoPresencialResponse): void {
+    this.pagoRegistrado.set(pago);
+    // La venta ya está confirmada: el modal de CU20 deja de tener sentido.
+    this.resultado.set(null);
+
+    const detalle = this.detalle();
+    if (pago.estado_reserva && detalle !== null) {
+      this.detalle.set({
+        ...detalle,
+        estado: pago.estado_reserva as EstadoReservaAtencion,
+      });
+    } else {
+      this.recargar();
+    }
+
+    this.toast.mostrar(
+      `Pago #${pago.pago_id} registrado. Reserva ${this.estadoReservaFinal()}.`,
+      'ok',
+    );
+  }
+
+  onSesionExpiradaPago(): void {
+    this.cerrarSesion();
+  }
+
+  /** Etiqueta legible del método devuelto por el backend. */
+  etiquetaMetodo(metodo: string): string {
+    return etiquetaMetodoPago(metodo);
   }
 
   // ===== Finalizar sin compra =====

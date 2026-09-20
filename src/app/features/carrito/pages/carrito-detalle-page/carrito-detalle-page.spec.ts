@@ -4,6 +4,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
+  Router,
   convertToParamMap,
   provideRouter,
 } from '@angular/router';
@@ -50,9 +51,10 @@ const CARRITO: CarritoDetalle = {
  * Regresión de CU15 tras integrar CU16: el carrito sigue funcionando y ahora
  * ofrece "RESERVAR PRENDAS" sin cambiar el comportamiento de "IR A PAGAR".
  */
-describe('CarritoDetallePage (regresión CU15 + CU16)', () => {
+describe('CarritoDetallePage (regresión CU15 + CU16 + CU19)', () => {
   let fixture: ComponentFixture<CarritoDetallePage>;
   let toast: any;
+  let navigateSpy: any;
 
   async function setup() {
     toast = { mostrar: vi.fn(), toasts: signal([]), cerrar: vi.fn() };
@@ -89,6 +91,10 @@ describe('CarritoDetallePage (regresión CU15 + CU16)', () => {
       ],
     }).compileComponents();
 
+    navigateSpy = vi
+      .spyOn(TestBed.inject(Router), 'navigate')
+      .mockResolvedValue(true);
+
     fixture = TestBed.createComponent(CarritoDetallePage);
     fixture.detectChanges();
   }
@@ -112,7 +118,7 @@ describe('CarritoDetallePage (regresión CU15 + CU16)', () => {
     expect((enlace.textContent ?? '').trim()).toContain('RESERVAR PRENDAS');
   });
 
-  it('conserva el botón IR A PAGAR con su aviso de próximamente', async () => {
+  it('IR A PAGAR navega al checkout digital (CU19)', async () => {
     await setup();
     const botones = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
@@ -123,6 +129,10 @@ describe('CarritoDetallePage (regresión CU15 + CU16)', () => {
 
     expect(pagar).toBeTruthy();
     pagar?.click();
-    expect(toast.mostrar).toHaveBeenCalledWith('Disponible próximamente', 'info');
+    expect(navigateSpy).toHaveBeenCalledWith(['/checkout', 7]);
+    expect(toast.mostrar).not.toHaveBeenCalledWith(
+      'Disponible próximamente',
+      'info',
+    );
   });
 });

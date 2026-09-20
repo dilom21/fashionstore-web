@@ -170,10 +170,22 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     id: 'ventas',
     label: 'Ventas y Pagos',
     icon: 'ventas',
-    route: '/admin/ventas',
     descripcion: 'Ventas presenciales, pagos y devoluciones.',
-    estado: 'proximamente',
     permiso: 'VENTAS',
+    children: [
+      {
+        id: 'venta-presencial',
+        label: 'Registrar venta presencial',
+        icon: 'ventas',
+        // CU20 vive en el shell operativo (/personal), no en /admin; la
+        // agrupación del menú es visual, no exige compartir prefijo de URL.
+        route: '/personal/ventas/presencial',
+        descripcion:
+          'Registra una venta en tienda, directa o proveniente de una reserva confirmada (CU20).',
+        estado: 'funcional',
+        permiso: 'VENTAS',
+      },
+    ],
   },
   {
     id: 'compras',
