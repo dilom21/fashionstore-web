@@ -168,7 +168,7 @@
                 [prenda]="item"
                 [seleccionada]="seleccionadaDe(item)"
                 [cantidad]="cantidadDe(item)"
-                [bloqueada]="soloLectura()"
+                [bloqueada]="soloLectura() || ventaBloqueada()"
                 (seleccionCambiada)="cambiarSeleccion(item, $event)"
                 (cantidadCambiada)="cambiarCantidad(item, $event)"
               />
@@ -253,6 +253,25 @@
               <app-admin-icon icono="chevron-left" />
               Volver a reservas por atender
             </button>
+          } @else if (ventaBloqueada()) {
+            <p class="atd__accion-nota">
+              VENTA #{{ ventaRegistrada()?.venta_id }} REGISTRADA ·
+              {{ estadoVentaRegistrada() }}. La reserva sigue
+              {{ reserva.estado }}: registra el pago para completarla.
+            </p>
+            <button
+              type="button"
+              class="atd__btn atd__btn--primary atd__btn--block"
+              [disabled]="!puedePagarReserva() || procesando() !== null"
+              (click)="abrirPago()"
+            >
+              <app-admin-icon icono="ventas" />
+              REGISTRAR PAGO
+            </button>
+            <p class="atd__accion-nota">
+              Ya existe una venta asociada: no se puede registrar otra venta ni
+              finalizar sin compra.
+            </p>
           } @else {
             <button
               type="button"

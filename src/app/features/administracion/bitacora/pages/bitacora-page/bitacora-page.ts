@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -63,6 +63,7 @@ export class BitacoraPage {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
 
   readonly items = signal<BitacoraEvento[]>([]);
   readonly total = signal(0);
@@ -188,6 +189,7 @@ export class BitacoraPage {
     const limite = Number((evento.target as HTMLSelectElement).value);
     this.limit.set(limite);
     this.cargarBitacora(0);
+    this.volverArriba();
   }
 
   irAnterior(): void {
@@ -195,6 +197,7 @@ export class BitacoraPage {
       return;
     }
     this.cargarBitacora(Math.max(0, this.offset() - this.limit()));
+    this.volverArriba();
   }
 
   irSiguiente(): void {
@@ -202,6 +205,16 @@ export class BitacoraPage {
       return;
     }
     this.cargarBitacora(this.offset() + this.limit());
+    this.volverArriba();
+  }
+
+  /** Devuelve la vista al inicio al cambiar de página o de tamaño. */
+  private volverArriba(): void {
+    this.document.defaultView?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth',
+    });
   }
 
   hayAnterior(): boolean {

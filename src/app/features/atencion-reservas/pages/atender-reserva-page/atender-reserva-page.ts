@@ -30,7 +30,6 @@ import {
   PagoPresencialResponse,
   etiquetaMetodoPago,
 } from '../../../ventas/models/pago-presencial.model';
-import { VentaPresencialResponse } from '../../../ventas/models/venta-presencial.model';
 import { VentaPresencialService } from '../../../ventas/services/venta-presencial.service';
 import { traducirErrorVentaPresencial } from '../../../ventas/utils/venta-presencial-error.util';
 import { PrendaAtencionCard } from '../../components/prenda-atencion-card/prenda-atencion-card';
@@ -41,6 +40,7 @@ import {
   OBSERVACION_MAX_LENGTH,
   PrepararVentaItemRequest,
   PrepararVentaResponse,
+  VentaAtencionResumen,
 } from '../../models/atencion-reserva.model';
 import { AtencionReservasService } from '../../services/atencion-reservas.service';
 import { traducirErrorAtencionReserva } from '../../utils/atencion-reserva-error.util';
@@ -106,13 +106,15 @@ export class AtenderReservaPage implements OnInit {
   readonly resultado = signal<PrepararVentaResponse | null>(null);
 
   /**
-   * Venta presencial (CU20) registrada para la selección validada.
+   * Venta presencial (CU20) asociada a la reserva.
    *
-   * Mientras exista, la reserva sigue CONFIRMADA y la venta queda PENDIENTE:
-   * CU21 registrará el pago. Se conserva `venta_id`/`total`/`estado` para el
-   * siguiente caso de uso.
+   * Se registra en la sesión actual o se RECUPERA del backend al cargar el
+   * detalle (`venta_asociada`): así, tras recargar o reabrir la atención, la
+   * pantalla sigue sabiendo que existe una venta PENDIENTE. Mientras exista,
+   * la reserva sigue CONFIRMADA y la única acción válida es registrar el pago
+   * (CU21); se bloquean venta nueva y finalizar sin compra.
    */
-  readonly ventaRegistrada = signal<VentaPresencialResponse | null>(null);
+  readonly ventaRegistrada = signal<VentaAtencionResumen | null>(null);
 
   /** CU21: diálogo de pago presencial y su resultado aprobado. */
   readonly mostrarPago = signal(false);
@@ -208,7 +210,7 @@ export class AtenderReservaPage implements OnInit {
     // El estado deshabilitado se gestiona en el propio FormControl (no con
     // [disabled] en el template, que Angular desaconseja junto a [formControl]).
     effect(() => {
-      if (this.soloLectura()) {
+      if (this.soloLectura() || this.ventaBloqueada()) {
         this.observacion.disable({ emitEvent: false });
       } else {
         this.observacion.enable({ emitEvent: false });
@@ -239,6 +241,7 @@ export class AtenderReservaPage implements OnInit {
           this.cargando.set(false);
           this.detalle.set(detalle);
           this.inicializarSeleccion(detalle);
+          this.sincronizarVentaAsociada(detalle);
         },
         error: (error: unknown) => {
           this.cargando.set(false);
@@ -275,6 +278,28 @@ export class AtenderReservaPage implements OnInit {
     this.seleccion.set(mapa);
   }
 
+  /**
+   * Recupera la venta asociada que expone el backend en el detalle CU18.
+   *
+   * Es la pieza clave del bug: sin esto, tras recargar o reabrir la atención el
+   * frontend olvidaba que CU20 ya creó una venta y volvía a ofrecer FINALIZAR
+   * SIN COMPRA. Si el backend no reporta venta, se limpia el estado local.
+   */
+  private sincronizarVentaAsociada(detalle: AtencionReservaDetalle): void {
+    const asociada = detalle.venta_asociada;
+    if (asociada === null || asociada === undefined) {
+      this.ventaRegistrada.set(null);
+      return;
+    }
+    this.ventaRegistrada.set({
+      venta_id: asociada.venta_id,
+      estado: asociada.estado,
+      total: Number(asociada.total),
+      canal: asociada.canal,
+      reserva_id: detalle.reserva_id,
+    });
+  }
+
   // ===== Selección (estado SOLO local) =====
 
   seleccionadaDe(item: AtencionReservaItem): boolean {
@@ -292,7 +317,7 @@ export class AtenderReservaPage implements OnInit {
    * cantidad positiva (o 1 si no existe), nunca por encima de lo reservado.
    */
   cambiarSeleccion(item: AtencionReservaItem, seleccionada: boolean): void {
-    if (this.soloLectura()) {
+    if (this.soloLectura() || this.ventaBloqueada()) {
       return;
     }
     const maximo = item.cantidad_reservada;
@@ -332,7 +357,7 @@ export class AtenderReservaPage implements OnInit {
 
   /** La tarjeta ya limita 1..cantidad_reservada; se acota por seguridad. */
   cambiarCantidad(item: AtencionReservaItem, cantidad: number): void {
-    if (this.soloLectura()) {
+    if (this.soloLectura() || this.ventaBloqueada()) {
       return;
     }
     const valor = Math.min(Math.max(1, cantidad), item.cantidad_reservada);
@@ -514,7 +539,7 @@ export class AtenderReservaPage implements OnInit {
   // ===== Finalizar sin compra =====
 
   solicitarFinalizarSinCompra(): void {
-    if (this.procesando() !== null) {
+    if (this.procesando() !== null || this.ventaBloqueada()) {
       return;
     }
     this.confirmarFinalizar.set(true);
@@ -531,7 +556,12 @@ export class AtenderReservaPage implements OnInit {
   finalizarSinCompra(): void {
     this.confirmarFinalizar.set(false);
     const detalle = this.detalle();
-    if (detalle === null || this.procesando() !== null) {
+    if (
+      detalle === null ||
+      this.procesando() !== null ||
+      this.soloLectura() ||
+      this.ventaBloqueada()
+    ) {
       return;
     }
 

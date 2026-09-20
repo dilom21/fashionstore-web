@@ -19,6 +19,7 @@ import { VentaPresencialService } from '../../../ventas/services/venta-presencia
 import {
   AtencionReservaDetalle,
   AtencionReservaItem,
+  VentaAsociadaAtencion,
 } from '../../models/atencion-reserva.model';
 import { AtencionReservasService } from '../../services/atencion-reservas.service';
 import { AtenderReservaPage } from './atender-reserva-page';
@@ -53,6 +54,7 @@ const ITEM_B: AtencionReservaItem = {
 function detalle(
   estado: AtencionReservaDetalle['estado'] = 'CONFIRMADA',
   items: AtencionReservaItem[] = [ITEM_A, ITEM_B],
+  ventaAsociada: VentaAsociadaAtencion | null = null,
 ): AtencionReservaDetalle {
   return {
     reserva_id: 15,
@@ -71,7 +73,16 @@ function detalle(
       (total, item) => total + item.cantidad_reservada,
       0,
     ),
+    venta_asociada: ventaAsociada,
   };
+}
+
+function ventaAsociada(
+  estado = 'PENDIENTE',
+  ventaId = 473,
+  total = 569.7,
+): VentaAsociadaAtencion {
+  return { venta_id: ventaId, estado, total, canal: 'PRESENCIAL' };
 }
 
 function ventaPresencial(): VentaPresencialResponse {
@@ -114,9 +125,12 @@ describe('AtenderReservaPage (CU18)', () => {
   let toast: any;
   let router: Router;
 
-  async function setup(estado: AtencionReservaDetalle['estado'] = 'CONFIRMADA') {
+  async function setup(
+    estado: AtencionReservaDetalle['estado'] = 'CONFIRMADA',
+    venta: VentaAsociadaAtencion | null = null,
+  ) {
     atencionService = {
-      obtenerReserva: vi.fn(() => of(detalle(estado))),
+      obtenerReserva: vi.fn(() => of(detalle(estado, [ITEM_A, ITEM_B], venta))),
       listarReservas: vi.fn(),
       esAtendible: (valor: string) => valor === 'CONFIRMADA',
       prepararVenta: vi.fn(() =>
@@ -729,6 +743,132 @@ describe('AtenderReservaPage (CU18)', () => {
       llamadasPrevias + 1,
     );
     expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
+  });
+
+  // ===== Recuperación de venta asociada (bug reload CU18/CU20) =====
+
+  it('sin venta asociada conserva el flujo normal de CU18', async () => {
+    await setup('CONFIRMADA', null);
+
+    expect(componente.ventaRegistrada()).toBeNull();
+    expect(componente.ventaBloqueada()).toBe(false);
+    expect(texto()).not.toContain('REGISTRAR PAGO');
+    // El CTA principal sigue siendo la venta normal.
+    expect(botonPrincipal()?.textContent).toContain('CONTINUAR A VENTA');
+  });
+
+  it('carga una reserva con venta PENDIENTE y la muestra como pendiente de pago', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+
+    expect(componente.ventaRegistrada()?.venta_id).toBe(473);
+    expect(componente.ventaRegistrada()?.estado).toBe('PENDIENTE');
+    expect(componente.ventaBloqueada()).toBe(true);
+    expect(texto()).toContain('VENTA #473 REGISTRADA');
+    expect(texto()).toContain('PENDIENTE DE PAGO');
+    // La reserva sigue CONFIRMADA.
+    expect(componente.detalle()?.estado).toBe('CONFIRMADA');
+  });
+
+  it('reload recupera la venta desde el backend y no la pierde', async () => {
+    await setup('CONFIRMADA', ventaAsociada('PENDIENTE', 473, 569.7));
+
+    componente.recargar();
+    fixture.detectChanges();
+
+    expect(atencionService.obtenerReserva).toHaveBeenCalledTimes(2);
+    expect(componente.ventaRegistrada()?.venta_id).toBe(473);
+    expect(componente.ventaBloqueada()).toBe(true);
+    expect(texto()).toContain('VENTA #473 REGISTRADA');
+  });
+
+  it('con venta asociada bloquea FINALIZAR SIN COMPRA y no ejecuta el endpoint', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+
+    // No hay botón principal de venta/finalizar; solo REGISTRAR PAGO.
+    expect(botonPrincipal()).toBeUndefined();
+    expect(texto()).not.toContain('FINALIZAR SIN COMPRA');
+    expect(texto()).not.toContain('CONTINUAR A VENTA');
+
+    componente.solicitarFinalizarSinCompra();
+    componente.finalizarSinCompra();
+    fixture.detectChanges();
+
+    expect(componente.confirmarFinalizar()).toBe(false);
+    expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
+  });
+
+  it('con venta asociada no permite preparar ni registrar otra venta', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+
+    expect(componente.puedeRegistrarVenta()).toBe(false);
+
+    componente.accionPrincipal();
+    componente.registrarVentaDesdeReserva();
+    fixture.detectChanges();
+
+    expect(atencionService.prepararVenta).not.toHaveBeenCalled();
+    expect(
+      ventaPresencialService.registrarVentaDesdeReserva,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('con venta asociada la selección queda bloqueada', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+
+    expect(checkboxDe(0).disabled).toBe(true);
+    expect(botonDe(tarjetas()[0], 'par__restar').disabled).toBe(true);
+    expect(botonDe(tarjetas()[0], 'par__sumar').disabled).toBe(true);
+  });
+
+  it('con venta asociada permite REGISTRAR PAGO y abre el diálogo', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+
+    const botonPago = Array.from(
+      fixture.nativeElement.querySelectorAll('.atd__card button'),
+    ).find((boton) =>
+      ((boton as HTMLButtonElement).textContent ?? '').includes(
+        'REGISTRAR PAGO',
+      ),
+    ) as HTMLButtonElement | undefined;
+
+    expect(botonPago).toBeDefined();
+    expect(botonPago?.disabled).toBe(false);
+
+    botonPago?.click();
+    fixture.detectChanges();
+
+    expect(componente.mostrarPago()).toBe(true);
+    expect(
+      fixture.nativeElement.querySelector('app-pago-presencial-dialog'),
+    ).not.toBeNull();
+  });
+
+  it('el pago exitoso de una venta recuperada deja la reserva ATENDIDA', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+
+    componente.onPagado(pagoAprobado());
+    fixture.detectChanges();
+
+    expect(componente.detalle()?.estado).toBe('ATENDIDA');
+    expect(componente.estadoReservaFinal()).toBe('ATENDIDA');
+    expect(texto()).toContain('PAGO #7 REGISTRADO');
+    expect(texto()).toContain('ATENCIÓN FINALIZADA');
+    expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
+  });
+
+  it('un 409 al finalizar con venta no altera el estado local', async () => {
+    await setup('CONFIRMADA', ventaAsociada());
+    atencionService.finalizarSinCompra.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 409 })),
+    );
+
+    componente.finalizarSinCompra();
+    fixture.detectChanges();
+
+    // Ni siquiera se llamó al backend (bloqueado en el cliente).
+    expect(atencionService.finalizarSinCompra).not.toHaveBeenCalled();
+    expect(componente.detalle()?.estado).toBe('CONFIRMADA');
+    expect(componente.ventaRegistrada()?.venta_id).toBe(473);
   });
 });
 

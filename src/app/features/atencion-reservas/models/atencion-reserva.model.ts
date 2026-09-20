@@ -65,6 +65,24 @@ export interface AtencionReservaListaResponse {
   offset: number;
 }
 
+/** Venta ya asociada a la reserva (CU20), expuesta por el detalle CU18. */
+export interface VentaAsociadaAtencion {
+  venta_id: number;
+  estado: string;
+  /** Decimal serializado por el backend: se normaliza solo para presentación. */
+  total: number;
+  canal: string;
+}
+
+/** Estado mínimo de la venta asociada que maneja la pantalla de atención. */
+export interface VentaAtencionResumen {
+  venta_id: number;
+  estado: string;
+  total: number;
+  canal: string;
+  reserva_id: number | null;
+}
+
 /** Detalle operativo (AtencionReservaDetalleResponse). */
 export interface AtencionReservaDetalle {
   reserva_id: number;
@@ -80,6 +98,11 @@ export interface AtencionReservaDetalle {
   observacion: string | null;
   items: AtencionReservaItem[];
   cantidad_total_unidades: number;
+  /**
+   * Venta (CU20) ya asociada a la reserva; null si aún no existe. Permite
+   * recuperar el estado de venta tras recargar o reabrir la atención.
+   */
+  venta_asociada: VentaAsociadaAtencion | null;
 }
 
 /** Línea de la selección de compra (PrepararVentaItemRequest). */
