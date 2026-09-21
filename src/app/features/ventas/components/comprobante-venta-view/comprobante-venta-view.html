@@ -1,0 +1,205 @@
+<section class="cvw" aria-label="Comprobante de venta">
+  <header class="cvw__resumen">
+    <span class="cvw__eyebrow">Comprobante de venta</span>
+    <strong class="cvw__codigo">{{ codigo() }}</strong>
+
+    <dl class="cvw__resumen-datos">
+      <div>
+        <dt>Código de venta</dt>
+        <dd>{{ codigo() }}</dd>
+      </div>
+      <div>
+        <dt>Fecha y hora</dt>
+        <dd>{{ fechaHora() }}</dd>
+      </div>
+      <div>
+        <dt>Canal</dt>
+        <dd>{{ canal() }}</dd>
+      </div>
+      <div>
+        <dt>Cliente</dt>
+        <dd>{{ cliente() }}</dd>
+      </div>
+      @if (cajero(); as nombre) {
+        <div>
+          <dt>Cajero</dt>
+          <dd>{{ nombre }}</dd>
+        </div>
+      } @else if (enLinea()) {
+        <div>
+          <dt>Registro</dt>
+          <dd>{{ ventaEnLinea }}</dd>
+        </div>
+      }
+    </dl>
+  </header>
+
+  @if (error(); as mensaje) {
+    <p class="cvw__aviso" role="alert">{{ mensaje }}</p>
+  }
+
+  <article class="cvw__hoja" #hoja aria-label="Vista previa del comprobante">
+    <p class="cvw__marca">VANTER <em>MEN</em></p>
+    <h2 class="cvw__hoja-titulo">COMPROBANTE DE VENTA</h2>
+
+    <dl class="cvw__hoja-datos">
+      <div>
+        <dt>N° de venta</dt>
+        <dd>{{ codigo() }}</dd>
+      </div>
+      <div>
+        <dt>Fecha y hora</dt>
+        <dd>{{ fechaHora() }}</dd>
+      </div>
+      <div>
+        <dt>Canal</dt>
+        <dd>{{ canal() }}</dd>
+      </div>
+      <div>
+        <dt>Sucursal</dt>
+        <dd>{{ comprobante().sucursal.nombre }}</dd>
+      </div>
+      <div>
+        <dt>Dirección</dt>
+        <dd>{{ comprobante().sucursal.direccion }}</dd>
+      </div>
+      @if (telefonoSucursal(); as telefono) {
+        <div>
+          <dt>Teléfono</dt>
+          <dd>{{ telefono }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Cliente</dt>
+        <dd>{{ cliente() }}</dd>
+      </div>
+      @if (documentoCliente(); as documento) {
+        <div>
+          <dt>Documento</dt>
+          <dd>{{ documento }}</dd>
+        </div>
+      }
+      @if (cajero(); as nombre) {
+        <div>
+          <dt>Cajero</dt>
+          <dd>{{ nombre }}</dd>
+        </div>
+      } @else if (enLinea()) {
+        <div>
+          <dt>Registro</dt>
+          <dd>{{ ventaEnLinea }}</dd>
+        </div>
+      }
+    </dl>
+
+    <table class="cvw__tabla">
+      <caption class="cvw__tabla-caption">Detalle del comprobante</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="cvw__col-cant">Cant.</th>
+          <th scope="col">Descripción</th>
+          <th scope="col" class="cvw__col-num">Precio unit.</th>
+          <th scope="col" class="cvw__col-num">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of comprobante().items; track item.detalle_venta_id) {
+          <tr>
+            <td class="cvw__col-cant" data-col="Cant.">{{ item.cantidad }}</td>
+            <td data-col="Descripción">
+              <span class="cvw__item-nombre">{{ item.producto_nombre }}</span>
+              <span class="cvw__item-variante">
+                {{ item.talla_nombre }} · {{ item.color_nombre }}
+              </span>
+              <span class="cvw__item-sku">SKU {{ item.sku }}</span>
+            </td>
+            <td class="cvw__col-num" data-col="Precio unit.">
+              Bs {{ formatearMonto(item.precio_unitario) }}
+            </td>
+            <td class="cvw__col-num" data-col="Subtotal">
+              Bs {{ formatearMonto(item.subtotal_linea) }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <footer class="cvw__hoja-pie">
+      <p class="cvw__unidades">
+        {{ unidades() }} {{ unidades() === 1 ? 'unidad' : 'unidades' }}
+      </p>
+
+      <p class="cvw__total">
+        <span>Total</span>
+        <strong>Bs {{ total() }}</strong>
+      </p>
+
+      <dl class="cvw__pago">
+        <div>
+          <dt>N° de pago</dt>
+          <dd>#{{ comprobante().pago.pago_id }}</dd>
+        </div>
+        <div>
+          <dt>Método de pago</dt>
+          <dd>{{ metodoPago() }}</dd>
+        </div>
+        <div>
+          <dt>Monto pagado</dt>
+          <dd>Bs {{ montoPago() }}</dd>
+        </div>
+        <div>
+          <dt>Estado</dt>
+          <dd class="cvw__estado" [class.cvw__estado--ok]="pagoAprobado()">
+            {{ comprobante().pago.estado }}
+          </dd>
+        </div>
+        @if (comprobante().pago.pasarela; as pasarela) {
+          <div>
+            <dt>Pasarela</dt>
+            <dd>{{ pasarela }}</dd>
+          </div>
+        }
+        @if (comprobante().pago.referencia_transaccion; as referencia) {
+          <div>
+            <dt>Referencia</dt>
+            <dd>{{ referencia }}</dd>
+          </div>
+        }
+      </dl>
+
+      <p class="cvw__gracias">Gracias por tu compra.</p>
+      <p class="cvw__lema">VANTER MEN - Moda que te define</p>
+    </footer>
+  </article>
+
+  <div class="cvw__acciones">
+    <button
+      type="button"
+      class="cvw__btn cvw__btn--primary"
+      [disabled]="!puedeDescargar()"
+      [attr.aria-busy]="descargando()"
+      (click)="descargarPdf()"
+    >
+      @if (descargando()) {
+        DESCARGANDO…
+      } @else {
+        DESCARGAR PDF
+      }
+    </button>
+
+    <button
+      type="button"
+      class="cvw__btn"
+      [disabled]="!puedeImprimir()"
+      [attr.aria-busy]="imprimiendo()"
+      (click)="imprimirComprobante()"
+    >
+      IMPRIMIR
+    </button>
+
+    <button type="button" class="cvw__btn cvw__btn--ghost" (click)="onVolver()">
+      VOLVER
+    </button>
+  </div>
+</section>
+

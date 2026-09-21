@@ -1,0 +1,56 @@
+<app-navbar />
+
+<main class="ccp">
+  <div class="vm-container">
+    <header class="ccp__head">
+      <span class="vm-eyebrow">Comprobante de venta</span>
+      <h1 class="ccp__title">Comprobante de venta</h1>
+      <p class="ccp__text">
+        @if (codigo()) {
+          Venta {{ codigo() }} ·
+        }
+        Aquí puedes visualizar, descargar e imprimir el comprobante de tu compra.
+      </p>
+    </header>
+
+    @if (cargando()) {
+      <section class="ccp__state" role="status" aria-live="polite">
+        <span class="ccp__spinner" aria-hidden="true"></span>
+        <p class="ccp__state-text">Cargando comprobante…</p>
+      </section>
+    } @else if (error(); as fallo) {
+      <section class="ccp__state ccp__state--error" role="alert">
+        <span class="ccp__state-icon" aria-hidden="true">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 8v4.5M12 15.6v.1"></path>
+          </svg>
+        </span>
+        <h2 class="ccp__state-title">No pudimos mostrar el comprobante</h2>
+        <p class="ccp__state-text">{{ fallo.mensaje }}</p>
+        <div class="ccp__state-actions">
+          @if (fallo.puedeReintentar) {
+            <button
+              type="button"
+              class="ccp__btn ccp__btn--primary"
+              (click)="cargarComprobante()"
+            >
+              REINTENTAR
+            </button>
+          }
+          <a class="ccp__btn" routerLink="/catalogo">Volver al catálogo</a>
+        </div>
+      </section>
+    } @else if (comprobante(); as venta) {
+      <app-comprobante-venta-view [comprobante]="venta" (volver)="volver()" />
+    }
+  </div>
+</main>

@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { PagoPresencialResponse } from '../../models/pago-presencial.model';
@@ -27,6 +28,7 @@ describe('PagoPresencialDialog (CU21)', () => {
   let fixture: ComponentFixture<PagoPresencialDialog>;
   let componente: PagoPresencialDialog;
   let pagoService: any;
+  let navigateSpy: ReturnType<typeof vi.spyOn>;
 
   async function setup(overrides: Record<string, unknown> = {}) {
     pagoService = {
@@ -36,8 +38,15 @@ describe('PagoPresencialDialog (CU21)', () => {
 
     await TestBed.configureTestingModule({
       imports: [PagoPresencialDialog],
-      providers: [{ provide: PagoPresencialService, useValue: pagoService }],
+      providers: [
+        provideRouter([]),
+        { provide: PagoPresencialService, useValue: pagoService },
+      ],
     }).compileComponents();
+
+    navigateSpy = vi
+      .spyOn(TestBed.inject(Router), 'navigate')
+      .mockResolvedValue(true);
 
     fixture = TestBed.createComponent(PagoPresencialDialog);
     componente = fixture.componentInstance;
@@ -327,5 +336,81 @@ describe('PagoPresencialDialog (CU21)', () => {
     expect(fixture.nativeElement.querySelector('input[type="password"]')).toBeNull();
     expect(texto().toLowerCase()).not.toContain('cvv');
     expect(texto().toLowerCase()).not.toContain('pan');
+  });
+
+  // ===== CU23 - Emitir comprobante de venta (integración desde CU21) =====
+
+  it('el pago aprobado ofrece VER COMPROBANTE (CU23)', async () => {
+    await setup();
+    seleccionar('EFECTIVO');
+    boton('REGISTRAR PAGO')?.click();
+    fixture.detectChanges();
+    boton('CONFIRMAR PAGO')?.click();
+    fixture.detectChanges();
+
+    expect(componente.pagoRegistrado()).toBe(true);
+    expect(boton('VER COMPROBANTE')).toBeDefined();
+    // El cierre sigue disponible como acción secundaria.
+    expect(boton('Entendido')).toBeDefined();
+    // CU23 es una acción explícita: no navega ni descarga por sí sola.
+    expect(navigateSpy).not.toHaveBeenCalled();
+  });
+
+  it('VER COMPROBANTE navega con el venta_id real del pago', async () => {
+    await setup();
+    seleccionar('TARJETA');
+    boton('REGISTRAR PAGO')?.click();
+    fixture.detectChanges();
+    boton('CONFIRMAR PAGO')?.click();
+    fixture.detectChanges();
+
+    boton('VER COMPROBANTE')?.click();
+
+    expect(navigateSpy).toHaveBeenCalledWith([
+      '/personal',
+      'ventas',
+      321,
+      'comprobante',
+    ]);
+  });
+
+  it('la misma integración sirve para la venta desde reserva (CU18 -> CU20)', async () => {
+    await setup({
+      registrarPresencial: vi.fn(() =>
+        of(
+          pagoAprobado({
+            reserva_id: 44,
+            estado_reserva: 'ATENDIDA',
+            metodo: 'EFECTIVO',
+          }),
+        ),
+      ),
+    });
+    seleccionar('EFECTIVO');
+    boton('REGISTRAR PAGO')?.click();
+    fixture.detectChanges();
+    boton('CONFIRMAR PAGO')?.click();
+    fixture.detectChanges();
+
+    // El diálogo no cambia de comportamiento por el origen de la venta.
+    expect(texto()).toContain('ATENDIDA');
+    boton('VER COMPROBANTE')?.click();
+
+    expect(navigateSpy).toHaveBeenCalledWith([
+      '/personal',
+      'ventas',
+      321,
+      'comprobante',
+    ]);
+  });
+
+  it('sin pago aprobado no expone VER COMPROBANTE', async () => {
+    await setup({
+      registrarPresencial: vi.fn(() =>
+        throwError(() => new HttpErrorResponse({ status: 403 })),
+      ),
+    });
+
+    expect(boton('VER COMPROBANTE')).toBeUndefined();
   });
 });

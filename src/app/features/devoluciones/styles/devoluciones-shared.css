@@ -1,0 +1,424 @@
+/**
+ * Estilos compartidos de CU25 (devoluciones).
+ *
+ * Se importan desde las tres pantallas del caso de uso
+ * (`styleUrls: ['./pagina.css', '../../styles/devoluciones-shared.css']`) para
+ * no triplicar botones, estados, filtros, tabla y paginación.
+ */
+
+/* ==================== ENCABEZADO DE PÁGINA ==================== */
+
+.dev__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Los iconos de los encabezados nunca deben crecer: siempre ~15px. */
+.dev__eyebrow app-admin-icon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.dev__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.15rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    filter 0.2s ease;
+}
+
+.dev__btn app-admin-icon,
+.dev__btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.dev__btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.dev__btn--primary {
+  border-color: transparent;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.dev__btn--primary:hover:not(:disabled) {
+  filter: brightness(1.07);
+  color: var(--on-accent);
+  background: var(--grad-accent);
+}
+
+.dev__btn--danger {
+  border-color: rgb(248 113 113 / 34%);
+  background: rgb(159 18 57 / 14%);
+  color: #fb7185;
+}
+
+.dev__btn--danger:hover:not(:disabled) {
+  background: rgb(159 18 57 / 22%);
+  color: #fecdd3;
+}
+
+.dev__btn--sm {
+  min-height: 2.1rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.72rem;
+}
+
+.dev__btn--block {
+  width: 100%;
+}
+
+.dev__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.dev__btn:focus-visible,
+.dev__field select:focus-visible,
+.dev__field input:focus-visible,
+.dev__field textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dev__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dev__aviso {
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgb(248 113 113 / 30%);
+  border-radius: var(--radius-m);
+  background: rgb(159 18 57 / 14%);
+  color: #fb7185;
+  font-size: 0.82rem;
+}
+
+/* ==================== ESTADOS ==================== */
+
+.dev__state {
+  display: grid;
+  place-items: center;
+  gap: 0.6rem;
+  padding: 2.4rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  text-align: center;
+}
+
+.dev__state--error {
+  border-color: rgb(248 113 113 / 28%);
+}
+
+.dev__state-title {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.dev__state-text {
+  color: var(--text-2);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.dev__state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.dev__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: dev-giro 0.8s linear infinite;
+}
+
+@keyframes dev-giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==================== FILTROS ==================== */
+
+.dev__filtros {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.dev__filtros-title {
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dev__filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 0.7rem;
+  align-items: end;
+  margin-top: 0.75rem;
+}
+
+.dev__filtros-acciones {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dev__field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.dev__label {
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.dev__field select,
+.dev__field input,
+.dev__field textarea {
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.dev__field textarea {
+  min-height: 5rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* ==================== TABLA / LISTADO ==================== */
+
+.dev__tabla-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.dev__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.dev__tabla th {
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dev__tabla td {
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+
+.dev__tabla tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dev__tabla tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.dev__codigo {
+  color: var(--text);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dev__motivo {
+  max-width: 22ch;
+} 
+
+.dev__prod {
+  display: block;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.dev__prod-unidades {
+  display: block;
+  color: var(--text-3);
+  font-size: 0.76rem;
+}
+
+/* ==================== PAGINACIÓN ==================== */
+
+.dev__paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+}
+
+.dev__pagina {
+  color: var(--text-3);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==================== RESPONSIVE (compartido) ==================== */
+
+@media (max-width: 1080px) {
+  .dev__filtros-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dev__filtros-acciones {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .dev__filtros-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dev__filtros-acciones {
+    flex-wrap: wrap;
+  }
+
+  .dev__filtros-acciones .dev__btn {
+    flex: 1 1 100%;
+  }
+
+  /* La tabla se convierte en tarjetas: sin scroll horizontal. */
+  .dev__tabla-wrap {
+    border: none;
+    background: transparent;
+  }
+
+  .dev__tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .dev__tabla,
+  .dev__tabla tbody,
+  .dev__tabla tr,
+  .dev__tabla td {
+    display: block;
+    width: 100%;
+  }
+
+  .dev__tabla tbody tr {
+    margin-bottom: 0.75rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background: var(--surface);
+  }
+
+  .dev__tabla td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.2rem 0;
+    border: 0;
+  }
+
+  .dev__tabla td::before {
+    content: attr(data-col);
+    color: var(--text-3);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .dev__tabla td[data-col='Acciones'] {
+    display: block;
+    padding-top: 0.6rem;
+  }
+
+  .dev__tabla td[data-col='Acciones']::before {
+    display: none;
+  }
+
+  .dev__tabla td[data-col='Acciones'] .dev__btn {
+    width: 100%;
+  }
+
+  .dev__motivo {
+    max-width: none;
+    text-align: right;
+  }
+
+  .dev__paginacion {
+    flex-wrap: wrap;
+  }
+
+  .dev__paginacion .dev__btn {
+    flex: 1 1 auto;
+  }
+}

@@ -1,0 +1,65 @@
+<div class="cpg">
+  <header class="cpg__head">
+    <div>
+      <span class="cpg__eyebrow">
+        <app-admin-icon icono="lista" />
+        Comprobante de venta
+      </span>
+      <h1 class="cpg__title">Comprobante de venta</h1>
+      <p class="cpg__subtitle">
+        @if (codigo()) {
+          Venta {{ codigo() }} ·
+        }
+        Consulta, descarga e imprime el comprobante de la venta finalizada.
+      </p>
+    </div>
+
+    @if (comprobante(); as venta) {
+      <span
+        class="cpg__estado"
+        [class.cpg__estado--ok]="venta.estado_venta === 'COMPLETADA'"
+      >
+        {{ venta.estado_venta }}
+      </span>
+    }
+  </header>
+
+  @if (cargando()) {
+    <section class="cpg__state" role="status" aria-live="polite">
+      <span class="cpg__spinner" aria-hidden="true"></span>
+      <p class="cpg__state-text">Cargando comprobante…</p>
+    </section>
+  } @else if (error(); as fallo) {
+    <section class="cpg__state cpg__state--error" role="alert">
+      <span class="cpg__state-icon" aria-hidden="true">
+        <app-admin-icon icono="alerta" />
+      </span>
+      <h2 class="cpg__state-title">No pudimos mostrar el comprobante</h2>
+      <p class="cpg__state-text">{{ fallo.mensaje }}</p>
+      <div class="cpg__state-actions">
+        @if (fallo.puedeReintentar) {
+          <button
+            type="button"
+            class="cpg__btn cpg__btn--primary"
+            (click)="cargarComprobante()"
+          >
+            REINTENTAR
+          </button>
+        }
+        <button type="button" class="cpg__btn" (click)="volver()">
+          Volver a ventas
+        </button>
+      </div>
+    </section>
+  } @else if (comprobante(); as venta) {
+    <p class="cpg__ok" role="status">
+      <app-admin-icon icono="check" />
+      Venta {{ codigo() }} registrada y pagada correctamente.
+    </p>
+
+    <app-comprobante-venta-view
+      [comprobante]="venta"
+      (volver)="volver()"
+    />
+  }
+</div>

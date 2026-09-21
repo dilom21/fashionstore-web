@@ -1,0 +1,425 @@
+<div class="reg">
+  <header class="reg__head">
+    <div>
+      <span class="dev__eyebrow">
+        <app-admin-icon icono="ventas" />
+        Ventas y pagos
+      </span>
+      <h1 class="reg__title">Registrar devolución de productos</h1>
+      <p class="reg__subtitle">
+        Valida la venta, selecciona los productos y cantidades que serán
+        devueltos. El registro solo crea la solicitud: el inventario se
+        actualiza al procesar la devolución aprobada.
+      </p>
+    </div>
+    <a class="dev__btn" routerLink="/personal/devoluciones">
+      Volver a devoluciones
+    </a>
+  </header>
+
+  @if (registrada(); as devolucion) {
+    <section class="reg__resultado" role="status">
+      <span class="reg__resultado-icon" aria-hidden="true">
+        <app-admin-icon icono="check" />
+      </span>
+      <h2 class="reg__resultado-title">Devolución registrada</h2>
+      <p class="reg__resultado-code">
+        {{ codigoDevolucion(devolucion.devolucion_id) }} · Venta
+        {{ codigoVenta(devolucion.venta_id) }}
+      </p>
+
+      <div class="reg__resultado-estado">
+        <span class="reg__resultado-label">Estado</span>
+        <app-devolucion-estado-badge [estado]="devolucion.estado" />
+      </div>
+
+      <p class="reg__resultado-nota">
+        El inventario aún no fue modificado. La reposición de stock ocurre al
+        procesar la devolución aprobada.
+      </p>
+
+      <div class="reg__resultado-acciones">
+        <button
+          type="button"
+          class="dev__btn dev__btn--primary"
+          (click)="verDevolucion()"
+        >
+          VER DEVOLUCIÓN
+        </button>
+        <button type="button" class="dev__btn" (click)="volverAlListado()">
+          VOLVER AL LISTADO
+        </button>
+      </div>
+    </section>
+  } @else {
+    <section class="reg__busqueda" aria-label="Validar venta">
+      <h2 class="reg__seccion-title">Validar venta</h2>
+      <div class="reg__busqueda-grid">
+        <label class="dev__field" for="reg-codigo">
+          <span class="dev__label">Buscar venta por código</span>
+          <span class="reg__control">
+            <app-admin-icon class="reg__control-icono" icono="buscar" />
+            <input
+              id="reg-codigo"
+              type="search"
+              autocomplete="off"
+              placeholder="VTA-00557 o 557"
+              [value]="codigo()"
+              [disabled]="validando() || registrando()"
+              (input)="actualizarCodigo($any($event.target).value)"
+              (keydown.enter)="validarVenta()"
+            />
+          </span>
+        </label>
+
+        <button
+          type="button"
+          class="dev__btn dev__btn--primary reg__buscar"
+          [disabled]="validando() || registrando()"
+          [attr.aria-busy]="validando()"
+          (click)="validarVenta()"
+        >
+          VALIDAR VENTA
+        </button>
+      </div>
+
+      <p class="reg__hint">
+        Solo se pueden devolver prendas de ventas COMPLETADAS de tu sucursal.
+        Puedes escribir el número o pegar el código visual (VTA-00557).
+      </p>
+
+      @if (validando()) {
+        <p class="reg__estado" role="status" aria-live="polite">
+          <span class="dev__spinner" aria-hidden="true"></span>
+          Validando venta…
+        </p>
+      } @else if (errorVenta(); as fallo) {
+        <div class="reg__error" role="alert">
+          <p class="reg__error-text">{{ fallo.mensaje }}</p>
+          <button
+            type="button"
+            class="dev__btn dev__btn--sm"
+            (click)="validarVenta()"
+          >
+            REINTENTAR
+          </button>
+        </div>
+      } @else if (ventaValidada()) {
+        <p class="reg__ok" role="status">
+          <app-admin-icon icono="check" />
+          Venta válida: encontrada y con prendas disponibles para devolución.
+        </p>
+      }
+    </section>
+
+    @if (venta(); as v) {
+      <div class="reg__grid">
+        <div class="reg__principal">
+          <section class="reg__venta" aria-label="Resumen de la venta">
+            <header class="reg__venta-head">
+              <div>
+                <span class="reg__venta-label">Venta</span>
+                <strong class="reg__venta-codigo">
+                  {{ codigoVenta(v.venta_id) }}
+                </strong>
+              </div>
+              <app-devolucion-estado-badge [estado]="v.estado" />
+            </header>
+
+            <dl class="reg__venta-datos">
+              <div>
+                <dt>Fecha y hora</dt>
+                <dd>{{ formatearFechaHora(v.fecha_hora) }}</dd>
+              </div>
+              <div>
+                <dt>Canal</dt>
+                <dd>{{ etiquetaCanal(v.canal) }}</dd>
+              </div>
+              <div>
+                <dt>Sucursal</dt>
+                <dd>{{ v.sucursal.nombre }}</dd>
+              </div>
+              <div>
+                <dt>Dirección</dt>
+                <dd>{{ v.sucursal.direccion }}</dd>
+              </div>
+              <div>
+                <dt>Total de la venta</dt>
+                <dd>Bs {{ formatearMonto(v.total) }}</dd>
+              </div>
+              <div>
+                <dt>Cliente</dt>
+                @if (v.cliente; as cliente) {
+                  <dd>{{ cliente.nombre }} {{ cliente.apellido }}</dd>
+                } @else {
+                  <dd>Cliente general</dd>
+                }
+              </div>
+            </dl>
+          </section>
+
+          <section class="reg__productos" aria-label="Prendas de la venta">
+            <h2 class="reg__seccion-title">
+              Prendas de la venta ({{ items().length }})
+            </h2>
+
+            <ul class="reg__items">
+              @for (item of items(); track item.detalle_venta_id) {
+                <li
+                  class="reg__item"
+                  [class.reg__item--agotada]="item.cantidad_disponible <= 0"
+                  [class.reg__item--activa]="
+                    esLineaSeleccionada(item.detalle_venta_id)
+                  "
+                >
+                  <div class="reg__item-media">
+                    @if (imagenes()[item.detalle_venta_id]; as url) {
+                      <img
+                        class="reg__item-img"
+                        [src]="url"
+                        [alt]="item.producto_nombre + ' - ' + item.color_nombre"
+                        loading="lazy"
+                        (error)="marcarImagenRota(item.detalle_venta_id)"
+                      />
+                    } @else {
+                      <span class="reg__item-placeholder">
+                        <app-admin-icon icono="paquete" />
+                        <span class="dev__sr">Sin imagen</span>
+                      </span>
+                    }
+                  </div>
+
+                  <div class="reg__item-body">
+                    <div class="reg__item-head">
+                      <input
+                        class="reg__check"
+                        type="checkbox"
+                        [checked]="esLineaSeleccionada(item.detalle_venta_id)"
+                        [disabled]="
+                          item.cantidad_disponible <= 0 || registrando()
+                        "
+                        [attr.aria-label]="'Seleccionar ' + item.producto_nombre"
+                        (change)="alternarLinea(item, $any($event.target).checked)"
+                      />
+
+                      <div class="reg__item-texto">
+                        <strong class="reg__item-nombre">
+                          {{ item.producto_nombre }}
+                        </strong>
+                        <span class="reg__item-variante">
+                          {{ item.talla_nombre }} · {{ item.color_nombre }}
+                        </span>
+                        <span class="reg__item-sku">SKU {{ item.sku }}</span>
+                      </div>
+
+                      <span class="reg__item-precio">
+                        Bs {{ formatearMonto(item.precio_unitario) }}
+                      </span>
+                    </div>
+
+                    <dl class="reg__item-cantidades">
+                      <div>
+                        <dt>Comprada</dt>
+                        <dd>{{ item.cantidad_vendida }}</dd>
+                      </div>
+                      <div>
+                        <dt>Comprometida</dt>
+                        <dd>{{ item.cantidad_comprometida }}</dd>
+                      </div>
+                      <div>
+                        <dt>Disponible</dt>
+                        <dd class="reg__disponible">
+                          {{ item.cantidad_disponible }}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    @if (item.cantidad_disponible <= 0) {
+                      <p class="reg__item-agotada">NO DISPONIBLE PARA DEVOLVER</p>
+                    } @else if (esLineaSeleccionada(item.detalle_venta_id)) {
+                      <div class="reg__item-controles">
+                        <label
+                          class="dev__field"
+                          [attr.for]="'cant-' + item.detalle_venta_id"
+                        >
+                          <span class="dev__label">Cantidad a devolver</span>
+                          <input
+                            [id]="'cant-' + item.detalle_venta_id"
+                            type="number"
+                            min="1"
+                            [max]="item.cantidad_disponible"
+                            [value]="cantidadDe(item.detalle_venta_id) ?? 1"
+                            [disabled]="registrando()"
+                            (change)="
+                              cambiarCantidad(item, $any($event.target).value)
+                            "
+                          />
+                        </label>
+
+                        <label
+                          class="dev__field"
+                          [attr.for]="'motivo-' + item.detalle_venta_id"
+                        >
+                          <span class="dev__label">
+                            Motivo de esta prenda (opcional)
+                          </span>
+                          <input
+                            [id]="'motivo-' + item.detalle_venta_id"
+                            type="text"
+                            maxlength="255"
+                            placeholder="Opcional"
+                            [value]="motivoDe(item.detalle_venta_id)"
+                            [disabled]="registrando()"
+                            (input)="
+                              cambiarMotivoLinea(
+                                item.detalle_venta_id,
+                                $any($event.target).value
+                              )
+                            "
+                          />
+                        </label>
+                      </div>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          </section>
+        </div>
+
+        <aside class="reg__resumen" aria-label="Resumen de la devolución">
+          <h2 class="reg__resumen-title">Resumen de devolución</h2>
+
+          <dl class="reg__resumen-datos">
+            <div>
+              <dt>Productos seleccionados</dt>
+              <dd>{{ productosSeleccionados() }}</dd>
+            </div>
+            <div>
+              <dt>Unidades a devolver</dt>
+              <dd>{{ unidadesSeleccionadas() }}</dd>
+            </div>
+          </dl>
+
+          <p class="reg__resumen-valor">
+            <span>Valor referencial</span>
+            <strong>Bs {{ formatearMonto(valorReferencial()) }}</strong>
+          </p>
+
+          <p class="reg__resumen-nota">
+            Valor informativo calculado con los precios de la venta. CU25 no
+            realiza reembolsos: las prendas vuelven al inventario al procesar la
+            devolución.
+          </p>
+
+          <label class="dev__field" for="reg-motivo">
+            <span class="dev__label">Motivo general (obligatorio)</span>
+            <select
+              id="reg-motivo"
+              [value]="motivoGeneral()"
+              [disabled]="registrando()"
+              (change)="cambiarMotivoGeneral($any($event.target).value)"
+            >
+              <option value="">Selecciona un motivo</option>
+              @for (motivo of motivos; track motivo) {
+                <option [value]="motivo">{{ motivo }}</option>
+              }
+            </select>
+          </label>
+
+          @if (requiereDescripcion()) {
+            <label class="dev__field" for="reg-motivo-libre">
+              <span class="dev__label">Especifique el motivo</span>
+              <input
+                id="reg-motivo-libre"
+                type="text"
+                maxlength="255"
+                placeholder="Describe el motivo"
+                [value]="motivoLibre()"
+                [disabled]="registrando()"
+                (input)="cambiarMotivoLibre($any($event.target).value)"
+              />
+            </label>
+          }
+
+          <label class="dev__field" for="reg-observacion">
+            <span class="dev__label">Observación (opcional)</span>
+            <textarea
+              id="reg-observacion"
+              maxlength="1000"
+              placeholder="Agrega información adicional si es necesario."
+              [value]="observacion()"
+              [disabled]="registrando()"
+              (input)="cambiarObservacion($any($event.target).value)"
+            ></textarea>
+          </label>
+
+          @if (errorRegistro(); as fallo) {
+            <div class="reg__error" role="alert">
+              <p class="reg__error-text">{{ fallo.mensaje }}</p>
+              <div class="reg__error-acciones">
+                @if (fallo.disponibilidadCambiada) {
+                  <button
+                    type="button"
+                    class="dev__btn dev__btn--sm dev__btn--primary"
+                    (click)="actualizarDisponibilidad()"
+                  >
+                    ACTUALIZAR DISPONIBILIDAD
+                  </button>
+                } @else if (fallo.puedeReintentar) {
+                  <button
+                    type="button"
+                    class="dev__btn dev__btn--sm"
+                    (click)="solicitarRegistro()"
+                  >
+                    REINTENTAR
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          <button
+            type="button"
+            class="dev__btn dev__btn--primary dev__btn--block"
+            [disabled]="!puedeRegistrar()"
+            [attr.aria-busy]="registrando()"
+            (click)="solicitarRegistro()"
+          >
+            @if (registrando()) {
+              REGISTRANDO…
+            } @else {
+              REGISTRAR DEVOLUCIÓN
+            }
+          </button>
+
+          <ul class="reg__requisitos">
+            <li [class.reg__requisito--ok]="ventaValidada()">Venta validada</li>
+            <li [class.reg__requisito--ok]="productosSeleccionados() > 0">
+              Al menos una prenda seleccionada
+            </li>
+            <li [class.reg__requisito--ok]="motivoValido()">
+              Motivo general indicado
+            </li>
+          </ul>
+
+          <p class="reg__resumen-nota">
+            Al registrar, la devolución queda SOLICITADA y el inventario todavía
+            no cambia.
+          </p>
+        </aside>
+      </div>
+    }
+  }
+</div>
+
+@if (confirmando()) {
+  <app-confirm-dialog
+    titulo="¿Registrar esta solicitud de devolución?"
+    mensaje="Se registrará como SOLICITADA. El inventario todavía no será modificado."
+    confirmarLabel="Registrar devolución"
+    cancelarLabel="Cancelar"
+    (confirmado)="confirmarRegistro()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}

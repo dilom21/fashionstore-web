@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.dev {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.dev__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.2rem;
+}
+
+.dev__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dev__eyebrow app-admin-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.dev__title {
+  margin-top: 0.35rem;
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+}
+
+.dev__subtitle {
+  margin-top: 0.3rem;
+  max-width: 68ch;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .dev__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dev__head .dev__btn {
+    width: 100%;
+  }
+}

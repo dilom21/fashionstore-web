@@ -30,4 +30,24 @@ export const ventasRoutes: Routes = [
       },
     ],
   },
+  // CU23 - Comprobante de venta (/personal/ventas/:venta_id/comprobante).
+  // Se abre contextualmente desde el resultado exitoso de CU21 (VER
+  // COMPROBANTE), tanto en la venta presencial directa (CU20) como en la
+  // proveniente de una reserva (CU18 -> CU20): es la MISMA venta y el mismo
+  // endpoint. Comparte el layout principal y la protección semántica de
+  // ventas. No se relaja `adminAuthGuard`.
+  {
+    path: 'ventas/:venta_id/comprobante',
+    component: AdministracionShell,
+    canActivate: [ventasPresencialesGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import(
+            './pages/comprobante-personal-page/comprobante-personal-page'
+          ).then((m) => m.ComprobantePersonalPage),
+      },
+    ],
+  },
 ];

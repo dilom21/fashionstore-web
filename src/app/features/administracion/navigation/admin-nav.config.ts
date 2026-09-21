@@ -185,6 +185,18 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
         estado: 'funcional',
         permiso: 'VENTAS',
       },
+      {
+        id: 'devoluciones',
+        label: 'Devoluciones',
+        icon: 'actualizar',
+        // CU25 también vive en el shell operativo (/personal): ADMINISTRADOR y
+        // ENCARGADO_SUCURSAL (no CAJERO).
+        route: '/personal/devoluciones',
+        descripcion:
+          'Consulta, registra, aprueba, rechaza y procesa devoluciones de productos (CU25).',
+        estado: 'funcional',
+        permiso: 'GESTIONAR_DEVOLUCIONES',
+      },
     ],
   },
   {

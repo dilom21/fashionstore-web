@@ -1,0 +1,467 @@
+<app-navbar />
+
+<main class="hist">
+  <div class="vm-container">
+    <nav class="hist__crumb" aria-label="Ruta de navegación">
+      <a class="hist__crumb-link" routerLink="/">Inicio</a>
+      <span class="hist__crumb-sep" aria-hidden="true">›</span>
+      <span class="hist__crumb-text">Mi cuenta</span>
+      <span class="hist__crumb-sep" aria-hidden="true">›</span>
+      <span class="hist__crumb-actual" aria-current="page">
+        Historial de compras
+      </span>
+    </nav>
+
+    <header class="hist__head">
+      <div class="hist__head-text">
+        <span class="vm-eyebrow">Mi cuenta</span>
+        <h1 class="hist__title">Historial de compras</h1>
+        <p class="hist__subtitle">
+          Revisa tus compras realizadas, consulta su estado y accede a tus
+          comprobantes de manera rápida y sencilla.
+        </p>
+      </div>
+      <a class="hist__btn hist__btn--primary" routerLink="/catalogo">
+        Seguir comprando
+      </a>
+    </header>
+
+    <section class="hist__cards" aria-label="Resumen del historial">
+      <article class="hist__card">
+        <span class="hist__card-label">Compras encontradas</span>
+        <strong class="hist__card-value">{{ totalRegistros() }}</strong>
+        <span class="hist__card-hint">con los filtros actuales</span>
+      </article>
+
+      <article class="hist__card">
+        <span class="hist__card-label">Página</span>
+        <strong class="hist__card-value">
+          {{ pagina() }} de {{ totalPaginas() }}
+        </strong>
+        <span class="hist__card-hint">{{ tamanoPagina() }} por página</span>
+      </article>
+
+      <article class="hist__card">
+        <span class="hist__card-label">Resultados mostrados</span>
+        <strong class="hist__card-value">{{ compras().length }}</strong>
+        <span class="hist__card-hint">en esta página</span>
+      </article>
+    </section>
+
+    <section class="hist__filtros" aria-label="Filtros del historial">
+      <h2 class="hist__filtros-title">Filtros</h2>
+
+      <div class="hist__filtros-grid">
+        <label class="hist__field" for="hist-estado">
+          <span class="hist__label">Estado</span>
+          <select
+            id="hist-estado"
+            [value]="estado() ?? ''"
+            (change)="cambiarEstado($any($event.target).value)"
+          >
+            <option value="">Todos los estados</option>
+            @for (opcion of estados; track opcion) {
+              <option [value]="opcion">{{ opcion }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="hist__field" for="hist-canal">
+          <span class="hist__label">Canal</span>
+          <select
+            id="hist-canal"
+            [value]="canal() ?? ''"
+            (change)="cambiarCanal($any($event.target).value)"
+          >
+            <option value="">Todos los canales</option>
+            @for (opcion of canales; track opcion) {
+              <option [value]="opcion">{{ etiquetaCanal(opcion) }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="hist__field" for="hist-desde">
+          <span class="hist__label">Desde</span>
+          <input
+            id="hist-desde"
+            type="date"
+            [value]="fechaDesde() ?? ''"
+            (change)="cambiarFechaDesde($any($event.target).value)"
+          />
+        </label>
+
+        <label class="hist__field" for="hist-hasta">
+          <span class="hist__label">Hasta</span>
+          <input
+            id="hist-hasta"
+            type="date"
+            [value]="fechaHasta() ?? ''"
+            (change)="cambiarFechaHasta($any($event.target).value)"
+          />
+        </label>
+
+        <div class="hist__filtros-acciones">
+          <button
+            type="button"
+            class="hist__btn hist__btn--primary"
+            [disabled]="cargando()"
+            [attr.aria-busy]="cargando()"
+            (click)="aplicarFiltros()"
+          >
+            FILTRAR
+          </button>
+          <button
+            type="button"
+            class="hist__btn"
+            [disabled]="cargando()"
+            (click)="limpiarFiltros()"
+          >
+            LIMPIAR FILTROS
+          </button>
+        </div>
+      </div>
+
+      @if (errorFiltros(); as mensaje) {
+        <p class="hist__aviso" role="alert">{{ mensaje }}</p>
+      }
+    </section>
+
+    <div class="hist__layout">
+      <section class="hist__lista" aria-label="Compras realizadas">
+        @if (cargando()) {
+          <div class="hist__state" role="status" aria-live="polite">
+            <span class="hist__spinner" aria-hidden="true"></span>
+            <p class="hist__state-text">Cargando tus compras…</p>
+          </div>
+        } @else if (error(); as fallo) {
+          <div class="hist__state hist__state--error" role="alert">
+            <h2 class="hist__state-title">No pudimos cargar tu historial</h2>
+            <p class="hist__state-text">{{ fallo.mensaje }}</p>
+            <div class="hist__state-actions">
+              @if (fallo.puedeReintentar) {
+                <button
+                  type="button"
+                  class="hist__btn hist__btn--primary"
+                  (click)="reintentarHistorial()"
+                >
+                  REINTENTAR
+                </button>
+              }
+              <a class="hist__btn" routerLink="/catalogo">Ir al catálogo</a>
+            </div>
+          </div>
+        } @else if (historialVacio()) {
+          <div class="hist__state hist__state--vacio" role="status">
+            <h2 class="hist__state-title">Aún no tienes compras registradas</h2>
+            <p class="hist__state-text">
+              Explora nuestro catálogo y encuentra tu próximo look.
+            </p>
+            <div class="hist__state-actions">
+              <button
+                type="button"
+                class="hist__btn hist__btn--primary"
+                (click)="irAlCatalogo()"
+              >
+                IR AL CATÁLOGO
+              </button>
+            </div>
+          </div>
+        } @else if (sinResultados()) {
+          <div class="hist__state hist__state--vacio" role="status">
+            <h2 class="hist__state-title">
+              No encontramos compras con estos filtros
+            </h2>
+            <p class="hist__state-text">
+              Prueba con otro estado, canal o rango de fechas.
+            </p>
+            <div class="hist__state-actions">
+              <button type="button" class="hist__btn" (click)="limpiarFiltros()">
+                LIMPIAR FILTROS
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="hist__tabla-wrap">
+            <table class="hist__tabla">
+              <caption class="hist__sr">
+                Compras encontradas en tu historial
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Código</th>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Canal</th>
+                  <th scope="col">Sucursal</th>
+                  <th scope="col">Productos</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (compra of compras(); track compra.venta_id) {
+                  <tr
+                    [class.hist__fila--activa]="
+                      compra.venta_id === seleccionadaId()
+                    "
+                  >
+                    <td data-col="Código">
+                      <strong class="hist__codigo">
+                        {{ codigoVenta(compra.venta_id) }}
+                      </strong>
+                    </td>
+                    <td data-col="Fecha">
+                      {{ formatearFecha(compra.fecha_hora) }}
+                    </td>
+                    <td data-col="Canal">{{ etiquetaCanal(compra.canal) }}</td>
+                    <td data-col="Sucursal">{{ compra.sucursal_nombre }}</td>
+                    <td data-col="Productos">
+                      <span class="hist__prod">
+                        {{ compra.cantidad_lineas }}
+                        {{
+                          compra.cantidad_lineas === 1 ? 'producto' : 'productos'
+                        }}
+                      </span>
+                      <span class="hist__prod-unidades">
+                        {{ compra.cantidad_total_unidades }}
+                        {{
+                          compra.cantidad_total_unidades === 1
+                            ? 'unidad'
+                            : 'unidades'
+                        }}
+                      </span>
+                    </td>
+                    <td data-col="Total">
+                      <strong class="hist__total">
+                        Bs {{ formatearMonto(compra.total) }}
+                      </strong>
+                    </td>
+                    <td data-col="Estado">
+                      <span
+                        class="hist__badge"
+                        [class]="'hist__badge--' + compra.estado.toLowerCase()"
+                      >
+                        {{ compra.estado }}
+                      </span>
+                    </td>
+                    <td data-col="Acciones">
+                      <div class="hist__acciones-fila">
+                        <button
+                          type="button"
+                          class="hist__btn hist__btn--sm"
+                          (click)="verDetalle(compra)"
+                        >
+                          VER DETALLE
+                        </button>
+                        @if (puedeVerComprobante(compra.estado)) {
+                          <button
+                            type="button"
+                            class="hist__btn hist__btn--sm hist__btn--primary"
+                            (click)="verComprobante(compra.venta_id)"
+                          >
+                            VER COMPROBANTE
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <footer class="hist__paginacion">
+            <button
+              type="button"
+              class="hist__btn"
+              [disabled]="!puedeAnterior()"
+              (click)="paginaAnterior()"
+            >
+              ANTERIOR
+            </button>
+            <span class="hist__pagina" role="status">
+              Página {{ pagina() }} de {{ totalPaginas() }}
+            </span>
+            <button
+              type="button"
+              class="hist__btn"
+              [disabled]="!puedeSiguiente()"
+              (click)="paginaSiguiente()"
+            >
+              SIGUIENTE
+            </button>
+          </footer>
+        }
+      </section>
+
+      @if (seleccionadaId() !== null) {
+        <aside class="hist__detalle" aria-label="Detalle de la compra">
+          <header class="hist__detalle-head">
+            <div>
+              <span class="hist__detalle-label">Detalle de la compra</span>
+              @if (detalle(); as d) {
+                <strong class="hist__detalle-codigo">
+                  {{ codigoVenta(d.venta_id) }}
+                </strong>
+              }
+            </div>
+            <div class="hist__detalle-head-right">
+              @if (detalle(); as d) {
+                <span
+                  class="hist__badge"
+                  [class]="'hist__badge--' + d.estado.toLowerCase()"
+                >
+                  {{ d.estado }}
+                </span>
+              }
+              <button
+                type="button"
+                class="hist__close"
+                aria-label="Cerrar el detalle"
+                (click)="cerrarDetalle()"
+              >
+                ✕
+              </button>
+            </div>
+          </header>
+
+          @if (cargandoDetalle()) {
+            <div class="hist__detalle-state" role="status" aria-live="polite">
+              <span class="hist__spinner" aria-hidden="true"></span>
+              <p class="hist__state-text">Cargando el detalle…</p>
+            </div>
+          } @else if (errorDetalle(); as fallo) {
+            <div
+              class="hist__detalle-state hist__detalle-state--error"
+              role="alert"
+            >
+              <p class="hist__state-text">{{ fallo.mensaje }}</p>
+              <div class="hist__state-actions">
+                @if (fallo.puedeReintentar) {
+                  <button
+                    type="button"
+                    class="hist__btn hist__btn--sm"
+                    (click)="reintentarDetalle()"
+                  >
+                    REINTENTAR
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="hist__btn hist__btn--sm"
+                  (click)="cerrarDetalle()"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          } @else if (detalle(); as d) {
+            <p class="hist__detalle-fecha">
+              Realizada el {{ formatearFechaHora(d.fecha_hora) }}
+            </p>
+
+            <dl class="hist__detalle-datos">
+              <div>
+                <dt>Canal</dt>
+                <dd>{{ etiquetaCanal(d.canal) }}</dd>
+              </div>
+              <div>
+                <dt>Sucursal</dt>
+                <dd>{{ d.sucursal.nombre }}</dd>
+              </div>
+              <div>
+                <dt>Dirección</dt>
+                <dd>{{ d.sucursal.direccion }}</dd>
+              </div>
+              @if (d.sucursal.telefono; as telefono) {
+                <div>
+                  <dt>Teléfono</dt>
+                  <dd>{{ telefono }}</dd>
+                </div>
+              }
+            </dl>
+
+            <section class="hist__detalle-sec" aria-label="Pago de la compra">
+              <h3 class="hist__detalle-sub">Pago</h3>
+              @if (d.pago; as pago) {
+                <dl class="hist__detalle-datos">
+                  <div>
+                    <dt>Método</dt>
+                    <dd>{{ etiquetaMetodoPago(pago.metodo) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Estado</dt>
+                    <dd class="hist__pago-estado">{{ pago.estado }}</dd>
+                  </div>
+                  @if (pago.pasarela; as pasarela) {
+                    <div>
+                      <dt>Pasarela</dt>
+                      <dd>{{ pasarela }}</dd>
+                    </div>
+                  }
+                  @if (pago.referencia_transaccion; as referencia) {
+                    <div>
+                      <dt>Referencia</dt>
+                      <dd>{{ referencia }}</dd>
+                    </div>
+                  }
+                  <div>
+                    <dt>Total pagado</dt>
+                    <dd>Bs {{ formatearMonto(pago.monto) }}</dd>
+                  </div>
+                </dl>
+              } @else {
+                <p class="hist__detalle-vacio">
+                  No hay información de pago disponible.
+                </p>
+              }
+            </section>
+
+            <section class="hist__detalle-sec" aria-label="Productos comprados">
+              <h3 class="hist__detalle-sub">
+                Productos ({{ d.items.length }})
+              </h3>
+              <ul class="hist__items">
+                @for (item of d.items; track item.detalle_venta_id) {
+                  <li class="hist__item">
+                    <div class="hist__item-head">
+                      <strong class="hist__item-nombre">
+                        {{ item.producto_nombre }}
+                      </strong>
+                      <span class="hist__item-subtotal">
+                        Bs {{ formatearMonto(item.subtotal_linea) }}
+                      </span>
+                    </div>
+                    <p class="hist__item-variante">
+                      {{ item.talla_nombre }} · {{ item.color_nombre }}
+                    </p>
+                    <p class="hist__item-meta">
+                      Cantidad: {{ item.cantidad }} · Precio unitario: Bs
+                      {{ formatearMonto(item.precio_unitario) }}
+                    </p>
+                  </li>
+                }
+              </ul>
+            </section>
+
+            <footer class="hist__detalle-pie">
+              <p class="hist__detalle-total">
+                <span>Total</span>
+                <strong>Bs {{ formatearMonto(d.total) }}</strong>
+              </p>
+              @if (puedeVerComprobante(d.estado)) {
+                <button
+                  type="button"
+                  class="hist__btn hist__btn--primary hist__btn--block"
+                  (click)="verComprobante(d.venta_id)"
+                >
+                  VER COMPROBANTE
+                </button>
+              }
+            </footer>
+          }
+        </aside>
+      }
+    </div>
+  </div>
+</main>

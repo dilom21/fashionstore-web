@@ -1,0 +1,463 @@
+:host {
+  display: block;
+}
+
+.ddt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-content: start;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.ddt__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 20px;
+  margin: 0;
+}
+
+.ddt__head .dev__btn {
+  flex-shrink: 0;
+}
+
+.ddt__title {
+  margin-top: 0.25rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.ddt__subtitle {
+  margin-top: 0.25rem;
+  max-width: 72ch;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* ==================== AVISO DE TRANSICIÓN ==================== */
+
+.ddt__aviso {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.ddt__aviso--ok {
+  border-color: rgb(52 211 153 / 30%);
+  background: rgb(6 78 59 / 16%);
+}
+
+.ddt__aviso--info {
+  border-color: rgb(167 139 250 / 34%);
+  background: rgb(76 29 149 / 18%);
+}
+
+.ddt__aviso--error {
+  border-color: rgb(248 113 113 / 30%);
+  background: rgb(159 18 57 / 14%);
+}
+
+.ddt__aviso-title {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.ddt__aviso-code {
+  color: var(--text-2);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ddt__aviso-text {
+  color: var(--text-2);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+/* ==================== LAYOUT ==================== */
+
+.ddt__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.ddt__principal {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.ddt__card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 20px 22px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.ddt__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.ddt__label {
+  display: block;
+  color: var(--text-3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ddt__codigo {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Metadatos en columnas limpias: label arriba, valor debajo. */
+.ddt__datos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+}
+
+.ddt__datos > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ddt__datos dt {
+  color: var(--text-3);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.ddt__datos dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.ddt__bloque {
+  display: grid;
+  gap: 0.1rem;
+  margin-top: 0.15rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.ddt__sub {
+  color: var(--text-3);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.ddt__texto {
+  margin-top: 0.3rem;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* ==================== PRENDAS ==================== */
+
+.ddt__items {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ddt__item {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+}
+
+.ddt__item-media {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.ddt__item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ddt__item-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-3);
+}
+
+.ddt__item-placeholder app-admin-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.ddt__item-body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.ddt__item-nombre {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.ddt__item-variante {
+  color: var(--text-2);
+  font-size: 0.79rem;
+}
+
+.ddt__item-sku {
+  color: var(--text-3);
+  font-size: 0.71rem;
+  letter-spacing: 0.04em;
+}
+
+/* Datos de la prenda: pares label/valor alineados en dos columnas. */
+.ddt__item-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 24px;
+  margin: 0.5rem 0 0;
+}
+
+.ddt__item-datos > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+}
+
+.ddt__item-datos dt {
+  color: var(--text-3);
+}
+
+.ddt__item-datos dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ddt__solicitada {
+  color: #c4b5fd !important;
+}
+
+.ddt__item-motivo {
+  margin-top: 0.3rem;
+  color: var(--text-2);
+  font-size: 0.78rem;
+}
+
+.ddt__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+}
+
+.ddt__total span {
+  color: var(--text-3);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ddt__total strong {
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==================== ACCIONES ==================== */
+
+/* Alineada con la parte superior de la card principal (sin flotar). */
+.ddt__acciones {
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  padding: 20px 22px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.ddt__nota {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+/* Nota compacta de estado terminal (con check). */
+.ddt__exito {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.2rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgb(52 211 153 / 28%);
+  border-radius: var(--radius-m);
+  background: rgb(6 78 59 / 14%);
+  color: #34d399;
+}
+
+.ddt__exito app-admin-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.ddt__exito-texto {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.ddt__exito-titulo {
+  color: #34d399;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.ddt__exito-texto span {
+  color: var(--text-2);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.ddt__error {
+  margin-top: 0.2rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgb(248 113 113 / 30%);
+  border-radius: var(--radius-m);
+  background: rgb(159 18 57 / 14%);
+}
+
+.ddt__error-text {
+  color: #fb7185;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.ddt__error .dev__btn {
+  margin-top: 0.5rem;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 1200px) {
+  .ddt__datos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Tablet: la columna de acciones pasa debajo del detalle. */
+@media (max-width: 1024px) {
+  .ddt {
+    padding: 24px 20px 40px;
+  }
+
+  .ddt__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mobile Web: una sola columna, header apilado y prendas como cards. */
+@media (max-width: 720px) {
+  .ddt {
+    gap: 16px;
+    padding: 18px 16px 32px;
+  }
+
+  .ddt__head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ddt__head .dev__btn {
+    width: 100%;
+  }
+
+  .ddt__title {
+    font-size: 1.35rem;
+  }
+
+  .ddt__card,
+  .ddt__acciones {
+    padding: 16px;
+  }
+
+  .ddt__datos,
+  .ddt__item-datos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ddt__item {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .ddt__item-media {
+    width: 64px;
+    height: 64px;
+  }
+
+  .ddt__acciones .dev__btn {
+    width: 100%;
+  }
+}

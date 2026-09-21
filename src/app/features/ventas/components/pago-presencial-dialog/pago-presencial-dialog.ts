@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 
 import { AdminIcon } from '../../../administracion/components/admin-icon/admin-icon';
 import {
@@ -44,6 +45,7 @@ import { traducirErrorPagoPresencial } from '../../utils/pago-presencial-error.u
 export class PagoPresencialDialog {
   private readonly pagoService = inject(PagoPresencialService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   readonly ventaId = input.required<number>();
   readonly total = input.required<number>();
@@ -149,6 +151,29 @@ export class PagoPresencialDialog {
           this.error.set(traducido.mensaje);
         },
       });
+  }
+
+  /**
+   * CU23: abre el comprobante de la venta ya pagada
+   * (/personal/ventas/{venta_id}/comprobante) usando el `venta_id` real que
+   * devolvió el backend.
+   *
+   * Es la MISMA integración para la venta presencial directa (CU20) y para la
+   * proveniente de una reserva (CU18 -> CU20): el diálogo no sabe ni necesita
+   * saber el origen. No cierra nada antes de navegar y no altera la venta ni la
+   * reserva: la página (y el diálogo) se desmontan con la navegación.
+   */
+  verComprobante(): void {
+    const pago = this.resultado();
+    if (pago === null || this.procesando()) {
+      return;
+    }
+    void this.router.navigate([
+      '/personal',
+      'ventas',
+      pago.venta_id,
+      'comprobante',
+    ]);
   }
 
   /** Cierra el diálogo (bloqueado mientras se procesa el pago). */

@@ -63,10 +63,17 @@
         Ya no se puede registrar otro pago para esta venta.
       </p>
 
-      <div class="ppd__acciones ppd__acciones--una">
+      <div class="ppd__acciones">
         <button
           type="button"
           class="ppd__btn ppd__btn--primary"
+          (click)="verComprobante()"
+        >
+          VER COMPROBANTE
+        </button>
+        <button
+          type="button"
+          class="ppd__btn ppd__btn--ghost"
           (click)="cerrar()"
         >
           Entendido

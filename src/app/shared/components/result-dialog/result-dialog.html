@@ -1,0 +1,64 @@
+<div class="result" (keydown.escape)="cerrar()">
+  <div
+    class="result__card"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="titulo()"
+  >
+    <span class="result__icon" aria-hidden="true">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.9"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M8.4 12.3l2.4 2.4 4.8-5.1"></path>
+      </svg>
+    </span>
+
+    <h2 class="result__title">{{ titulo() }}</h2>
+
+    @if (codigo(); as codigoTexto) {
+      <p class="result__code">{{ codigoTexto }}</p>
+    }
+
+    @if (referencia(); as referenciaTexto) {
+      <p class="result__ref">{{ referenciaTexto }}</p>
+    }
+
+    @if (mensaje(); as mensajeTexto) {
+      <p class="result__text">{{ mensajeTexto }}</p>
+    }
+
+    @if (detalle(); as detalleTexto) {
+      <p class="result__detail">{{ detalleTexto }}</p>
+    }
+
+    <div class="result__actions">
+      <button
+        #accionBoton
+        type="button"
+        class="result__btn result__btn--primary"
+        (click)="confirmar()"
+      >
+        {{ accionLabel() }}
+      </button>
+    </div>
+
+    @if (cerrable()) {
+      <button
+        type="button"
+        class="result__close"
+        aria-label="Cerrar"
+        (click)="cerrar()"
+      >
+        ✕
+      </button>
+    }
+  </div>
+</div>

@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { ToastService } from '../../../../core/services/toast.service';
@@ -124,6 +125,7 @@ describe('VentaPresencialPage (CU20)', () => {
     await TestBed.configureTestingModule({
       imports: [VentaPresencialPage],
       providers: [
+        provideRouter([]),
         { provide: ProductosService, useValue: productosService },
         { provide: VentaPresencialService, useValue: ventaService },
         { provide: PagoPresencialService, useValue: pagoService },

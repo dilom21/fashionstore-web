@@ -1,0 +1,313 @@
+<div class="ddt">
+  <header class="ddt__head">
+    <div>
+      <span class="dev__eyebrow">Ventas y pagos</span>
+      <h1 class="ddt__title">Detalle de la devolución</h1>
+      <p class="ddt__subtitle">
+        Consulta la solicitud y gestiona su estado. El inventario se repone
+        únicamente al procesar una devolución aprobada.
+      </p>
+    </div>
+    <a class="dev__btn" routerLink="/personal/devoluciones">
+      Volver a devoluciones
+    </a>
+  </header>
+
+  @if (resultado(); as aviso) {
+    <section class="ddt__aviso ddt__aviso--{{ aviso.tono }}" role="status">
+      <h2 class="ddt__aviso-title">{{ aviso.titulo }}</h2>
+      @if (detalle(); as d) {
+        <p class="ddt__aviso-code">
+          {{ codigoDevolucion(d.devolucion_id) }} · Venta
+          {{ codigoVenta(d.venta_id) }}
+        </p>
+      }
+      <p class="ddt__aviso-text">{{ aviso.mensaje }}</p>
+    </section>
+  }
+
+  @if (cargando()) {
+    <div class="dev__state" role="status" aria-live="polite">
+      <span class="dev__spinner" aria-hidden="true"></span>
+      <p class="dev__state-text">Cargando la devolución…</p>
+    </div>
+  } @else if (error(); as fallo) {
+    <div class="dev__state dev__state--error" role="alert">
+      <h2 class="dev__state-title">No pudimos cargar la devolución</h2>
+      <p class="dev__state-text">{{ fallo.mensaje }}</p>
+      <div class="dev__state-actions">
+        <button type="button" class="dev__btn dev__btn--primary" (click)="reintentar()">
+          REINTENTAR
+        </button>
+        <button type="button" class="dev__btn" (click)="volverAlListado()">
+          Volver a devoluciones
+        </button>
+      </div>
+    </div>
+  } @else if (detalle(); as d) {
+    <div class="ddt__layout">
+      <div class="ddt__principal">
+        <section class="ddt__card" aria-label="Datos de la devolución">
+          <header class="ddt__card-head">
+            <div>
+              <span class="ddt__label">Devolución</span>
+              <strong class="ddt__codigo">
+                {{ codigoDevolucion(d.devolucion_id) }}
+              </strong>
+            </div>
+            <app-devolucion-estado-badge [estado]="d.estado" />
+          </header>
+
+          <dl class="ddt__datos">
+            <div>
+              <dt>Venta</dt>
+              <dd>{{ codigoVenta(d.venta_id) }}</dd>
+            </div>
+            <div>
+              <dt>Fecha</dt>
+              <dd>{{ formatearFechaHora(d.fecha_hora) }}</dd>
+            </div>
+            <div>
+              <dt>Canal</dt>
+              <dd>{{ etiquetaCanal(d.venta.canal) }}</dd>
+            </div>
+            <div>
+              <dt>Sucursal</dt>
+              <dd>{{ d.sucursal.nombre }}</dd>
+            </div>
+            <div>
+              <dt>Dirección</dt>
+              <dd>{{ d.sucursal.direccion }}</dd>
+            </div>
+            <div>
+              <dt>Cliente</dt>
+              @if (d.cliente; as cliente) {
+                <dd>{{ cliente.nombre }} {{ cliente.apellido }}</dd>
+              } @else {
+                <dd>Cliente general</dd>
+              }
+            </div>
+            <div>
+              <dt>Total</dt>
+              <dd>Bs {{ formatearMonto(d.venta.total) }}</dd>
+            </div>
+          </dl>
+
+          <section class="ddt__bloque" aria-label="Motivo de la devolución">
+            <h2 class="ddt__sub">Motivo general</h2>
+            <p class="ddt__texto">{{ d.motivo }}</p>
+
+            @if (d.observacion; as observacion) {
+              <h2 class="ddt__sub">Observación</h2>
+              <p class="ddt__texto">{{ observacion }}</p>
+            }
+          </section>
+        </section>
+
+        <section class="ddt__card" aria-label="Prendas de la devolución">
+          <h2 class="ddt__sub">Prendas ({{ d.items.length }})</h2>
+
+          <ul class="ddt__items">
+            @for (item of d.items; track item.detalle_devolucion_id) {
+              <li class="ddt__item">
+                <div class="ddt__item-media">
+                  @if (imagenes()[item.detalle_devolucion_id]; as url) {
+                    <img
+                      class="ddt__item-img"
+                      [src]="url"
+                      [alt]="item.producto_nombre + ' - ' + item.color_nombre"
+                      loading="lazy"
+                      (error)="marcarImagenRota(item.detalle_devolucion_id)"
+                    />
+                  } @else {
+                    <span class="ddt__item-placeholder">
+                      <app-admin-icon icono="paquete" />
+                      <span class="dev__sr">Sin imagen</span>
+                    </span>
+                  }
+                </div>
+
+                <div class="ddt__item-body">
+                  <strong class="ddt__item-nombre">
+                    {{ item.producto_nombre }}
+                  </strong>
+                  <span class="ddt__item-variante">
+                    {{ item.talla_nombre }} · {{ item.color_nombre }}
+                  </span>
+                  <span class="ddt__item-sku">SKU {{ item.sku }}</span>
+
+                  <dl class="ddt__item-datos">
+                    <div>
+                      <dt>Vendida</dt>
+                      <dd>{{ item.cantidad_vendida }}</dd>
+                    </div>
+                    <div>
+                      <dt>Solicitada</dt>
+                      <dd class="ddt__solicitada">
+                        {{ item.cantidad_solicitada }}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Precio unitario</dt>
+                      <dd>Bs {{ formatearMonto(item.precio_unitario) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Subtotal referencial</dt>
+                      <dd>Bs {{ formatearMonto(item.subtotal_referencial) }}</dd>
+                    </div>
+                  </dl>
+
+                  @if (item.motivo; as motivo) {
+                    <p class="ddt__item-motivo">Motivo: {{ motivo }}</p>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+
+          <p class="ddt__total">
+            <span>Total de unidades</span>
+            <strong>{{ d.cantidad_total_unidades }}</strong>
+          </p>
+          <p class="ddt__nota">
+            Los subtotales son referenciales (precios de la venta). CU25 no
+            realiza reembolsos financieros.
+          </p>
+        </section>
+      </div>
+
+      <aside class="ddt__acciones" aria-label="Acciones de la devolución">
+        <h2 class="ddt__sub">Acciones</h2>
+
+        @if (esCompletada()) {
+          <p class="ddt__exito">
+            <app-admin-icon icono="check" />
+            <span class="ddt__exito-texto">
+              <span class="ddt__exito-titulo">Devolución completada</span>
+              <span>El inventario ya fue actualizado.</span>
+            </span>
+          </p>
+          <button
+            type="button"
+            class="dev__btn dev__btn--primary dev__btn--block"
+            (click)="volverAlListado()"
+          >
+            VOLVER A DEVOLUCIONES
+          </button>
+        } @else if (esRechazada()) {
+          <p class="ddt__nota" role="status">
+            Esta solicitud no modificó el inventario.
+          </p>
+          <button
+            type="button"
+            class="dev__btn dev__btn--block"
+            (click)="volverAlListado()"
+          >
+            VOLVER A DEVOLUCIONES
+          </button>
+        } @else if (puedeAprobar() || puedeRechazar()) {
+          <button
+            type="button"
+            class="dev__btn dev__btn--primary dev__btn--block"
+            [disabled]="procesando()"
+            [attr.aria-busy]="accion() === 'aprobar'"
+            (click)="solicitar('aprobar')"
+          >
+            @if (accion() === 'aprobar') {
+              PROCESANDO…
+            } @else {
+              APROBAR
+            }
+          </button>
+          <button
+            type="button"
+            class="dev__btn dev__btn--danger dev__btn--block"
+            [disabled]="procesando()"
+            (click)="solicitar('rechazar')"
+          >
+            RECHAZAR
+          </button>
+        } @else if (puedeProcesar()) {
+          <button
+            type="button"
+            class="dev__btn dev__btn--primary dev__btn--block"
+            [disabled]="procesando()"
+            [attr.aria-busy]="accion() === 'procesar'"
+            (click)="solicitar('procesar')"
+          >
+            @if (accion() === 'procesar') {
+              PROCESANDO…
+            } @else {
+              PROCESAR DEVOLUCIÓN
+            }
+          </button>
+          <p class="ddt__nota">
+            Al procesar se repondrán las unidades al inventario y la devolución
+            quedará COMPLETADA.
+          </p>
+        }
+
+        @if (errorAccion(); as fallo) {
+          <div class="ddt__error" role="alert">
+            <p class="ddt__error-text">{{ fallo.mensaje }}</p>
+            <button
+              type="button"
+              class="dev__btn dev__btn--sm"
+              (click)="reintentarAccion()"
+            >
+              REINTENTAR
+            </button>
+          </div>
+        }
+      </aside>
+    </div>
+  }
+</div>
+
+@if (confirmacion() === 'aprobar') {
+  <app-confirm-dialog
+    titulo="¿Aprobar esta devolución?"
+    mensaje="Se validarán nuevamente las cantidades disponibles. El inventario todavía no será modificado."
+    confirmarLabel="Aprobar devolución"
+    cancelarLabel="Cancelar"
+    (confirmado)="confirmarAccion()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}
+
+@if (confirmacion() === 'rechazar') {
+  <app-confirm-dialog
+    titulo="¿Rechazar esta devolución?"
+    mensaje="La solicitud quedará RECHAZADA y no modificará el inventario."
+    confirmarLabel="Rechazar devolución"
+    cancelarLabel="Cancelar"
+    [peligro]="true"
+    (confirmado)="confirmarAccion()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}
+
+@if (confirmacion() === 'procesar') {
+  <app-confirm-dialog
+    titulo="¿Procesar esta devolución?"
+    mensaje="Esta acción repondrá las unidades al inventario y completará la devolución."
+    confirmarLabel="Procesar devolución"
+    cancelarLabel="Cancelar"
+    (confirmado)="confirmarAccion()"
+    (cancelado)="cancelarConfirmacion()"
+  />
+}
+
+<!-- Feedback de éxito: solo cuando el backend confirma COMPLETADA. -->
+@if (completada(); as exito) {
+  <app-result-dialog
+    titulo="Devolución completada"
+    [codigo]="exito.codigo"
+    [referencia]="exito.referencia"
+    mensaje="La devolución fue procesada correctamente."
+    [detalle]="textoUnidades(exito.unidades)"
+    accionLabel="VOLVER A DEVOLUCIONES"
+    (accion)="volverAlListado()"
+    (cerrado)="cerrarResultado()"
+  />
+}

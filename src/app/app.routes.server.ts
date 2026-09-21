@@ -55,6 +55,12 @@ export const serverRoutes: ServerRoute[] = [
     path: 'pagos/**',
     renderMode: RenderMode.Server,
   },
+  // Comprobante de venta (CU23): requiere sesión y usa :venta_id. Se renderiza
+  // por petición; el PDF/impresión solo se ejecutan en el navegador.
+  {
+    path: 'ventas/**',
+    renderMode: RenderMode.Server,
+  },
   {
     path: '**',
     renderMode: RenderMode.Prerender,

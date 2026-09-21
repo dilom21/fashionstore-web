@@ -1,0 +1,247 @@
+<div class="dev">
+  <header class="dev__head">
+    <div>
+      <span class="dev__eyebrow">
+        <app-admin-icon icono="ventas" />
+        Ventas y pagos
+      </span>
+      <h1 class="dev__title">Devoluciones</h1>
+      <p class="dev__subtitle">
+        Consulta y gestiona las devoluciones registradas. El inventario solo se
+        actualiza al procesar una devolución aprobada.
+      </p>
+    </div>
+    <a class="dev__btn dev__btn--primary" routerLink="/personal/devoluciones/nueva">
+      <app-admin-icon icono="mas" />
+      REGISTRAR DEVOLUCIÓN
+    </a>
+  </header>
+
+  <section class="dev__filtros" aria-label="Filtros de devoluciones">
+    <h2 class="dev__filtros-title">Filtros</h2>
+    <div class="dev__filtros-grid">
+      <label class="dev__field" for="dev-estado">
+        <span class="dev__label">Estado</span>
+        <select
+          id="dev-estado"
+          [value]="estado() ?? ''"
+          (change)="cambiarEstado($any($event.target).value)"
+        >
+          <option value="">Todos los estados</option>
+          @for (opcion of estados; track opcion) {
+            <option [value]="opcion">{{ opcion }}</option>
+          }
+        </select>
+      </label>
+
+      @if (esAdministrador()) {
+        <label class="dev__field" for="dev-sucursal">
+          <span class="dev__label">Sucursal</span>
+          <select
+            id="dev-sucursal"
+            [value]="sucursalId() ?? ''"
+            [disabled]="cargandoSucursales()"
+            (change)="cambiarSucursal($any($event.target).value)"
+          >
+            <option value="">Todas las sucursales</option>
+            @for (sucursal of sucursales(); track sucursal.id) {
+              <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      <label class="dev__field" for="dev-desde">
+        <span class="dev__label">Desde</span>
+        <input
+          id="dev-desde"
+          type="date"
+          [value]="fechaDesde() ?? ''"
+          (change)="cambiarFechaDesde($any($event.target).value)"
+        />
+      </label>
+
+      <label class="dev__field" for="dev-hasta">
+        <span class="dev__label">Hasta</span>
+        <input
+          id="dev-hasta"
+          type="date"
+          [value]="fechaHasta() ?? ''"
+          (change)="cambiarFechaHasta($any($event.target).value)"
+        />
+      </label>
+
+      <div class="dev__filtros-acciones">
+        <button
+          type="button"
+          class="dev__btn dev__btn--primary"
+          [disabled]="cargando()"
+          [attr.aria-busy]="cargando()"
+          (click)="aplicarFiltros()"
+        >
+          FILTRAR
+        </button>
+        <button
+          type="button"
+          class="dev__btn"
+          [disabled]="cargando()"
+          (click)="limpiarFiltros()"
+        >
+          LIMPIAR
+        </button>
+      </div>
+    </div>
+
+    @if (errorFiltros(); as mensaje) {
+      <p class="dev__aviso" role="alert">{{ mensaje }}</p>
+    }
+  </section>
+
+  <section class="dev__lista" aria-label="Devoluciones registradas">
+    @if (cargando()) {
+      <div class="dev__state" role="status" aria-live="polite">
+        <span class="dev__spinner" aria-hidden="true"></span>
+        <p class="dev__state-text">Cargando devoluciones…</p>
+      </div>
+    } @else if (error(); as fallo) {
+      <div class="dev__state dev__state--error" role="alert">
+        <h2 class="dev__state-title">No pudimos cargar las devoluciones</h2>
+        <p class="dev__state-text">{{ fallo.mensaje }}</p>
+        <div class="dev__state-actions">
+          @if (fallo.puedeReintentar) {
+            <button
+              type="button"
+              class="dev__btn dev__btn--primary"
+              (click)="reintentar()"
+            >
+              REINTENTAR
+            </button>
+          }
+          <a class="dev__btn" routerLink="/dashboard">Ir al panel</a>
+        </div>
+      </div>
+    } @else if (listaVacia()) {
+      <div class="dev__state" role="status">
+        <h2 class="dev__state-title">Aún no hay devoluciones registradas</h2>
+        <p class="dev__state-text">
+          Registra una devolución validando la venta original y sus prendas.
+        </p>
+        <div class="dev__state-actions">
+          <a
+            class="dev__btn dev__btn--primary"
+            routerLink="/personal/devoluciones/nueva"
+          >
+            REGISTRAR DEVOLUCIÓN
+          </a>
+        </div>
+      </div>
+    } @else if (sinResultados()) {
+      <div class="dev__state" role="status">
+        <h2 class="dev__state-title">No hay devoluciones con estos filtros</h2>
+        <p class="dev__state-text">
+          Prueba con otro estado, sucursal o rango de fechas.
+        </p>
+        <div class="dev__state-actions">
+          <button type="button" class="dev__btn" (click)="limpiarFiltros()">
+            LIMPIAR FILTROS
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="dev__tabla-wrap">
+        <table class="dev__tabla">
+          <caption class="dev__sr">Devoluciones registradas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Código</th>
+              <th scope="col">Venta</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">Productos</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (devolucion of devoluciones(); track devolucion.devolucion_id) {
+              <tr>
+                <td data-col="Código">
+                  <strong class="dev__codigo">
+                    {{ codigoDevolucion(devolucion.devolucion_id) }}
+                  </strong>
+                </td>
+                <td data-col="Venta">
+                  {{ codigoVenta(devolucion.venta_id) }}
+                </td>
+                <td data-col="Fecha">
+                  {{ formatearFecha(devolucion.fecha_hora) }}
+                </td>
+                <td data-col="Sucursal">{{ devolucion.sucursal_nombre }}</td>
+                <td data-col="Motivo" class="dev__motivo">
+                  {{ devolucion.motivo }}
+                </td>
+                <td data-col="Productos">
+                  <span class="dev__prod">
+                    {{ devolucion.cantidad_lineas }}
+                    {{
+                      devolucion.cantidad_lineas === 1 ? 'producto' : 'productos'
+                    }}
+                  </span>
+                  <span class="dev__prod-unidades">
+                    {{ devolucion.cantidad_total_unidades }}
+                    {{
+                      devolucion.cantidad_total_unidades === 1
+                        ? 'unidad'
+                        : 'unidades'
+                    }}
+                  </span>
+                </td>
+                <td data-col="Estado">
+                  <app-devolucion-estado-badge
+                    [estado]="devolucion.estado"
+                  />
+                </td>
+                <td data-col="Acciones">
+                  <a
+                    class="dev__btn dev__btn--sm"
+                    [routerLink]="[
+                      '/personal',
+                      'devoluciones',
+                      devolucion.devolucion_id,
+                    ]"
+                  >
+                    VER DETALLE
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="dev__paginacion">
+        <button
+          type="button"
+          class="dev__btn"
+          [disabled]="!puedeAnterior()"
+          (click)="paginaAnterior()"
+        >
+          ANTERIOR
+        </button>
+        <span class="dev__pagina" role="status">
+          Página {{ pagina() }} de {{ totalPaginas() }} ·
+          {{ totalRegistros() }} devoluciones
+        </span>
+        <button
+          type="button"
+          class="dev__btn"
+          [disabled]="!puedeSiguiente()"
+          (click)="paginaSiguiente()"
+        >
+          SIGUIENTE
+        </button>
+      </footer>
+    }
+  </section>
+</div>

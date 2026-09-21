@@ -540,6 +540,19 @@ export class PagoElectronicoPage implements OnInit {
       : 'No pudimos procesar el pago. Revisa los datos e intenta nuevamente.';
   }
 
+  /**
+   * CU23: abre el comprobante de esta venta ya pagada
+   * (/ventas/{venta_id}/comprobante). El usuario decide luego si descarga o
+   * imprime: CU23 no dispara nada automáticamente.
+   */
+  verComprobante(): void {
+    const ventaId = this.ventaId();
+    if (ventaId === null) {
+      return;
+    }
+    void this.router.navigate(['/ventas', ventaId, 'comprobante']);
+  }
+
   irAlCatalogo(): void {
     void this.router.navigate(['/catalogo']);
   }

@@ -99,6 +99,15 @@ export class AuthService {
   );
 
   /**
+   * true si el usuario puede gestionar devoluciones (CU25):
+   * ADMINISTRADOR y ENCARGADO_SUCURSAL. El CAJERO y el CLIENTE quedan fuera
+   * (el backend además exige GESTIONAR_DEVOLUCIONES y responde 403).
+   */
+  readonly puedeGestionarDevoluciones = computed(
+    () => this.esAdministrador() || this.esEncargadoSucursal(),
+  );
+
+  /**
    * true si el usuario puede atender reservas en sucursal (CU18):
    * ADMINISTRADOR (cualquier sucursal), ENCARGADO_SUCURSAL o CAJERO (su
    * sucursal). CLIENTE queda fuera.

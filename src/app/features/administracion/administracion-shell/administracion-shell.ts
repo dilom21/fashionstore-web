@@ -27,6 +27,9 @@ const RUTAS_ENCARGADO_SUCURSAL = new Set([
   '/personal/reservas/atencion',
   // CU20 (venta presencial) vive en /personal/ventas/presencial.
   '/personal/ventas/presencial',
+  // CU25 (devoluciones) vive en /personal/devoluciones: ADMINISTRADOR y
+  // ENCARGADO_SUCURSAL.
+  '/personal/devoluciones',
 ]);
 
 /**

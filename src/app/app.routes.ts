@@ -108,6 +108,29 @@ export const routes: Routes = [
         './features/ventas/pages/pago-electronico-page/pago-electronico-page'
       ).then((m) => m.PagoElectronicoPage),
   },
+  // ===== CU24 - Historial de compras (solo CLIENTE autenticado) =====
+  // El backend identifica al cliente desde el JWT (`get_current_cliente`): el
+  // frontend nunca envía `cliente_id`. Se declara antes del wildcard.
+  {
+    path: 'ventas/historial',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/ventas/pages/historial-compras-page/historial-compras-page'
+      ).then((m) => m.HistorialComprasPage),
+  },
+  // ===== CU23 - Emitir comprobante de venta (solo CLIENTE dueño de la venta) =====
+  // Se abre desde el resultado exitoso de CU22 (VER COMPROBANTE). El backend
+  // responde 403 si la venta no es del cliente autenticado. Se declara antes
+  // del wildcard.
+  {
+    path: 'ventas/:venta_id/comprobante',
+    canActivate: [clienteAuthGuard],
+    loadComponent: () =>
+      import(
+        './features/ventas/pages/comprobante-cliente-page/comprobante-cliente-page'
+      ).then((m) => m.ComprobanteClientePage),
+  },
   {
     path: 'auth',
     loadChildren: () =>
@@ -137,11 +160,16 @@ export const routes: Routes = [
   {
     path: 'personal',
     loadChildren: async () => {
-      const [atencion, ventas] = await Promise.all([
+      const [atencion, ventas, devoluciones] = await Promise.all([
         import('./features/atencion-reservas/atencion-reservas.routes'),
         import('./features/ventas/ventas.routes'),
+        import('./features/devoluciones/devoluciones.routes'),
       ]);
-      return [...atencion.atencionReservasRoutes, ...ventas.ventasRoutes];
+      return [
+        ...atencion.atencionReservasRoutes,
+        ...ventas.ventasRoutes,
+        ...devoluciones.devolucionesRoutes,
+      ];
     },
   },
   { path: '**', redirectTo: '' },
