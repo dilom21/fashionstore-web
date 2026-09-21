@@ -1,0 +1,689 @@
+/* ==========================================================================
+   Registro público de clientes — misma identidad visual que el Login.
+   ========================================================================== */
+
+.reg {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 5.5rem var(--gutter) 3.5rem;
+  overflow: hidden;
+}
+
+/* Vínculo de retorno a la tienda */
+.reg__back {
+  position: absolute;
+  top: 1.6rem;
+  left: var(--gutter);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.25rem;
+  color: var(--text-2);
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: color 0.22s ease;
+}
+
+.reg__back:hover {
+  color: var(--text);
+}
+
+/* Resplandores decorativos (mismos del login) */
+.reg__glow {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(90px);
+}
+
+.reg__glow--a {
+  width: 440px;
+  height: 440px;
+  left: -12%;
+  top: -18%;
+  background: radial-gradient(circle, rgb(168 85 247 / 16%), transparent 65%);
+}
+
+.reg__glow--b {
+  width: 480px;
+  height: 480px;
+  right: -14%;
+  bottom: -22%;
+  background: radial-gradient(circle, rgb(217 70 239 / 11%), transparent 65%);
+}
+
+/* Tarjeta principal: más ancha que el login por la cantidad de campos */
+.reg__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 760px);
+  padding: clamp(1.7rem, 3.4vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  animation: vm-reg-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.reg__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+
+.reg__logo {
+  filter: drop-shadow(0 0 10px rgb(192 38 211 / 35%));
+}
+
+.reg__brand-name {
+  font-size: 1.12rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.reg__brand-name em {
+  font-style: normal;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.reg__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.reg__eyebrow::before,
+.reg__eyebrow::after {
+  content: '';
+  width: 18px;
+  height: 1px;
+  background: var(--grad-accent);
+}
+
+.reg__title {
+  margin-top: 0.6rem;
+  font-size: clamp(1.6rem, 3.4vw, 2rem);
+  letter-spacing: -0.025em;
+}
+
+.reg__subtitle {
+  margin: 0.5rem auto 0;
+  max-width: 46ch;
+  color: var(--text-2);
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+/* Alerta general de error */
+.reg__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 1.3rem auto 0;
+  max-width: 640px;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgb(248 113 113 / 40%);
+  border-radius: var(--radius-m);
+  background: rgb(190 18 60 / 12%);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.reg__alert svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: #fb7185;
+}
+
+html[data-theme='light'] .reg__alert {
+  background: rgb(225 29 72 / 8%);
+}
+
+/* ===== Formulario ===== */
+.reg__form {
+  margin-top: 1.5rem;
+}
+
+.reg__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.1rem;
+  text-align: left;
+}
+
+.reg__field--full {
+  grid-column: 1 / -1;
+}
+
+.reg__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.reg__input {
+  width: 100%;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.reg__input::placeholder {
+  color: color-mix(in srgb, var(--text-3) 88%, transparent);
+}
+
+.reg__input:focus {
+  outline: none;
+  border-color: var(--accent-3);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.reg__input--error {
+  border-color: rgb(248 113 113 / 55%);
+}
+
+.reg__input--error:focus {
+  box-shadow: 0 0 0 3px rgb(190 18 60 / 18%);
+}
+
+/* Selector de sexo (mismo lenguaje visual que los inputs) */
+.reg__select {
+  appearance: none;
+  padding-right: 2.4rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
+    linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.25rem) calc(50% + 2px),
+    calc(100% - 0.95rem) calc(50% + 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+/* Campo de contraseña con botón de ojo */
+.reg__password {
+  position: relative;
+}
+
+.reg__input--password {
+  padding-right: 3rem;
+}
+
+.reg__eye {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.reg__eye:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
+.reg__eye:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+}
+
+/* Mensajes de validación por campo */
+.reg__field-error {
+  margin: 0.4rem 0 0;
+  color: #fda4af;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+html[data-theme='light'] .reg__field-error {
+  color: #be123c;
+}
+
+.reg__hint {
+  margin: 0.6rem 0 0;
+  color: var(--text-3);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* CTA principal */
+.reg__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1.6rem;
+  border: 0;
+  border-radius: 14px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-family: var(--font);
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow:
+    var(--shadow-accent),
+    inset 0 1px 0 rgb(255 255 255 / 18%);
+  transition:
+    transform 0.22s ease,
+    filter 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.reg__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.06) saturate(1.05);
+}
+
+.reg__submit:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+}
+
+.reg__submit:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 3px;
+}
+
+.reg__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: saturate(0.7);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
+}
+
+.reg__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgb(255 255 255 / 35%);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: vm-reg-spin 0.7s linear infinite;
+}
+
+/* ===== Barra de fortaleza: ROJO / ÁMBAR / VERDE ===== */
+.reg__strength {
+  margin-top: 0.8rem;
+}
+
+.reg__strength-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+}
+
+.reg__strength-title {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.reg__strength-nivel {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.reg__strength--insegura .reg__strength-nivel {
+  color: #fb7185;
+}
+
+.reg__strength--media .reg__strength-nivel {
+  color: #fbbf24;
+}
+
+.reg__strength--segura .reg__strength-nivel {
+  color: #34d399;
+}
+
+.reg__strength-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.reg__strength-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  transition:
+    width 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
+    background-color 0.35s ease;
+}
+
+.reg__strength--insegura .reg__strength-fill {
+  background: linear-gradient(90deg, #fb7185, #f43f5e);
+}
+
+.reg__strength--media .reg__strength-fill {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.reg__strength--segura .reg__strength-fill {
+  background: linear-gradient(90deg, #34d399, #10b981);
+}
+
+/* ===== Checklist de requisitos (se actualiza en vivo) ===== */
+.reg__reqs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reg__req {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-3);
+  font-size: 0.8rem;
+  transition: color 0.2s ease;
+}
+
+.reg__req-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: color-mix(in srgb, var(--text-3) 80%, transparent);
+}
+
+.reg__req--ok {
+  color: var(--text-2);
+}
+
+.reg__req--ok .reg__req-icon {
+  color: #34d399;
+}
+
+/* ===== Enlace inferior: inverso del CTA «Crear cuenta» del login ===== */
+.reg__login {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1.4rem 0 0;
+  padding: 1.2rem 0 0;
+  border-top: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: 0.95rem;
+}
+
+.reg__login-link {
+  color: var(--accent-text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-strong);
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: color 0.22s ease;
+}
+
+.reg__login-link:hover {
+  color: var(--text);
+}
+
+.reg__login-link:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 3px;
+}
+
+/* ===== Modal de «Cuenta creada» ===== */
+.reg__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 1.4rem;
+  background: rgb(3 6 15 / 74%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: vm-reg-fade 0.24s ease both;
+}
+
+.reg__modal {
+  width: min(100%, 420px);
+  padding: clamp(1.7rem, 4vw, 2.3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  animation: vm-reg-rise 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.reg__modal-brand {
+  display: block;
+  margin-bottom: 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.reg__modal-brand em {
+  font-style: normal;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.reg__modal-check {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  border: 1px solid rgb(52 211 153 / 40%);
+  border-radius: 50%;
+  background: rgb(6 78 59 / 26%);
+  color: #34d399;
+}
+
+.reg__modal-title {
+  margin: 0;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.reg__modal-text {
+  margin: 0.7rem 0 0;
+  color: var(--text-2);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.reg__modal-correo {
+  margin: 0.5rem 0 1.3rem;
+  color: var(--text-3);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.reg__modal-correo strong {
+  color: var(--text);
+}
+
+.reg__modal-correo span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--accent-text);
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.reg__modal-cta {
+  width: 100%;
+  padding: 0.8rem 1.4rem;
+  border: 0;
+  border-radius: 14px;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow:
+    var(--shadow-accent),
+    inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+
+.reg__modal-cta:hover {
+  filter: brightness(1.06);
+}
+
+.reg__modal-cta:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 3px;
+}
+
+.reg__modal-secundario {
+  margin-top: 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.reg__modal-secundario:hover {
+  color: var(--text);
+}
+
+.reg__modal-secundario:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 3px;
+}
+
+/* ===== Animaciones ===== */
+@keyframes vm-reg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes vm-reg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes vm-reg-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reg__card,
+  .reg__modal,
+  .reg__overlay,
+  .reg__spinner {
+    animation: none;
+  }
+}
+
+/* ===== Responsive: una columna, mismo orden del DOM ===== */
+@media (max-width: 680px) {
+  .reg {
+    padding-inline: 1rem;
+  }
+
+  .reg__card {
+    padding: 1.6rem 1.25rem;
+  }
+
+  .reg__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reg__reqs {
+    grid-template-columns: 1fr;
+  }
+
+  .reg__back {
+    left: 1rem;
+    top: 1.2rem;
+    font-size: 0;
+    gap: 0;
+    width: 42px;
+    height: 42px;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+
+  .reg__back svg {
+    width: 20px;
+    height: 20px;
+  }
+}

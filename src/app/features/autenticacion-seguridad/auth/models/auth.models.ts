@@ -58,3 +58,51 @@ export interface ClienteLoginResponse extends LoginResponseBase {
 export interface PersonalLoginResponse extends LoginResponseBase {
   usuario: PersonalAuth;
 }
+
+// ===== Registro público de clientes (POST /auth/clientes/registro) =====
+
+/** Sexo del cliente: valores EXACTOS del backend. */
+export type SexoCliente = 'MASCULINO' | 'FEMENINO' | 'OTRO' | 'NO_ESPECIFICA';
+
+/**
+ * Opciones presentables del selector de sexo: la interfaz muestra la etiqueta
+ * legible y envía siempre el valor real del backend.
+ */
+export const OPCIONES_SEXO: readonly {
+  valor: SexoCliente;
+  etiqueta: string;
+}[] = [
+  { valor: 'MASCULINO', etiqueta: 'Masculino' },
+  { valor: 'FEMENINO', etiqueta: 'Femenino' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+  { valor: 'NO_ESPECIFICA', etiqueta: 'Prefiero no especificar' },
+];
+
+/**
+ * Datos del formulario de registro de cliente.
+ *
+ * Solo estos campos: el backend asigna rol, estado e ids; el frontend nunca
+ * envía `rol`, `rol_id`, `estado`, `usuario_id`, `cliente_id`, `empleado_id`,
+ * `sucursal_id` ni `contexto`.
+ */
+export interface ClienteRegistroRequest {
+  correo: string;
+  password: string;
+  password_confirmacion: string;
+  nombre: string;
+  apellido: string;
+  ci: string;
+  telefono: string;
+  sexo: SexoCliente;
+  fecha_nacimiento: string;
+}
+
+/** Respuesta 201 del registro: NO incluye JWT (no hay auto-login). */
+export interface ClienteRegistroResponse {
+  mensaje: string;
+  usuario_id: number;
+  cliente_id: number;
+  correo: string;
+  nombre: string;
+  apellido: string;
+}

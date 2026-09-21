@@ -183,19 +183,16 @@ export const administracionRoutes: Routes = [
         pathMatch: 'full',
         redirectTo: 'compras-proveedores/proveedores',
       },
+      // ===== CU28 - Dashboard y reportes (funcional) =====
+      // Accesible para ADMINISTRADOR y ENCARGADO_SUCURSAL (adminAuthGuard en el
+      // shell padre). El encargado solo consulta su sucursal y no ve AUDITORÍA;
+      // el backend sigue siendo la autoridad (403/422).
       {
         path: 'reportes',
-        data: {
-          modulo: 'REPORTES',
-          titulo: 'Reportes',
-          descripcion:
-            'Reportes e indicadores del negocio.',
-          icono: 'reportes',
-        },
         loadComponent: () =>
-          import(
-            './components/modulo-en-construccion/modulo-en-construccion'
-          ).then((m) => m.ModuloEnConstruccion),
+          import('../reportes/pages/reportes-page/reportes-page').then(
+            (m) => m.ReportesPage,
+          ),
       },
     ],
   },

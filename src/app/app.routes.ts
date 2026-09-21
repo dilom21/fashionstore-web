@@ -42,6 +42,16 @@ export const routes: Routes = [
         (m) => m.Login,
       ),
   },
+  // ===== Registro público de clientes (POST /auth/clientes/registro) =====
+  // Ruta de UI pública (`/registro`); NO es el endpoint de la API. No lleva
+  // guard, se carga de forma diferida y se declara antes del wildcard.
+  {
+    path: 'registro',
+    loadComponent: () =>
+      import(
+        './features/autenticacion-seguridad/auth/pages/registro-cliente/registro-cliente'
+      ).then((m) => m.RegistroCliente),
+  },
   // ===== CU15 - Carrito de compras (solo CLIENTE autenticado) =====
   {
     path: 'carritos',

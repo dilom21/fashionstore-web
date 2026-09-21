@@ -26,7 +26,8 @@ const MENSAJE_CONEXION =
  * Página de inicio de sesión de CLIENTES (VANTER MEN).
  *
  * - Usa exclusivamente AuthService.loginCliente() (POST /auth/clientes/login).
- * - No implementa todavía registro ni recuperación de contraseña.
+ * - El registro público de clientes vive en /registro (CU29); la recuperación
+ *   de contraseña sigue pendiente.
  * - Si el cliente ya está autenticado, redirige a returnUrl válido o a "/".
  */
 @Component({
@@ -61,6 +62,15 @@ export class Login {
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.mensajeError.set(null));
+
+    // Precarga opcional del correo enviado desde el registro (?correo=...).
+    // Solo el correo: la contraseña queda vacía y NO hay auto-login.
+    const correoPrecargado = this.route.snapshot.queryParamMap.get('correo');
+    if (correoPrecargado !== null && correoPrecargado.trim().length > 0) {
+      this.form.controls.correo.setValue(
+        correoPrecargado.trim().slice(0, 150),
+      );
+    }
 
     // Si ya existe un cliente autenticado (p. ej. tras restaurar sesión o
     // justo después de un login correcto), esta página no debe mostrarse:

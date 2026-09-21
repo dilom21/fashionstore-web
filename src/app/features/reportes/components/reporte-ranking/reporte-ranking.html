@@ -1,0 +1,28 @@
+@if (hayDatos()) {
+  <ol class="rank">
+    @for (fila of visibles(); track fila.indice) {
+      <li class="rank__fila">
+        <span class="rank__puesto" aria-hidden="true">{{ fila.indice }}</span>
+
+        <div class="rank__cuerpo">
+          <div class="rank__cabecera">
+            <span class="rank__etiqueta" [attr.title]="fila.etiqueta">
+              {{ fila.etiqueta }}
+            </span>
+            <span class="rank__valor">{{ texto(fila) }}</span>
+          </div>
+          <span class="rank__pista">
+            <span
+              class="rank__barra"
+              [style.width.%]="porcentaje(fila.valor)"
+            ></span>
+          </span>
+        </div>
+      </li>
+    }
+  </ol>
+} @else {
+  <p class="rank__vacio" role="status">
+    No hay información para el período seleccionado.
+  </p>
+}

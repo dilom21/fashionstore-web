@@ -1,0 +1,369 @@
+<!--
+  Registro público de CLIENTES — VANTER MEN.
+  Formulario real conectado a POST /auth/clientes/registro vía AuthService.
+  Sin auto-login: al crear la cuenta se muestra un modal y se ofrece ir al login.
+-->
+<main class="reg">
+  <a routerLink="/" class="reg__back" aria-label="Volver a la tienda">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M19 12H5M11 6l-6 6 6 6"></path>
+    </svg>
+    Volver a la tienda
+  </a>
+
+  <div class="reg__glow reg__glow--a" aria-hidden="true"></div>
+  <div class="reg__glow reg__glow--b" aria-hidden="true"></div>
+
+  <section class="reg__card">
+    <a routerLink="/" class="reg__brand" aria-label="VANTER MEN — ir al inicio">
+      <svg class="reg__logo" width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M4 6h24L17 27h-2L4 6z" fill="url(#vm-reg-grad)" />
+        <path d="M11 6l5 9 5-9" stroke="rgba(255,255,255,.85)" stroke-width="1.6" />
+        <defs>
+          <linearGradient id="vm-reg-grad" x1="4" y1="6" x2="28" y2="27" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#a855f7" />
+            <stop offset="1" stop-color="#d946ef" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="reg__brand-name">VANTER&nbsp;<em>MEN</em></span>
+    </a>
+
+    <span class="reg__eyebrow">Cuenta de cliente</span>
+    <h1 class="reg__title">Crear cuenta</h1>
+    <p class="reg__subtitle">
+      Completa tus datos para comprar, reservar y seguir tus pedidos.
+    </p>
+
+    @if (mensajeError(); as error) {
+      <p class="reg__alert" role="alert">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 8v4.5M12 15.6v.1"></path>
+        </svg>
+        <span>{{ error }}</span>
+      </p>
+    }
+
+    <form class="reg__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="reg__grid">
+        <div class="reg__field">
+          <label class="reg__label" for="reg-nombre">Nombre</label>
+          <input
+            class="reg__input"
+            [class.reg__input--error]="mensajeNombre() !== null"
+            id="reg-nombre"
+            type="text"
+            formControlName="nombre"
+            autocomplete="given-name"
+            placeholder="Juan"
+            required
+            [attr.aria-invalid]="mensajeNombre() !== null"
+            aria-describedby="reg-nombre-error"
+          />
+          @if (mensajeNombre(); as mensaje) {
+            <p class="reg__field-error" id="reg-nombre-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field">
+          <label class="reg__label" for="reg-apellido">Apellido</label>
+          <input
+            class="reg__input"
+            [class.reg__input--error]="mensajeApellido() !== null"
+            id="reg-apellido"
+            type="text"
+            formControlName="apellido"
+            autocomplete="family-name"
+            placeholder="Pérez"
+            required
+            [attr.aria-invalid]="mensajeApellido() !== null"
+            aria-describedby="reg-apellido-error"
+          />
+          @if (mensajeApellido(); as mensaje) {
+            <p class="reg__field-error" id="reg-apellido-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field reg__field--full">
+          <label class="reg__label" for="reg-correo">Correo electrónico</label>
+          <input
+            class="reg__input"
+            [class.reg__input--error]="mensajeCorreo() !== null"
+            id="reg-correo"
+            type="email"
+            formControlName="correo"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="tucorreo@ejemplo.com"
+            required
+            [attr.aria-invalid]="mensajeCorreo() !== null"
+            aria-describedby="reg-correo-error"
+          />
+          @if (mensajeCorreo(); as mensaje) {
+            <p class="reg__field-error" id="reg-correo-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field">
+          <label class="reg__label" for="reg-ci">Documento (CI)</label>
+          <input
+            class="reg__input"
+            [class.reg__input--error]="mensajeCi() !== null"
+            id="reg-ci"
+            type="text"
+            formControlName="ci"
+            autocomplete="off"
+            placeholder="12345678"
+            required
+            [attr.aria-invalid]="mensajeCi() !== null"
+            aria-describedby="reg-ci-error"
+          />
+          @if (mensajeCi(); as mensaje) {
+            <p class="reg__field-error" id="reg-ci-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field">
+          <label class="reg__label" for="reg-telefono">Teléfono</label>
+          <input
+            class="reg__input"
+            [class.reg__input--error]="mensajeTelefono() !== null"
+            id="reg-telefono"
+            type="tel"
+            formControlName="telefono"
+            autocomplete="tel"
+            placeholder="70000000"
+            required
+            [attr.aria-invalid]="mensajeTelefono() !== null"
+            aria-describedby="reg-telefono-error"
+          />
+          @if (mensajeTelefono(); as mensaje) {
+            <p class="reg__field-error" id="reg-telefono-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field">
+          <label class="reg__label" for="reg-sexo">Sexo</label>
+          <select
+            class="reg__input reg__select"
+            [class.reg__input--error]="mensajeSexo() !== null"
+            id="reg-sexo"
+            formControlName="sexo"
+            required
+            [attr.aria-invalid]="mensajeSexo() !== null"
+            aria-describedby="reg-sexo-error"
+          >
+            <option value="" disabled>Selecciona una opción</option>
+            @for (opcion of opcionesSexo; track opcion.valor) {
+              <option [value]="opcion.valor">{{ opcion.etiqueta }}</option>
+            }
+          </select>
+          @if (mensajeSexo(); as mensaje) {
+            <p class="reg__field-error" id="reg-sexo-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field">
+          <label class="reg__label" for="reg-fecha">Fecha de nacimiento</label>
+          <input
+            class="reg__input"
+            [class.reg__input--error]="mensajeFechaNacimiento() !== null"
+            id="reg-fecha"
+            type="date"
+            formControlName="fecha_nacimiento"
+            autocomplete="bday"
+            [attr.max]="hoy"
+            required
+            [attr.aria-invalid]="mensajeFechaNacimiento() !== null"
+            aria-describedby="reg-fecha-error"
+          />
+          @if (mensajeFechaNacimiento(); as mensaje) {
+            <p class="reg__field-error" id="reg-fecha-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field reg__field--full">
+          <label class="reg__label" for="reg-password">Contraseña</label>
+          <div class="reg__password">
+            <input
+              class="reg__input reg__input--password"
+              [class.reg__input--error]="mensajePassword() !== null"
+              id="reg-password"
+              [type]="mostrarPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="new-password"
+              placeholder="••••••••"
+              required
+              [attr.aria-invalid]="mensajePassword() !== null"
+              aria-describedby="reg-password-error reg-password-requisitos"
+            />
+            <button
+              type="button"
+              class="reg__eye"
+              [attr.aria-label]="mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="mostrarPassword()"
+              (click)="toggleMostrarPassword()"
+            >
+              @if (mostrarPassword()) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                  <path d="M3 3l18 18"></path>
+                  <path d="M10.6 5.1A9.8 9.8 0 0112 5c5 0 9 7 9 7a15.6 15.6 0 01-2.6 3.2M6.6 6.6A15.6 15.6 0 003 12s4 7 9 7c1.2 0 2.3-.4 3.4-.9"></path>
+                  <path d="M9.9 9.9a3 3 0 004.2 4.2"></path>
+                </svg>
+              } @else {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                  <path d="M3 12s4-7 9-7 9 7 9 7-4 7-9 7-9-7-9-7z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              }
+            </button>
+          </div>
+
+          @if (mostrarFortaleza()) {
+            <div class="reg__strength" [class]="'reg__strength--' + fortaleza().nivel">
+              <div class="reg__strength-head">
+                <span class="reg__strength-title">Fortaleza de contraseña</span>
+                <span class="reg__strength-nivel">{{ nivelTexto() }}</span>
+              </div>
+              <div class="reg__strength-track">
+                <span
+                  class="reg__strength-fill"
+                  [style.width.%]="progreso()"
+                ></span>
+              </div>
+            </div>
+
+            <ul class="reg__reqs" id="reg-password-requisitos">
+              @for (requisito of requisitos(); track requisito.clave) {
+                <li class="reg__req" [class.reg__req--ok]="requisito.cumple">
+                  <span class="reg__req-icon" aria-hidden="true">
+                    @if (requisito.cumple) {
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                        <path d="M5 13l4.5 4.5L19 7"></path>
+                      </svg>
+                    } @else {
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="8"></circle>
+                      </svg>
+                    }
+                  </span>
+                  <span>{{ requisito.etiqueta }}</span>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (mensajePassword(); as mensaje) {
+            <p class="reg__field-error" id="reg-password-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field reg__field--full">
+          <label class="reg__label" for="reg-password2">Confirmar contraseña</label>
+          <div class="reg__password">
+            <input
+              class="reg__input reg__input--password"
+              [class.reg__input--error]="mensajeConfirmacion() !== null"
+              id="reg-password2"
+              [type]="mostrarConfirmacion() ? 'text' : 'password'"
+              formControlName="password_confirmacion"
+              autocomplete="new-password"
+              placeholder="••••••••"
+              required
+              [attr.aria-invalid]="mensajeConfirmacion() !== null"
+              aria-describedby="reg-password2-error"
+            />
+            <button
+              type="button"
+              class="reg__eye"
+              [attr.aria-label]="mostrarConfirmacion() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="mostrarConfirmacion()"
+              (click)="toggleMostrarConfirmacion()"
+            >
+              @if (mostrarConfirmacion()) {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                  <path d="M3 3l18 18"></path>
+                  <path d="M10.6 5.1A9.8 9.8 0 0112 5c5 0 9 7 9 7a15.6 15.6 0 01-2.6 3.2M6.6 6.6A15.6 15.6 0 003 12s4 7 9 7c1.2 0 2.3-.4 3.4-.9"></path>
+                  <path d="M9.9 9.9a3 3 0 004.2 4.2"></path>
+                </svg>
+              } @else {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+                  <path d="M3 12s4-7 9-7 9 7 9 7-4 7-9 7-9-7-9-7z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (mensajeConfirmacion(); as mensaje) {
+            <p class="reg__field-error" id="reg-password2-error">{{ mensaje }}</p>
+          }
+        </div>
+
+        <div class="reg__field reg__field--full">
+          <button
+            type="submit"
+            class="reg__submit"
+            [disabled]="!puedeEnviar()"
+            [attr.aria-busy]="enviando()"
+          >
+            @if (enviando()) {
+              <span class="reg__spinner" aria-hidden="true"></span>
+              <span>CREANDO CUENTA…</span>
+            } @else {
+              <span>CREAR CUENTA</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"></path>
+              </svg>
+            }
+          </button>
+          @if (!puedeEnviar() && !enviando()) {
+            <p class="reg__hint">
+              Completa tus datos y usa una contraseña SEGURA (barra en verde) para
+              habilitar el botón.
+            </p>
+          }
+        </div>
+      </div>
+    </form>
+
+    <p class="reg__login">
+      ¿Ya tienes una cuenta?
+      <a routerLink="/login" class="reg__login-link">Iniciar sesión</a>
+    </p>
+  </section>
+
+  @if (cuentaCreada(); as cuenta) {
+    <div
+      class="reg__overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reg-exito-titulo"
+      aria-describedby="reg-exito-texto"
+    >
+      <div class="reg__modal">
+        <span class="reg__modal-brand">VANTER&nbsp;<em>MEN</em></span>
+
+        <span class="reg__modal-check" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <path d="M5 13l4.5 4.5L19 7"></path>
+          </svg>
+        </span>
+
+        <h2 class="reg__modal-title" id="reg-exito-titulo">CUENTA CREADA</h2>
+        <p class="reg__modal-text" id="reg-exito-texto">{{ cuenta.mensaje }}</p>
+        <p class="reg__modal-correo">
+          <strong>{{ cuenta.nombre }}</strong>, ya puedes iniciar sesión con
+          <span>{{ cuenta.correo }}</span>
+        </p>
+
+        <button type="button" class="reg__modal-cta" (click)="irALogin()">
+          INICIAR SESIÓN
+        </button>
+        <button type="button" class="reg__modal-secundario" (click)="irATienda()">
+          Volver a la tienda
+        </button>
+      </div>
+    </div>
+  }
+</main>

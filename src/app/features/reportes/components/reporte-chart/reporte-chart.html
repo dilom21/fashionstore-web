@@ -1,0 +1,25 @@
+<div
+  class="chart"
+  [style.height.px]="altura()"
+  [style.min-height.px]="altura()"
+>
+  <!--
+    El canvas se renderiza SIEMPRE (nunca dentro de un @if): así el chart puede
+    crearse en el primer render del navegador y, cuando llegan los datos
+    asíncronos, solo se actualizan dataset/opciones. Si se condicionara el
+    canvas, `crear()` no encontraría el elemento y la gráfica nunca aparecería.
+  -->
+  <canvas
+    #canvas
+    class="chart__lienzo"
+    [class.chart__lienzo--oculto]="!tieneDatos()"
+    role="img"
+    [attr.aria-label]="descripcion()"
+  ></canvas>
+
+  @if (!tieneDatos()) {
+    <p class="chart__vacio" role="status">
+      No hay datos para el período seleccionado.
+    </p>
+  }
+</div>

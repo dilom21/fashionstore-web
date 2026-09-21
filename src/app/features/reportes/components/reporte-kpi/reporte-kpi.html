@@ -1,0 +1,18 @@
+<article class="kpi" [class]="'kpi--' + tono()">
+  <span class="kpi__icono" aria-hidden="true">
+    <app-admin-icon [icono]="icono()" />
+  </span>
+
+  <p class="kpi__label">
+    {{ label() }}
+    @if (ayuda(); as texto) {
+      <span class="kpi__ayuda" [attr.title]="texto" [attr.aria-label]="texto">ℹ</span>
+    }
+  </p>
+
+  <strong class="kpi__valor">{{ valor() ?? '0' }}</strong>
+
+  @if (contexto(); as texto) {
+    <span class="kpi__contexto">{{ texto }}</span>
+  }
+</article>

@@ -233,8 +233,9 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: 'Reportes',
     icon: 'reportes',
     route: '/admin/reportes',
-    descripcion: 'Reportes e indicadores del negocio.',
-    estado: 'proximamente',
+    descripcion:
+      'Dashboard y reportes: indicadores del negocio, comparativos y exportación a PDF, Excel o CSV.',
+    estado: 'funcional',
     permiso: 'REPORTES',
   },
 ];

@@ -1,0 +1,78 @@
+:host {
+  display: block;
+}
+
+.rank {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rank__fila {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.rank__puesto {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank__cuerpo {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.rank__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.rank__etiqueta {
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank__valor {
+  color: var(--text-2);
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank__pista {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.rank__barra {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  transition: width 0.3s ease;
+}
+
+.rank__vacio {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.84rem;
+}

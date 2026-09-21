@@ -1,0 +1,1207 @@
+<section class="rpt">
+  <!-- ===== Cabecera ===== -->
+  <header class="rpt__head">
+    <div>
+      <span class="rpt__eyebrow">Reportes y analítica</span>
+      <h1 class="rpt__title">Dashboard y reportes</h1>
+      <p class="rpt__subtitle">
+        Consulta los indicadores clave del negocio y genera reportes
+        exportables en PDF, Excel o CSV con los mismos filtros.
+      </p>
+    </div>
+
+    <div class="rpt__head-meta">
+      <span class="rpt__chip">Período: <strong>{{ periodoTexto() }}</strong></span>
+      <span class="rpt__chip">Alcance: <strong>{{ alcanceTexto() }}</strong></span>
+      <span class="rpt__chip">{{ agrupacionTexto() }}</span>
+      @if (generadoEn()) {
+        <span class="rpt__chip">
+          Datos actualizados: <strong>{{ generadoEn() }}</strong>
+        </span>
+      }
+
+      <div class="rpt__exportar">
+        <button
+          type="button"
+          class="rpt__exportar-btn"
+          [disabled]="exportando() !== null"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="menuExportar()"
+          (click)="alternarMenuExportar()"
+        >
+          @if (exportando() === null) {
+            Exportar {{ etiquetaActiva() }}
+          } @else {
+            Exportando {{ exportando() }}...
+          }
+        </button>
+
+        @if (menuExportar()) {
+          <div class="rpt__exportar-menu" role="menu">
+            <button
+              type="button"
+              class="rpt__exportar-item"
+              role="menuitem"
+              (click)="exportar('PDF')"
+            >
+              <span>PDF</span><span>documento</span>
+            </button>
+            <button
+              type="button"
+              class="rpt__exportar-item"
+              role="menuitem"
+              (click)="exportar('XLSX')"
+            >
+              <span>Excel</span><span>.xlsx</span>
+            </button>
+            <button
+              type="button"
+              class="rpt__exportar-item"
+              role="menuitem"
+              (click)="exportar('CSV')"
+            >
+              <span>CSV</span><span>.csv</span>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (errorExportar(); as error) {
+    <p class="rpt__exportar-error" role="alert">{{ error }}</p>
+  }
+
+  <!-- ===== Filtros (solo APLICAR consulta) ===== -->
+  <div class="rpt__filters">
+    <label class="rpt__field">
+      <span class="rpt__label">Desde</span>
+      <input
+        class="rpt__input"
+        type="date"
+        [value]="desde() ?? ''"
+        (change)="onDesde($any($event.target).value)"
+      />
+    </label>
+
+    <label class="rpt__field">
+      <span class="rpt__label">Hasta</span>
+      <input
+        class="rpt__input"
+        type="date"
+        [value]="hasta() ?? ''"
+        (change)="onHasta($any($event.target).value)"
+      />
+    </label>
+
+    <label class="rpt__field">
+      <span class="rpt__label">Alcance</span>
+      @if (esAdministrador()) {
+        <select
+          class="rpt__select"
+          [value]="sucursalId() ?? ''"
+          (change)="onSucursal($any($event.target).value)"
+        >
+          <option value="">Todas las sucursales</option>
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+          }
+        </select>
+      } @else {
+        <span class="rpt__valor-fijo">{{ alcanceTexto() }}</span>
+      }
+    </label>
+
+    <label class="rpt__field">
+      <span class="rpt__label">Agrupación</span>
+      <select
+        class="rpt__select"
+        [value]="agrupacion()"
+        (change)="onAgrupacion($any($event.target).value)"
+      >
+        @for (opcion of agrupaciones; track opcion) {
+          <option [value]="opcion">
+            {{ opcion === 'MES' ? 'Por mes' : 'Por día' }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <label class="rpt__field">
+      <span class="rpt__label">Top</span>
+      <select
+        class="rpt__select"
+        [value]="top()"
+        (change)="onTop($any($event.target).value)"
+      >
+        @for (opcion of tops; track opcion) {
+          <option [value]="opcion">{{ opcion }}</option>
+        }
+      </select>
+    </label>
+
+    @if (tab() === 'INVENTARIO') {
+      <label class="rpt__field">
+        <span class="rpt__label">Umbral stock bajo</span>
+        <input
+          class="rpt__input"
+          type="number"
+          min="0"
+          max="1000"
+          [value]="umbral()"
+          (change)="onUmbral($any($event.target).value)"
+        />
+      </label>
+    }
+
+    <button type="button" class="rpt__aplicar" (click)="aplicarFiltros()">
+      Aplicar
+    </button>
+  </div>
+
+  <div class="rpt__quick">
+    @for (rango of rangos; track rango.id) {
+      <button
+        type="button"
+        class="rpt__quick-btn"
+        (click)="aplicarRango(rango.id)"
+      >
+        {{ rango.label }}
+      </button>
+    }
+    @if (sucursalId() !== null) {
+      <button type="button" class="rpt__quick-btn" (click)="onSucursal('')">
+        Quitar sucursal
+      </button>
+    }
+  </div>
+
+  @if (aviso(); as mensaje) {
+    <div class="rpt__aviso" role="alert">
+      <span>{{ mensaje }}</span>
+      <button type="button" (click)="cerrarAviso()">Cerrar</button>
+    </div>
+  }
+
+  <!-- ===== Navegación secundaria entre reportes ===== -->
+  <nav class="rpt__tabs" aria-label="Reportes disponibles">
+    @for (opcion of tabs(); track opcion.id) {
+      <button
+        type="button"
+        class="rpt__tab"
+        [class.rpt__tab--activo]="tab() === opcion.id"
+        [attr.aria-current]="tab() === opcion.id ? 'page' : null"
+        (click)="cambiarReporte(opcion.id)"
+      >
+        {{ opcion.label }}
+      </button>
+    }
+  </nav>
+
+  <!-- ===== Contenido de la sección activa ===== -->
+  @if (cargandoActivo()) {
+    <div class="rpt__kpis">
+      @for (tarjeta of [1, 2, 3, 4]; track tarjeta) {
+        <span class="rpt__skeleton-caja rpt__skeleton-caja--kpi"></span>
+      }
+    </div>
+    <div class="rpt__bento">
+      <div class="rpt__bloque rpt__bloque--wide">
+        <span class="rpt__skeleton-caja"></span>
+      </div>
+      <div class="rpt__bloque rpt__card">
+        <div class="rpt__skeleton">
+          @for (linea of [1, 2, 3, 4, 5]; track linea) {
+            <span class="rpt__skeleton-linea"></span>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (errorActivo(); as error) {
+    <div class="rpt__estado rpt__estado--error" role="alert">
+      <p>{{ error.mensaje }}</p>
+      @if (error.puedeReintentar) {
+        <button type="button" class="rpt__reintentar" (click)="reintentar()">
+          Reintentar
+        </button>
+      }
+    </div>
+  } @else if (tab() === 'RESUMEN') {
+    @if (dashboard().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi
+          label="Ventas completadas"
+          [valor]="d.kpis.ventas_completadas | number"
+          contexto="Período seleccionado"
+          icono="ventas"
+          tono="acento"
+        />
+        <app-reporte-kpi
+          label="Total vendido"
+          [valor]="'Bs ' + formatearMonto(d.kpis.total_vendido)"
+          contexto="Solo ventas en estado COMPLETADA"
+          icono="numero"
+          tono="exito"
+        />
+        <app-reporte-kpi
+          label="Unidades vendidas"
+          [valor]="d.kpis.unidades_vendidas | number"
+          contexto="Prendas entregadas al cliente"
+          icono="paquete"
+          tono="info"
+        />
+        <app-reporte-kpi
+          label="Ticket promedio"
+          [valor]="'Bs ' + formatearMonto(d.kpis.ticket_promedio)"
+          contexto="Promedio por venta completada"
+          icono="estado"
+          tono="neutro"
+          ayuda="Total vendido dividido entre las ventas completadas del período."
+        />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--wide">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Evolución de ventas</h2>
+            <div class="rpt__segment" role="group" aria-label="Métrica de la gráfica">
+              <button
+                type="button"
+                [attr.aria-pressed]="metricaEvolucion() === 'MONTO'"
+                (click)="metricaEvolucion.set('MONTO')"
+              >
+                MONTO
+              </button>
+              <button
+                type="button"
+                [attr.aria-pressed]="metricaEvolucion() === 'CANTIDAD'"
+                (click)="metricaEvolucion.set('CANTIDAD')"
+              >
+                VENTAS
+              </button>
+              <button
+                type="button"
+                [attr.aria-pressed]="metricaEvolucion() === 'UNIDADES'"
+                (click)="metricaEvolucion.set('UNIDADES')"
+              >
+                UNIDADES
+              </button>
+            </div>
+          </header>
+          <app-reporte-chart
+            tipo="line"
+            [etiquetas]="evolucionResumen().etiquetas"
+            [datasets]="evolucionResumen().datasets"
+            [formato]="metricaEvolucion() === 'MONTO' ? 'MONTO' : 'NUMERO'"
+            [altura]="300"
+            [mostrarLeyenda]="false"
+            descripcion="Evolución de ventas del período seleccionado"
+          />
+          <p class="rpt__card-hint">
+            {{ agrupacionTexto() }} · {{ periodoTexto() }} · {{ alcanceTexto() }}
+          </p>
+        </article>
+
+        <article class="rpt__card rpt__bloque">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Resumen ejecutivo</h2>
+          </header>
+          <ul class="rpt__metricas">
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Ventas completadas</span>
+              <span class="rpt__metrica-valor">{{ d.kpis.ventas_completadas | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Total vendido</span>
+              <span class="rpt__metrica-valor">Bs {{ formatearMonto(d.kpis.total_vendido) }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Unidades vendidas</span>
+              <span class="rpt__metrica-valor">{{ d.kpis.unidades_vendidas | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Ticket promedio</span>
+              <span class="rpt__metrica-valor">Bs {{ formatearMonto(d.kpis.ticket_promedio) }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Reservas del período</span>
+              <span class="rpt__metrica-valor">{{ d.resumen_reservas.total | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Devoluciones completadas</span>
+              <span class="rpt__metrica-valor">{{ d.resumen_devoluciones.completadas | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Unidades devueltas</span>
+              <span class="rpt__metrica-valor">{{ d.resumen_devoluciones.unidades_devueltas | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Stock disponible hoy</span>
+              <span class="rpt__metrica-valor rpt__metrica-valor--acento">
+                {{ d.resumen_inventario.stock_disponible_total | number }}
+              </span>
+            </li>
+          </ul>
+
+          <div class="rpt__estado-resumen">
+            <span class="rpt__card-hint">Reservas por estado</span>
+            <app-reporte-chart
+              tipo="doughnut"
+              [etiquetas]="reservasResumen().etiquetas"
+              [datasets]="reservasResumen().datasets"
+              [altura]="150"
+              descripcion="Reservas por estado"
+            />
+            <span class="rpt__card-hint">Devoluciones por estado</span>
+            <app-reporte-chart
+              tipo="doughnut"
+              [etiquetas]="devolucionesResumen().etiquetas"
+              [datasets]="devolucionesResumen().datasets"
+              [altura]="150"
+              descripcion="Devoluciones por estado"
+            />
+          </div>
+
+          <p class="rpt__card-hint">
+            Período: {{ periodoTexto() }} · Alcance: {{ alcanceTexto() }}
+          </p>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Ventas por canal</h2>
+            <span class="rpt__card-hint">Web · Móvil · Presencial</span>
+          </header>
+          <app-reporte-chart
+            tipo="doughnut"
+            [etiquetas]="canalesResumen().etiquetas"
+            [datasets]="canalesResumen().datasets"
+            [altura]="240"
+            descripcion="Ventas por canal"
+          />
+          <ul class="rpt__metricas">
+            @for (canal of d.ventas_por_canal; track canal.canal) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaCanal(canal.canal) }}</span>
+                <span class="rpt__metrica-valor">
+                  {{ canal.cantidad_ventas | number }} ventas · Bs {{ formatearMonto(canal.monto) }}
+                </span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">
+              @if (esAdministrador()) {
+                Comparativo de sucursales
+              } @else {
+                Mi sucursal
+              }
+            </h2>
+            @if (esAdministrador()) {
+              <div class="rpt__segment" role="group" aria-label="Métrica del comparativo">
+                <button
+                  type="button"
+                  [attr.aria-pressed]="metricaSucursal() === 'MONTO'"
+                  (click)="metricaSucursal.set('MONTO')"
+                >
+                  MONTO
+                </button>
+                <button
+                  type="button"
+                  [attr.aria-pressed]="metricaSucursal() === 'UNIDADES'"
+                  (click)="metricaSucursal.set('UNIDADES')"
+                >
+                  UNIDADES
+                </button>
+              </div>
+            }
+          </header>
+
+          @if (esAdministrador()) {
+            <app-reporte-chart
+              tipo="bar"
+              [etiquetas]="sucursalesGrafica().etiquetas"
+              [datasets]="sucursalesGrafica().datasets"
+              [formato]="metricaSucursal() === 'MONTO' ? 'MONTO' : 'NUMERO'"
+              [altura]="240"
+              [mostrarLeyenda]="false"
+              descripcion="Comparativo de ventas por sucursal"
+            />
+            <p class="rpt__card-hint">
+              Solo ADMINISTRADOR compara sucursales; el encargado ve su sucursal.
+            </p>
+          } @else if (d.comparativo_sucursales[0]; as sucursal) {
+            <ul class="rpt__metricas">
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Sucursal</span>
+                <span class="rpt__metrica-valor">{{ sucursal.sucursal_nombre }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Ventas</span>
+                <span class="rpt__metrica-valor">{{ sucursal.ventas | number }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Monto vendido</span>
+                <span class="rpt__metrica-valor">Bs {{ formatearMonto(sucursal.monto_vendido) }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Unidades</span>
+                <span class="rpt__metrica-valor">{{ sucursal.unidades | number }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Ticket promedio</span>
+                <span class="rpt__metrica-valor">Bs {{ formatearMonto(sucursal.ticket_promedio) }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Reservas</span>
+                <span class="rpt__metrica-valor">{{ sucursal.reservas | number }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Devoluciones</span>
+                <span class="rpt__metrica-valor">{{ sucursal.devoluciones | number }}</span>
+              </li>
+            </ul>
+          } @else {
+            <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+          }
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--full">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Productos más vendidos</h2>
+            <span class="rpt__card-hint">Top {{ top() }} por unidades vendidas</span>
+          </header>
+          <app-reporte-ranking
+            [filas]="topProductosResumen()"
+            formato="UNIDADES"
+            sufijo="u."
+            [maximo]="top()"
+          />
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'VENTAS') {
+    @if (ventas().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Ventas completadas" [valor]="d.resumen.ventas_completadas | number" contexto="Solo estado COMPLETADA" icono="ventas" tono="acento" />
+        <app-reporte-kpi label="Monto total" [valor]="'Bs ' + formatearMonto(d.resumen.monto_total)" contexto="Ventas completadas del período" icono="numero" tono="exito" />
+        <app-reporte-kpi label="Unidades" [valor]="d.resumen.unidades_vendidas | number" contexto="Prendas vendidas" icono="paquete" tono="info" />
+        <app-reporte-kpi label="Ticket promedio" [valor]="'Bs ' + formatearMonto(d.resumen.ticket_promedio)" contexto="Promedio por venta" icono="estado" tono="neutro" ayuda="Monto total dividido entre las ventas completadas." />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--wide">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Evolución de ventas</h2>
+            <div class="rpt__segment" role="group" aria-label="Métrica de la evolución">
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'MONTO'" (click)="metricaEvolucion.set('MONTO')">MONTO</button>
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'CANTIDAD'" (click)="metricaEvolucion.set('CANTIDAD')">VENTAS</button>
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'UNIDADES'" (click)="metricaEvolucion.set('UNIDADES')">UNIDADES</button>
+            </div>
+          </header>
+          <app-reporte-chart tipo="line" [etiquetas]="evolucionVentas().etiquetas" [datasets]="evolucionVentas().datasets" [formato]="metricaEvolucion() === 'MONTO' ? 'MONTO' : 'NUMERO'" [altura]="280" [mostrarLeyenda]="false" descripcion="Evolución de ventas completadas" />
+        </article>
+
+        <article class="rpt__card rpt__bloque">
+          <h2 class="rpt__card-title">Ventas por estado</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="estadoVentas().etiquetas" [datasets]="estadoVentas().datasets" [altura]="200" descripcion="Ventas por estado" />
+          <ul class="rpt__metricas">
+            @for (fila of d.ventas_por_estado; track fila.estado) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.estado) }}</span>
+                <span class="rpt__metrica-valor">{{ fila.cantidad }} · Bs {{ formatearMonto(fila.monto) }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Ventas por canal</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="canalVentas().etiquetas" [datasets]="canalVentas().datasets" [altura]="210" descripcion="Ventas por canal" />
+          <ul class="rpt__metricas">
+            @for (canal of d.ventas_por_canal; track canal.canal) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaCanal(canal.canal) }}</span>
+                <span class="rpt__metrica-valor">{{ canal.cantidad }} ventas · {{ canal.unidades }} u. · Bs {{ formatearMonto(canal.monto) }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">
+            {{ esAdministrador() ? 'Ventas por sucursal' : 'Mi sucursal' }}
+          </h2>
+          @if (esAdministrador()) {
+            <app-reporte-chart tipo="bar" [etiquetas]="sucursalVentas().etiquetas" [datasets]="sucursalVentas().datasets" [formato]="metricaSucursal() === 'MONTO' ? 'MONTO' : 'NUMERO'" [altura]="210" [mostrarLeyenda]="false" descripcion="Ventas por sucursal" />
+          } @else if (d.ventas_por_sucursal[0]; as sucursal) {
+            <ul class="rpt__metricas">
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Sucursal</span>
+                <span class="rpt__metrica-valor">{{ sucursal.sucursal_nombre }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Ventas</span>
+                <span class="rpt__metrica-valor">{{ sucursal.cantidad | number }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Monto</span>
+                <span class="rpt__metrica-valor">Bs {{ formatearMonto(sucursal.monto) }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Unidades</span>
+                <span class="rpt__metrica-valor">{{ sucursal.unidades | number }}</span>
+              </li>
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">Ticket promedio</span>
+                <span class="rpt__metrica-valor">Bs {{ formatearMonto(sucursal.ticket_promedio) }}</span>
+              </li>
+            </ul>
+          } @else {
+            <p class="rpt__vacio">Sin datos de sucursal en el período.</p>
+          }
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--full">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Ventas por empleado</h2>
+            <span class="rpt__card-hint">Personal que registró ventas en el período</span>
+          </header>
+          <app-reporte-ranking [filas]="empleadoVentas()" formato="UNIDADES" sufijo="ventas" [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--full">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Detalle de ventas</h2>
+            <span class="rpt__card-hint">{{ d.paginacion.total_registros | number }} registros</span>
+          </header>
+          @if (d.items.length === 0) {
+            <p class="rpt__vacio">No hay ventas para el período seleccionado.</p>
+          } @else {
+            <div class="rpt__tabla-wrap">
+              <table class="rpt__tabla">
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Sucursal</th>
+                    <th scope="col">Canal</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Empleado</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="num">Unid.</th>
+                    <th scope="col" class="num">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of d.items; track item.venta_id) {
+                    <tr>
+                      <td>{{ fechaHora(item.fecha_hora) }}</td>
+                      <td>{{ item.sucursal }}</td>
+                      <td>{{ etiquetaCanal(item.canal) }}</td>
+                      <td class="rpt__celda-fuerte">{{ item.cliente_nombre ?? 'Sin registro' }}</td>
+                      <td>{{ item.empleado_nombre ?? '—' }}</td>
+                      <td><span class="rpt__badge">{{ etiquetaSimple(item.estado) }}</span></td>
+                      <td class="num">{{ item.cantidad_unidades | number }}</td>
+                      <td class="num">Bs {{ formatearMonto(item.total) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="rpt__paginacion">
+              <span class="rpt__paginacion-info">
+                Página {{ d.paginacion.pagina }} de {{ d.paginacion.total_paginas }} ·
+                {{ d.paginacion.total_registros | number }} ventas
+              </span>
+              <div class="rpt__paginas">
+                <button type="button" class="rpt__pagina" [disabled]="d.paginacion.pagina <= 1" (click)="irPagina('VENTAS', d.paginacion.pagina - 1)">‹</button>
+                @for (pagina of paginasVisibles(d.paginacion.pagina, d.paginacion.total_paginas); track pagina) {
+                  <button type="button" class="rpt__pagina" [attr.aria-current]="pagina === d.paginacion.pagina ? 'page' : null" (click)="irPagina('VENTAS', pagina)">{{ pagina }}</button>
+                }
+                <button type="button" class="rpt__pagina" [disabled]="d.paginacion.pagina >= d.paginacion.total_paginas" (click)="irPagina('VENTAS', d.paginacion.pagina + 1)">›</button>
+              </div>
+            </div>
+          }
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'PRODUCTOS') {
+    @if (productos().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Productos activos" [valor]="d.resumen_catalogo.productos_activos | number" contexto="Catálogo publicado" icono="productos" tono="acento" />
+        <app-reporte-kpi label="Productos inactivos" [valor]="d.resumen_catalogo.productos_inactivos | number" contexto="Fuera de catálogo" icono="alerta" tono="neutro" />
+        <app-reporte-kpi label="Variantes activas" [valor]="d.resumen_catalogo.variantes_activas | number" contexto="SKU con talla y color" icono="paquete" tono="info" />
+        <app-reporte-kpi label="Variantes inactivas" [valor]="d.resumen_catalogo.variantes_inactivas | number" contexto="SKU deshabilitado" icono="cancelar" tono="neutro" />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Top por unidades</h2>
+            <span class="rpt__card-hint">Top {{ top() }} vendido</span>
+          </header>
+          <app-reporte-ranking [filas]="topProductosUnidades()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Top por monto</h2>
+            <span class="rpt__card-hint">Monto vendido real</span>
+          </header>
+          <app-reporte-ranking [filas]="topProductosMonto()" formato="MONTO" [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Ventas por categoría</h2>
+          <app-reporte-chart tipo="bar" [etiquetas]="categoriaGrafica().etiquetas" [datasets]="categoriaGrafica().datasets" formato="NUMERO" [altura]="240" [mostrarLeyenda]="false" descripcion="Unidades vendidas por categoría" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Variantes más vendidas</h2>
+          <app-reporte-ranking [filas]="varianteProductos()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Tallas más vendidas</h2>
+          <app-reporte-ranking [filas]="tallaProductos()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Colores más vendidos</h2>
+          <app-reporte-ranking [filas]="colorProductos()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Ventas por temporada</h2>
+          <app-reporte-ranking [filas]="temporadaProductos()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Ventas por colección</h2>
+          <app-reporte-ranking [filas]="coleccionProductos()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+          <p class="rpt__tabla-nota">
+            Un producto puede pertenecer a varias colecciones: la suma de esta
+            sección no representa un total global del período.
+          </p>
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'INVENTARIO') {
+    @if (inventario().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Stock actual" [valor]="d.resumen.stock_actual_total | number" contexto="Unidades registradas" icono="inventario" tono="acento" />
+        <app-reporte-kpi label="Stock reservado" [valor]="d.resumen.stock_reservado_total | number" contexto="Apartado por reservas activas" icono="reservas" tono="alerta" />
+        <app-reporte-kpi label="Stock disponible" [valor]="d.resumen.stock_disponible_total | number" contexto="Actual menos reservado" icono="paquete" tono="exito" ayuda="stock_disponible = stock_actual - stock_reservado (nunca negativo)." />
+        <app-reporte-kpi label="Variantes agotadas" [valor]="d.resumen.variantes_agotadas | number" contexto="Sin stock disponible" icono="cancelar" tono="neutro" />
+        <app-reporte-kpi label="Stock bajo" [valor]="d.resumen.variantes_stock_bajo | number" [contexto]="'Stock disponible ≤ ' + d.resumen.umbral_stock_bajo" icono="alerta" tono="alerta" ayuda="Criterio de REPORTE configurable con el umbral de la barra de filtros." />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Movimientos por tipo</h2>
+            <span class="rpt__card-hint">Kardex del período</span>
+          </header>
+          <app-reporte-chart tipo="bar" [etiquetas]="movimientosInventario().etiquetas" [datasets]="movimientosInventario().datasets" formato="NUMERO" [altura]="250" [mostrarLeyenda]="false" descripcion="Movimientos de inventario por tipo" />
+          <p class="rpt__tabla-nota">
+            Entradas por compra, salidas por venta, reservas, liberaciones,
+            devoluciones, ajustes y transferencias.
+          </p>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Atención de stock</h2>
+            <span class="rpt__card-hint">
+              Disponible ≤ {{ d.resumen.umbral_stock_bajo }} · esta página
+            </span>
+          </header>
+          <app-reporte-ranking [filas]="alertasStock()" formato="UNIDADES" sufijo="disp." [maximo]="10" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--full">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Detalle de inventario</h2>
+            <span class="rpt__card-hint">{{ d.paginacion.total_registros | number }} variantes</span>
+          </header>
+          @if (d.items.length === 0) {
+            <p class="rpt__vacio">No hay variantes para el período seleccionado.</p>
+          } @else {
+            <div class="rpt__tabla-wrap">
+              <table class="rpt__tabla">
+                <thead>
+                  <tr>
+                    <th scope="col">Sucursal</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Talla / Color</th>
+                    <th scope="col">Temporada</th>
+                    <th scope="col" class="num">Actual</th>
+                    <th scope="col" class="num">Reservado</th>
+                    <th scope="col" class="num">Disponible</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of d.items; track item.inventario_id) {
+                    <tr>
+                      <td>{{ item.sucursal }}</td>
+                      <td class="rpt__celda-fuerte">{{ item.producto }}</td>
+                      <td>{{ item.sku }}</td>
+                      <td>{{ item.talla }} / {{ item.color }}</td>
+                      <td>{{ item.temporada }}</td>
+                      <td class="num">{{ item.stock_actual | number }}</td>
+                      <td class="num">{{ item.stock_reservado | number }}</td>
+                      <td class="num">
+                        @if (item.stock_disponible <= 0) {
+                          <span class="rpt__badge rpt__badge--peligro">Agotado</span>
+                        } @else if (item.stock_disponible <= d.resumen.umbral_stock_bajo) {
+                          <span class="rpt__badge rpt__badge--alerta">{{ item.stock_disponible }}</span>
+                        } @else {
+                          {{ item.stock_disponible | number }}
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="rpt__paginacion">
+              <span class="rpt__paginacion-info">
+                Página {{ d.paginacion.pagina }} de {{ d.paginacion.total_paginas }} ·
+                {{ d.paginacion.total_registros | number }} registros
+              </span>
+              <div class="rpt__paginas">
+                <button type="button" class="rpt__pagina" [disabled]="d.paginacion.pagina <= 1" (click)="irPagina('INVENTARIO', d.paginacion.pagina - 1)">‹</button>
+                @for (pagina of paginasVisibles(d.paginacion.pagina, d.paginacion.total_paginas); track pagina) {
+                  <button type="button" class="rpt__pagina" [attr.aria-current]="pagina === d.paginacion.pagina ? 'page' : null" (click)="irPagina('INVENTARIO', pagina)">{{ pagina }}</button>
+                }
+                <button type="button" class="rpt__pagina" [disabled]="d.paginacion.pagina >= d.paginacion.total_paginas" (click)="irPagina('INVENTARIO', d.paginacion.pagina + 1)">›</button>
+              </div>
+            </div>
+          }
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'RESERVAS') {
+    @if (reservas().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Total reservas" [valor]="d.resumen.total_reservas | number" contexto="Solicitudes del período" icono="reservas" tono="acento" />
+        <app-reporte-kpi label="Unidades reservadas" [valor]="d.resumen.cantidad_total_unidades | number" contexto="Prendas apartadas" icono="paquete" tono="info" />
+        <app-reporte-kpi label="Atendidas" [valor]="d.resumen.reservas_atendidas | number" contexto="Reservas gestionadas por el personal" icono="check" tono="exito" />
+        <app-reporte-kpi label="Convertidas en venta" [valor]="d.resumen.reservas_convertidas_en_venta | number" contexto="Terminaron con venta COMPLETADA" icono="ventas" tono="neutro" />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__destacado rpt__bloque rpt__bloque--full">
+          <span class="rpt__destacado-label">Conversión de reservas atendidas</span>
+          <strong class="rpt__destacado-valor">{{ d.resumen.tasa_conversion | number: '1.0-2' }} %</strong>
+          <span class="rpt__destacado-nota">
+            Porcentaje de reservas ATENDIDAS que finalizaron con una venta
+            COMPLETADA. Las reservas canceladas o vencidas no entran en el cálculo.
+          </span>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Reservas por estado</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="reservasGrafica().etiquetas" [datasets]="reservasGrafica().datasets" [altura]="210" descripcion="Reservas por estado" />
+          <ul class="rpt__metricas">
+            @for (fila of d.reservas_por_estado; track fila.estado) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.estado) }}</span>
+                <span class="rpt__metrica-valor">{{ fila.cantidad }} · {{ fila.unidades }} u.</span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Evolución de reservas</h2>
+            <div class="rpt__segment" role="group" aria-label="Métrica de la evolución">
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'CANTIDAD'" (click)="metricaEvolucion.set('CANTIDAD')">RESERVAS</button>
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'UNIDADES'" (click)="metricaEvolucion.set('UNIDADES')">UNIDADES</button>
+            </div>
+          </header>
+          <app-reporte-chart tipo="line" [etiquetas]="evolucionReservas().etiquetas" [datasets]="evolucionReservas().datasets" formato="NUMERO" [altura]="240" [mostrarLeyenda]="false" descripcion="Evolución de reservas" />
+        </article>
+
+        @if (esAdministrador()) {
+          <article class="rpt__card rpt__bloque rpt__bloque--full">
+            <header class="rpt__card-head">
+              <h2 class="rpt__card-title">Reservas por sucursal</h2>
+              <span class="rpt__card-hint">Comparativo entre sucursales (ADMINISTRADOR)</span>
+            </header>
+            <app-reporte-chart tipo="bar" [etiquetas]="sucursalReservas().etiquetas" [datasets]="sucursalReservas().datasets" formato="NUMERO" [altura]="240" [mostrarLeyenda]="false" descripcion="Reservas por sucursal" />
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'DEVOLUCIONES') {
+    @if (devoluciones().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Total solicitudes" [valor]="d.resumen.total_devoluciones | number" contexto="Solicitudes registradas" icono="actualizar" tono="acento" />
+        <app-reporte-kpi label="Completadas" [valor]="d.resumen.completadas | number" contexto="Producto reincorporado al inventario" icono="check" tono="exito" />
+        <app-reporte-kpi label="Unidades devueltas" [valor]="d.resumen.unidades_devueltas | number" contexto="Solo devoluciones COMPLETADA" icono="paquete" tono="info" />
+        <app-reporte-kpi label="Valor referencial" [valor]="'Bs ' + formatearMonto(d.resumen.valor_referencial)" contexto="Precio de venta de lo devuelto" icono="numero" tono="neutro" ayuda="Valor REFERENCIAL (cantidad × precio unitario de la venta). CU25 no realiza reembolsos de dinero." />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Devoluciones por estado</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="devolucionesGrafica().etiquetas" [datasets]="devolucionesGrafica().datasets" [altura]="210" descripcion="Devoluciones por estado" />
+          <ul class="rpt__metricas">
+            @for (fila of d.devoluciones_por_estado; track fila.estado) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.estado) }}</span>
+                <span class="rpt__metrica-valor">
+                  {{ fila.cantidad }} · {{ fila.unidades }} u. · Bs {{ formatearMonto(fila.valor_referencial) }}
+                </span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Evolución de devoluciones</h2>
+            <div class="rpt__segment" role="group" aria-label="Métrica de la evolución">
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'CANTIDAD'" (click)="metricaEvolucion.set('CANTIDAD')">SOLICITUDES</button>
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'UNIDADES'" (click)="metricaEvolucion.set('UNIDADES')">UNIDADES</button>
+            </div>
+          </header>
+          <app-reporte-chart tipo="line" [etiquetas]="evolucionDevoluciones().etiquetas" [datasets]="evolucionDevoluciones().datasets" formato="NUMERO" [altura]="240" [mostrarLeyenda]="false" descripcion="Evolución de devoluciones" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Productos más devueltos</h2>
+            <span class="rpt__card-hint">Valor referencial acumulado</span>
+          </header>
+          <app-reporte-ranking [filas]="productosDevueltos()" formato="MONTO" [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Motivos más frecuentes</h2>
+            <span class="rpt__card-hint">Solicitudes por motivo</span>
+          </header>
+          <app-reporte-ranking [filas]="motivosDevolucion()" formato="UNIDADES" sufijo="solicitudes" [maximo]="top()" />
+        </article>
+
+        @if (esAdministrador()) {
+          <article class="rpt__card rpt__bloque rpt__bloque--full">
+            <header class="rpt__card-head">
+              <h2 class="rpt__card-title">Devoluciones por sucursal</h2>
+              <span class="rpt__card-hint">Comparativo entre sucursales (ADMINISTRADOR)</span>
+            </header>
+            <ul class="rpt__metricas">
+              @for (fila of d.devoluciones_por_sucursal; track fila.sucursal_id) {
+                <li class="rpt__metrica">
+                  <span class="rpt__metrica-label">{{ fila.sucursal_nombre }}</span>
+                  <span class="rpt__metrica-valor">{{ fila.cantidad }} solicitudes · {{ fila.unidades }} u.</span>
+                </li>
+              }
+            </ul>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'PAGOS') {
+    @if (pagos().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Transacciones de pago" [valor]="d.resumen.cantidad_pagos | number" contexto="Intentos registrados" icono="estado" tono="acento" ayuda="Una venta puede generar varios intentos de pago: no equivale a la cantidad de ventas." />
+        <app-reporte-kpi label="Monto procesado" [valor]="'Bs ' + formatearMonto(d.resumen.monto_total_procesado)" contexto="Suma de transacciones del período" icono="numero" tono="info" />
+        <app-reporte-kpi label="Monto aprobado" [valor]="'Bs ' + formatearMonto(d.resumen.monto_aprobado)" contexto="Transacciones aprobadas" icono="check" tono="exito" />
+      </div>
+
+      @if (d.resumen.nota) {
+        <p class="rpt__tabla-nota">{{ d.resumen.nota }}</p>
+      }
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Por método de pago</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="metodoPagos().etiquetas" [datasets]="metodoPagos().datasets" [altura]="210" descripcion="Transacciones por método de pago" />
+          <ul class="rpt__metricas">
+            @for (fila of d.pagos_por_metodo; track fila.metodo) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.metodo) }}</span>
+                <span class="rpt__metrica-valor">{{ fila.cantidad }} · Bs {{ formatearMonto(fila.monto) }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Por estado</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="estadoPagos().etiquetas" [datasets]="estadoPagos().datasets" [altura]="210" descripcion="Transacciones por estado" />
+          <ul class="rpt__metricas">
+            @for (fila of d.pagos_por_estado; track fila.estado) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.estado) }}</span>
+                <span class="rpt__metrica-valor">{{ fila.cantidad }} · Bs {{ formatearMonto(fila.monto) }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Por pasarela</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="pasarelaPagos().etiquetas" [datasets]="pasarelaPagos().datasets" [altura]="210" descripcion="Transacciones por pasarela" />
+          <ul class="rpt__metricas">
+            @for (fila of d.pagos_por_pasarela; track fila.pasarela) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.pasarela) }}</span>
+                <span class="rpt__metrica-valor">{{ fila.cantidad }} · Bs {{ formatearMonto(fila.monto) }}</span>
+              </li>
+            }
+          </ul>
+          <p class="rpt__tabla-nota">
+            Solo datos agregados de la pasarela: nunca se muestran referencias ni
+            secretos de pago.
+          </p>
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Evolución de transacciones</h2>
+            <div class="rpt__segment" role="group" aria-label="Métrica de la evolución">
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'CANTIDAD'" (click)="metricaEvolucion.set('CANTIDAD')">TRANSACCIONES</button>
+              <button type="button" [attr.aria-pressed]="metricaEvolucion() === 'MONTO'" (click)="metricaEvolucion.set('MONTO')">MONTO</button>
+            </div>
+          </header>
+          <app-reporte-chart tipo="line" [etiquetas]="evolucionPagos().etiquetas" [datasets]="evolucionPagos().datasets" [formato]="metricaEvolucion() === 'MONTO' ? 'MONTO' : 'NUMERO'" [altura]="240" [mostrarLeyenda]="false" descripcion="Evolución de transacciones de pago" />
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'COMPRAS_PROVEEDORES') {
+    @if (compras().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Órdenes de compra" [valor]="d.resumen.total_ordenes | number" contexto="Emitidas en el período" icono="compras" tono="acento" />
+        <app-reporte-kpi label="Unidades ordenadas" [valor]="d.resumen.unidades_ordenadas | number" contexto="Prendas solicitadas a proveedores" icono="paquete" tono="info" />
+        <app-reporte-kpi label="Valor de órdenes" [valor]="'Bs ' + formatearMonto(d.resumen.valor_total_ordenes)" contexto="Costo unitario × cantidad" icono="numero" tono="neutro" />
+        <app-reporte-kpi label="Valor recibido" [valor]="'Bs ' + formatearMonto(d.resumen.valor_ordenes_recibidas)" contexto="Solo órdenes RECIBIDA" icono="check" tono="exito" ayuda="El modelo solo marca la orden como RECIBIDA: las entregas parciales no se cuentan como mercadería ingresada." />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Órdenes por estado</h2>
+            <span class="rpt__card-hint">Valor de órdenes por estado</span>
+          </header>
+          <app-reporte-chart tipo="bar" [etiquetas]="estadoCompras().etiquetas" [datasets]="estadoCompras().datasets" formato="MONTO" [altura]="240" [mostrarLeyenda]="false" descripcion="Órdenes de compra por estado" />
+          <ul class="rpt__metricas">
+            @for (fila of d.ordenes_por_estado; track fila.estado) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.estado) }}</span>
+                <span class="rpt__metrica-valor">
+                  {{ fila.cantidad }} órdenes · Bs {{ formatearMonto(fila.valor) }}
+                </span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Órdenes por proveedor</h2>
+            <span class="rpt__card-hint">Datos reales, sin valoraciones</span>
+          </header>
+          <app-reporte-ranking [filas]="proveedorCompras()" formato="MONTO" [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Órdenes por sucursal</h2>
+            <span class="rpt__card-hint">Valor solicitado por sucursal</span>
+          </header>
+          <app-reporte-chart tipo="bar" [etiquetas]="sucursalCompras().etiquetas" [datasets]="sucursalCompras().datasets" formato="MONTO" [altura]="240" [mostrarLeyenda]="false" descripcion="Órdenes de compra por sucursal" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Productos abastecidos</h2>
+            <span class="rpt__card-hint">Unidades ordenadas y valor</span>
+          </header>
+          <app-reporte-ranking [filas]="productosCompras()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+          <p class="rpt__tabla-nota">
+            No se generan rankings de proveedores: solo agregados reales de órdenes.
+          </p>
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'CLIENTES_CARRITOS') {
+    @if (clientes().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Clientes compradores" [valor]="d.resumen_clientes.clientes_compradores | number" contexto="Con al menos una venta completada" icono="usuario" tono="acento" />
+        <app-reporte-kpi label="Clientes recurrentes" [valor]="d.resumen_clientes.clientes_recurrentes | number" contexto="Más de una compra en el período" icono="usuarios" tono="info" ayuda="cliente_recurrente = cliente con más de una venta COMPLETADA dentro del período consultado." />
+        <app-reporte-kpi label="Total carritos" [valor]="d.resumen_carritos.total_carritos | number" contexto="Carritos registrados en el período" icono="lista" tono="neutro" />
+        <app-reporte-kpi label="Carritos convertidos" [valor]="d.resumen_carritos.carritos_convertidos | number" contexto="Estado CONVERTIDO" icono="check" tono="exito" />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__destacado rpt__bloque rpt__bloque--full">
+          <span class="rpt__destacado-label">Tasa de conversión de carritos</span>
+          <strong class="rpt__destacado-valor">
+            {{ d.resumen_carritos.tasa_conversion_carrito | number: '1.0-2' }} %
+          </strong>
+          <span class="rpt__destacado-nota">
+            Carritos en estado CONVERTIDO sobre el total de carritos del período.
+            Estados reales: ACTIVO, EXPIRADO, ELIMINADO y CONVERTIDO.
+          </span>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Carritos por estado</h2>
+          <app-reporte-chart tipo="doughnut" [etiquetas]="carritosGrafica().etiquetas" [datasets]="carritosGrafica().datasets" [altura]="210" descripcion="Carritos por estado" />
+          <ul class="rpt__metricas">
+            @for (fila of d.resumen_carritos.por_estado; track fila.estado) {
+              <li class="rpt__metrica">
+                <span class="rpt__metrica-label">{{ etiquetaSimple(fila.estado) }}</span>
+                <span class="rpt__metrica-valor">{{ fila.cantidad | number }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Compras del período</h2>
+          <ul class="rpt__metricas">
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Compras totales</span>
+              <span class="rpt__metrica-valor">{{ d.resumen_clientes.compras_totales | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Unidades totales</span>
+              <span class="rpt__metrica-valor">{{ d.resumen_clientes.unidades_totales | number }}</span>
+            </li>
+            <li class="rpt__metrica">
+              <span class="rpt__metrica-label">Monto total</span>
+              <span class="rpt__metrica-valor">Bs {{ formatearMonto(d.resumen_clientes.monto_total) }}</span>
+            </li>
+          </ul>
+          <p class="rpt__tabla-nota">
+            Solo se muestran nombre y apellido del cliente: sin carnet,
+            teléfono ni fecha de nacimiento.
+          </p>
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--full">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Top compradores</h2>
+            <span class="rpt__card-hint">Unidades compradas en el período</span>
+          </header>
+          <app-reporte-ranking [filas]="topCompradores()" formato="UNIDADES" sufijo="u." [maximo]="top()" />
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  } @else if (tab() === 'AUDITORIA') {
+    @if (auditoria().datos; as d) {
+      <div class="rpt__kpis">
+        <app-reporte-kpi label="Eventos registrados" [valor]="d.total_eventos | number" contexto="Bitácora del período" icono="bitacora" tono="acento" />
+        <app-reporte-kpi label="Usuarios en bitácora" [valor]="d.eventos_por_usuario.length | number" contexto="Usuarios con actividad" icono="usuarios" tono="info" />
+        <app-reporte-kpi label="Entidades afectadas" [valor]="d.eventos_por_entidad.length | number" contexto="Tablas con movimientos" icono="lista" tono="neutro" />
+        <app-reporte-kpi label="Acciones distintas" [valor]="d.eventos_por_accion.length | number" contexto="Tipos de acción registrados" icono="estado" tono="neutro" />
+      </div>
+
+      <div class="rpt__bento">
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Eventos por acción</h2>
+          <app-reporte-chart tipo="bar" [horizontal]="true" [etiquetas]="auditoriaAccion().etiquetas" [datasets]="auditoriaAccion().datasets" formato="NUMERO" [altura]="260" [mostrarLeyenda]="false" descripcion="Eventos de auditoría por acción" />
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <h2 class="rpt__card-title">Eventos por entidad</h2>
+          <app-reporte-chart tipo="bar" [horizontal]="true" [etiquetas]="auditoriaEntidad().etiquetas" [datasets]="auditoriaEntidad().datasets" formato="NUMERO" [altura]="260" [mostrarLeyenda]="false" descripcion="Eventos de auditoría por entidad" />
+        </article>
+
+        <article class="rpt__card rpt__card--grafica rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Evolución de eventos</h2>
+            <span class="rpt__card-hint">{{ agrupacionTexto() }}</span>
+          </header>
+          <app-reporte-chart tipo="line" [etiquetas]="auditoriaEvolucion().etiquetas" [datasets]="auditoriaEvolucion().datasets" formato="NUMERO" [altura]="240" [mostrarLeyenda]="false" descripcion="Evolución de eventos de auditoría" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--seis">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Usuarios con actividad</h2>
+            <span class="rpt__card-hint">Eventos por usuario</span>
+          </header>
+          <app-reporte-ranking [filas]="auditoriaUsuario()" formato="UNIDADES" sufijo="eventos" [maximo]="top()" />
+        </article>
+
+        <article class="rpt__card rpt__bloque rpt__bloque--full">
+          <header class="rpt__card-head">
+            <h2 class="rpt__card-title">Detalle de auditoría</h2>
+            <span class="rpt__card-hint">{{ d.paginacion.total_registros | number }} eventos</span>
+          </header>
+          @if (d.items.length === 0) {
+            <p class="rpt__vacio">No hay eventos para el período seleccionado.</p>
+          } @else {
+            <div class="rpt__tabla-wrap">
+              <table class="rpt__tabla">
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Acción</th>
+                    <th scope="col">Entidad</th>
+                    <th scope="col">Descripción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of d.items; track item.bitacora_id) {
+                    <tr>
+                      <td>{{ fechaHora(item.fecha_hora) }}</td>
+                      <td class="rpt__celda-fuerte">{{ item.usuario ?? 'Sistema' }}</td>
+                      <td><span class="rpt__badge rpt__badge--info">{{ etiquetaSimple(item.accion) }}</span></td>
+                      <td>{{ etiquetaSimple(item.entidad_afectada) }}</td>
+                      <td>{{ item.descripcion ?? '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="rpt__paginacion">
+              <span class="rpt__paginacion-info">
+                Página {{ d.paginacion.pagina }} de {{ d.paginacion.total_paginas }} ·
+                {{ d.paginacion.total_registros | number }} eventos
+              </span>
+              <div class="rpt__paginas">
+                <button type="button" class="rpt__pagina" [disabled]="d.paginacion.pagina <= 1" (click)="irPagina('AUDITORIA', d.paginacion.pagina - 1)">‹</button>
+                @for (pagina of paginasVisibles(d.paginacion.pagina, d.paginacion.total_paginas); track pagina) {
+                  <button type="button" class="rpt__pagina" [attr.aria-current]="pagina === d.paginacion.pagina ? 'page' : null" (click)="irPagina('AUDITORIA', pagina)">{{ pagina }}</button>
+                }
+                <button type="button" class="rpt__pagina" [disabled]="d.paginacion.pagina >= d.paginacion.total_paginas" (click)="irPagina('AUDITORIA', d.paginacion.pagina + 1)">›</button>
+              </div>
+            </div>
+          }
+        </article>
+      </div>
+    } @else {
+      <p class="rpt__vacio">No hay información para el período seleccionado.</p>
+    }
+  }
+</section>

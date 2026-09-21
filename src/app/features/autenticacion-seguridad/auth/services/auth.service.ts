@@ -18,6 +18,8 @@ import {
   AuthContext,
   ClienteAuth,
   ClienteLoginResponse,
+  ClienteRegistroRequest,
+  ClienteRegistroResponse,
   LoginRequest,
   PersonalAuth,
   PersonalLoginResponse,
@@ -178,6 +180,25 @@ export class AuthService {
           this._usuarioActual.set(respuesta.usuario);
         }),
       );
+  }
+
+  /**
+   * Registra un cliente nuevo (POST /auth/clientes/registro).
+   *
+   * Solo crea la cuenta: NO guarda JWT, NO marca autenticado, NO modifica
+   * `usuarioActual` y NO llama a `loginCliente`. Devuelve la respuesta 201 para
+   * que la interfaz muestre la confirmación y decida qué hacer.
+   *
+   * El backend sigue siendo la autoridad: revalida todos los datos (409 si el
+   * correo o el CI ya existen, 422 si algún valor no cumple el contrato).
+   */
+  registrarCliente(
+    datos: ClienteRegistroRequest,
+  ): Observable<ClienteRegistroResponse> {
+    return this.http.post<ClienteRegistroResponse>(
+      `${this.apiUrl}/auth/clientes/registro`,
+      datos,
+    );
   }
 
   /**

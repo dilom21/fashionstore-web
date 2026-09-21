@@ -1,0 +1,100 @@
+:host {
+  display: block;
+}
+
+.kpi {
+  position: relative;
+  display: grid;
+  gap: 0.3rem;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* Glow muy sutil, solo como acento superior. */
+.kpi::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--grad-accent);
+  opacity: 0.55;
+}
+
+.kpi__icono {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--accent-text);
+}
+
+.kpi__icono app-admin-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.kpi__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.kpi__ayuda {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--text-3);
+  font-size: 0.6rem;
+  cursor: help;
+}
+
+.kpi__valor {
+  color: var(--text);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.kpi__contexto {
+  color: var(--text-3);
+  font-size: 0.74rem;
+}
+
+.kpi--exito .kpi__icono {
+  border-color: rgb(52 211 153 / 30%);
+  background: rgb(6 78 59 / 18%);
+  color: #34d399;
+}
+
+.kpi--info .kpi__icono {
+  border-color: rgb(56 189 248 / 30%);
+  background: rgb(8 47 73 / 22%);
+  color: #38bdf8;
+}
+
+.kpi--alerta .kpi__icono {
+  border-color: rgb(251 191 36 / 32%);
+  background: rgb(120 53 15 / 20%);
+  color: #fbbf24;
+}
+
+.kpi--neutro .kpi__icono {
+  color: var(--text-2);
+}

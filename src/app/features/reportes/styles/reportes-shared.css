@@ -1,0 +1,335 @@
+/* ==========================================================================
+   CU28 - Reportes: piezas compartidas (cabecera, filtros, tabs, cards, KPI).
+   Se importa junto a `reportes-page.css` vía `styleUrls`.
+   ========================================================================== */
+
+.rpt {
+  display: block;
+  width: 100%;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 26px 24px 56px;
+}
+
+/* ===== Cabecera ===== */
+.rpt__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rpt__eyebrow {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--accent-text);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.rpt__title {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.rpt__subtitle {
+  max-width: 62ch;
+  margin: 6px 0 0;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.rpt__head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rpt__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rpt__chip strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ===== Barra de filtros ===== */
+.rpt__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 12px;
+  align-items: end;
+  margin: 18px 0 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: linear-gradient(
+    160deg,
+    rgb(17 29 51 / 92%) 0%,
+    rgb(9 14 26 / 88%) 100%
+  );
+}
+
+.rpt__field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.rpt__label {
+  color: var(--text-3);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rpt__input,
+.rpt__select {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+}
+
+.rpt__input:focus-visible,
+.rpt__select:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 1px;
+}
+
+.rpt__valor-fijo {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 9px 11px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 0.84rem;
+}
+
+.rpt__aplicar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 18px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-accent);
+}
+
+.rpt__aplicar:hover {
+  filter: brightness(1.06);
+}
+
+.rpt__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rpt__quick-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rpt__quick-btn:hover {
+  border-color: var(--accent-strong);
+  color: var(--text);
+}
+
+.rpt__aviso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgb(251 191 36 / 32%);
+  border-radius: var(--radius-m);
+  background: rgb(120 53 15 / 18%);
+  color: #fde68a;
+  font-size: 0.82rem;
+}
+
+.rpt__aviso button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ===== Tabs de reportes (una sola línea desplazable) ===== */
+.rpt__tabs {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.rpt__tab {
+  padding: 8px 15px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rpt__tab:hover {
+  color: var(--text);
+}
+
+.rpt__tab--activo {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+/* ===== Card base ===== */
+.rpt__card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.rpt__card--acento {
+  border-color: var(--accent-strong);
+  background: linear-gradient(
+    165deg,
+    rgb(192 38 211 / 12%) 0%,
+    var(--surface) 62%
+  );
+}
+
+.rpt__card--grafica {
+  min-height: 320px;
+}
+
+.rpt__card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rpt__card-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.94rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.rpt__card-hint {
+  color: var(--text-3);
+  font-size: 0.72rem;
+}
+
+.rpt__card-body {
+  min-width: 0;
+}
+
+/* ===== KPIs ===== */
+.rpt__kpis {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+/* Mini donuts dentro del resumen ejecutivo. */
+.rpt__estado-resumen {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+/* ===== Selector de métrica ===== */
+.rpt__segment {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.rpt__segment button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.rpt__segment button[aria-pressed='true'] {
+  background: var(--grad-accent);
+  color: var(--on-accent);
+}

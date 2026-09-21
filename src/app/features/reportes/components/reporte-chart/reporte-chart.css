@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.chart {
+  position: relative;
+  width: 100%;
+  /* La altura real llega por binding (`altura()` como height y min-height),
+     de modo que el canvas siempre tiene espacio aunque el contenedor sea
+     flexible; no se usan alturas gigantes fijas en CSS. */
+}
+
+.chart__lienzo {
+  display: block;
+  max-width: 100%;
+  /* Chart.js dimensiona el canvas al contenedor (responsive:true +
+     maintainAspectRatio:false): no se fuerzan width/height por CSS para no
+     provocar bucles de resize. */
+}
+
+/* Oculto solo visualmente: conserva el tamaño para no romper el resize. */
+.chart__lienzo--oculto {
+  visibility: hidden;
+}
+
+.chart__vacio {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0 12px;
+  color: var(--text-3);
+  font-size: 0.84rem;
+  text-align: center;
+}

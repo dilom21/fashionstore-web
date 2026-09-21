@@ -15,13 +15,16 @@ import { ADMIN_NAV_ITEMS, filtrarItemsNav } from '../navigation/admin-nav.config
 /**
  * Rutas del panel reservadas para ENCARGADO_SUCURSAL (CU13 - Consultar
  * inventario, CU14 - Movimientos de inventario, CU17 - Gestionar reservas de
- * sucursal y CU18 - Atender reservas). El resto de módulos quedan ocultos para
- * su rol.
+ * sucursal, CU18 - Atender reservas y CU28 - Dashboard y reportes). El resto de
+ * módulos quedan ocultos para su rol.
  */
 const RUTAS_ENCARGADO_SUCURSAL = new Set([
   '/admin/inventario/consultar',
   '/admin/inventario/movimientos',
   '/admin/reservas',
+  // CU28 (reportes) vive en /admin/reportes: el encargado solo consulta su
+  // sucursal y no ve la sección de AUDITORÍA.
+  '/admin/reportes',
   // CU18 se ofrece en el submenú Reservas; su pantalla vive en /personal pero
   // se renderiza dentro de este mismo layout.
   '/personal/reservas/atencion',
