@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  InjectionToken,
   PLATFORM_ID,
   computed,
   inject,
@@ -31,6 +32,20 @@ import {
   nombreArchivoPdf,
 } from '../../utils/comprobante-venta-pdf.util';
 
+export interface ComprobantePdfAdapter {
+  generar(comprobante: ComprobanteVenta): Promise<Blob>;
+  descargar(blob: Blob, nombreArchivo: string): void;
+  nombreArchivo(ventaId: number): string;
+}
+
+export const COMPROBANTE_PDF = new InjectionToken<ComprobantePdfAdapter>('COMPROBANTE_PDF', {
+  providedIn: 'root',
+  factory: () => ({
+    generar: generarPdfComprobante,
+    descargar: descargarPdfGenerado,
+    nombreArchivo: nombreArchivoPdf,
+  }),
+});
 /**
  * CU23 - Vista reutilizable del comprobante de venta.
  *
@@ -56,6 +71,7 @@ import {
 })
 export class ComprobanteVentaView {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly pdf = inject(COMPROBANTE_PDF);
 
   /** Comprobante real de GET /ventas/{venta_id}/comprobante. */
   readonly comprobante = input.required<ComprobanteVenta>();
@@ -66,38 +82,20 @@ export class ComprobanteVentaView {
   /** Hoja blanca: único nodo que se descarga/imprime. */
   private readonly hojaRef = viewChild<ElementRef<HTMLElement>>('hoja');
 
-  readonly codigo = computed(() =>
-    codigoVenta(this.comprobante().venta_id),
-  );
-  readonly fechaHora = computed(() =>
-    formatearFechaHora(this.comprobante().fecha_hora),
-  );
+  readonly codigo = computed(() => codigoVenta(this.comprobante().venta_id));
+  readonly fechaHora = computed(() => formatearFechaHora(this.comprobante().fecha_hora));
   readonly canal = computed(() => etiquetaCanal(this.comprobante().canal));
-  readonly telefonoSucursal = computed(
-    () => this.comprobante().sucursal.telefono?.trim() || null,
-  );
-  readonly cliente = computed(
-    () => this.clienteVisual(this.comprobante()),
-  );
-  readonly documentoCliente = computed(
-    () => this.comprobante().cliente?.ci?.trim() || null,
-  );
+  readonly telefonoSucursal = computed(() => this.comprobante().sucursal.telefono?.trim() || null);
+  readonly cliente = computed(() => this.clienteVisual(this.comprobante()));
+  readonly documentoCliente = computed(() => this.comprobante().cliente?.ci?.trim() || null);
   readonly cajero = computed(() => this.cajeroVisual(this.comprobante()));
   readonly enLinea = computed(() => esVentaEnLinea(this.comprobante()));
-  readonly unidades = computed(
-    () => this.comprobante().cantidad_total_unidades,
-  );
+  readonly unidades = computed(() => this.comprobante().cantidad_total_unidades);
   readonly total = computed(() => formatearMonto(this.comprobante().total));
-  readonly metodoPago = computed(() =>
-    etiquetaMetodoPago(this.comprobante().pago.metodo),
-  );
-  readonly montoPago = computed(() =>
-    formatearMonto(this.comprobante().pago.monto),
-  );
+  readonly metodoPago = computed(() => etiquetaMetodoPago(this.comprobante().pago.metodo));
+  readonly montoPago = computed(() => formatearMonto(this.comprobante().pago.monto));
   readonly pagoAprobado = computed(
-    () =>
-      (this.comprobante().pago.estado ?? '').trim().toUpperCase() ===
-      'APROBADO',
+    () => (this.comprobante().pago.estado ?? '').trim().toUpperCase() === 'APROBADO',
   );
 
   readonly descargando = signal(false);
@@ -126,9 +124,10 @@ export class ComprobanteVentaView {
     this.descargando.set(true);
     this.error.set(null);
 
-    generarPdfComprobante(comprobante)
+    this.pdf
+      .generar(comprobante)
       .then((blob) => {
-        descargarPdfGenerado(blob, nombreArchivoPdf(comprobante.venta_id));
+        this.pdf.descargar(blob, this.pdf.nombreArchivo(comprobante.venta_id));
       })
       .catch(() => {
         this.error.set('No pudimos generar el PDF. Intenta nuevamente.');
@@ -216,15 +215,10 @@ export class ComprobanteVentaView {
     const estilos = Array.from(document.querySelectorAll('style'))
       .map((nodo) => nodo.outerHTML)
       .join('');
-    const enlaces = Array.from(
-      document.querySelectorAll('link[rel="stylesheet"]'),
-    )
+    const enlaces = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
       .map((nodo) => nodo.outerHTML)
       .join('');
-    const titulo = nombreArchivoPdf(this.comprobante().venta_id).replace(
-      /\.pdf$/,
-      '',
-    );
+    const titulo = this.pdf.nombreArchivo(this.comprobante().venta_id).replace(/\.pdf$/, '');
     return [
       '<!doctype html><html lang="es"><head><meta charset="utf-8" />',
       `<title>${titulo}</title>`,

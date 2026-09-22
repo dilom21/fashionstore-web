@@ -3,30 +3,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ComprobanteVenta } from '../../models/comprobante-venta.model';
 import {
-  descargarPdfGenerado,
-  generarPdfComprobante,
-} from '../../utils/comprobante-venta-pdf.util';
-import { ComprobanteVentaView } from './comprobante-venta-view';
+  COMPROBANTE_PDF,
+  ComprobantePdfAdapter,
+  ComprobanteVentaView,
+} from './comprobante-venta-view';
 
 /**
  * El PDF se aísla en un util: se sustituye para no generar archivos reales ni
  * cargar `jspdf` durante las pruebas.
  */
-vi.mock('../../utils/comprobante-venta-pdf.util', () => ({
-  generarPdfComprobante: vi.fn(),
-  descargarPdfGenerado: vi.fn(),
-  nombreArchivoPdf: vi.fn(
-    (ventaId: number) =>
-      `comprobante-VTA-${String(ventaId).padStart(5, '0')}.pdf`,
-  ),
-}));
-
-const generarPdfMock = generarPdfComprobante as unknown as ReturnType<
-  typeof vi.fn
->;
-const descargarPdfMock = descargarPdfGenerado as unknown as ReturnType<
-  typeof vi.fn
->;
 
 function comprobante(extra: Partial<ComprobanteVenta> = {}): ComprobanteVenta {
   return {
@@ -81,6 +66,14 @@ function comprobante(extra: Partial<ComprobanteVenta> = {}): ComprobanteVenta {
 }
 
 describe('ComprobanteVentaView (CU23)', () => {
+  const generarPdfMock = vi.fn();
+  const descargarPdfMock = vi.fn();
+
+  const pdfMock: ComprobantePdfAdapter = {
+    generar: generarPdfMock,
+    descargar: descargarPdfMock,
+    nombreArchivo: (ventaId: number) => `comprobante-VTA-${String(ventaId).padStart(5, '0')}.pdf`,
+  };
   let fixture: ComponentFixture<ComprobanteVentaView>;
   let componente: ComprobanteVentaView;
 
@@ -90,7 +83,10 @@ describe('ComprobanteVentaView (CU23)', () => {
   ): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [ComprobanteVentaView],
-      providers: [{ provide: PLATFORM_ID, useValue: plataforma }],
+      providers: [
+        { provide: PLATFORM_ID, useValue: plataforma },
+        { provide: COMPROBANTE_PDF, useValue: pdfMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ComprobanteVentaView);
@@ -100,9 +96,7 @@ describe('ComprobanteVentaView (CU23)', () => {
   }
 
   function texto(): string {
-    return ((fixture.nativeElement as HTMLElement).textContent ?? '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    return ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\s+/g, ' ').trim();
   }
 
   function boton(etiqueta: string): HTMLButtonElement | undefined {
@@ -110,9 +104,7 @@ describe('ComprobanteVentaView (CU23)', () => {
       Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll('button'),
       ) as HTMLButtonElement[]
-    ).find((elemento) =>
-      (elemento.textContent ?? '').replace(/\s+/g, ' ').includes(etiqueta),
-    );
+    ).find((elemento) => (elemento.textContent ?? '').replace(/\s+/g, ' ').includes(etiqueta));
   }
 
   beforeEach(() => {
@@ -143,9 +135,7 @@ describe('ComprobanteVentaView (CU23)', () => {
   });
 
   it('sin empleado (WEB) no muestra cajero ficticio ni undefined', async () => {
-    await setup(
-      comprobante({ canal: 'WEB', empleado: null, reserva_id: null }),
-    );
+    await setup(comprobante({ canal: 'WEB', empleado: null, reserva_id: null }));
 
     expect(texto()).not.toContain('Cajero');
     expect(texto()).toContain('Venta en línea');
@@ -229,27 +219,30 @@ describe('ComprobanteVentaView (CU23)', () => {
 
   it('descarga el PDF con nombre comprobante-VTA-00535.pdf', async () => {
     await setup(comprobante());
+
     const blob = new Blob(['%PDF'], { type: 'application/pdf' });
     generarPdfMock.mockResolvedValue(blob);
 
     componente.descargarPdf();
-    await Promise.resolve();
-    await Promise.resolve();
 
-    expect(generarPdfMock).toHaveBeenCalledTimes(1);
-    expect(descargarPdfMock).toHaveBeenCalledWith(
-      blob,
-      'comprobante-VTA-00535.pdf',
-    );
-    expect(componente.descargando()).toBe(false);
+    await vi.waitFor(() => {
+      expect(generarPdfMock).toHaveBeenCalledTimes(1);
+      expect(descargarPdfMock).toHaveBeenCalledWith(blob, 'comprobante-VTA-00535.pdf');
+      expect(componente.descargando()).toBe(false);
+    });
+
+    expect(componente.puedeDescargar()).toBe(true);
   });
 
   it('no genera dos PDF simultáneos (una descarga a la vez)', async () => {
     await setup(comprobante());
+
     let resolver!: (valor: Blob) => void;
-    const pendiente = new Promise<Blob>(
-      (resolve) => (resolver = resolve),
-    );
+
+    const pendiente = new Promise<Blob>((resolve) => {
+      resolver = resolve;
+    });
+
     generarPdfMock.mockReturnValue(pendiente);
 
     componente.descargarPdf();
@@ -261,13 +254,17 @@ describe('ComprobanteVentaView (CU23)', () => {
     expect(componente.puedeDescargar()).toBe(false);
     expect(boton('DESCARGANDO')?.disabled).toBe(true);
 
-    resolver(new Blob(['%PDF'], { type: 'application/pdf' }));
-    await Promise.resolve();
-    await Promise.resolve();
+    const blob = new Blob(['%PDF'], { type: 'application/pdf' });
+    resolver(blob);
+
+    await vi.waitFor(() => {
+      expect(descargarPdfMock).toHaveBeenCalledTimes(1);
+      expect(descargarPdfMock).toHaveBeenCalledWith(blob, 'comprobante-VTA-00535.pdf');
+      expect(componente.descargando()).toBe(false);
+    });
+
     fixture.detectChanges();
 
-    expect(descargarPdfMock).toHaveBeenCalledTimes(1);
-    expect(componente.descargando()).toBe(false);
     expect(componente.puedeDescargar()).toBe(true);
   });
 
@@ -280,9 +277,7 @@ describe('ComprobanteVentaView (CU23)', () => {
     await Promise.resolve();
     fixture.detectChanges();
 
-    expect(componente.error()).toBe(
-      'No pudimos generar el PDF. Intenta nuevamente.',
-    );
+    expect(componente.error()).toBe('No pudimos generar el PDF. Intenta nuevamente.');
     expect(texto()).toContain('No pudimos generar el PDF');
     expect(texto()).not.toContain('boom');
   });
@@ -290,12 +285,10 @@ describe('ComprobanteVentaView (CU23)', () => {
   it('imprime solo la hoja del comprobante (sin acciones ni fondo)', async () => {
     await setup(comprobante());
     let htmlImpreso = '';
-    const spy = vi
-      .spyOn(componente, 'imprimirDocumento')
-      .mockImplementation((ventana: Window) => {
-        htmlImpreso = ventana.document.documentElement.outerHTML;
-        ventana.dispatchEvent(new Event('afterprint'));
-      });
+    const spy = vi.spyOn(componente, 'imprimirDocumento').mockImplementation((ventana: Window) => {
+      htmlImpreso = ventana.document.documentElement.outerHTML;
+      ventana.dispatchEvent(new Event('afterprint'));
+    });
 
     componente.imprimirComprobante();
 
@@ -311,9 +304,7 @@ describe('ComprobanteVentaView (CU23)', () => {
 
   it('no abre dos diálogos de impresión a la vez', async () => {
     await setup(comprobante());
-    const spy = vi
-      .spyOn(componente, 'imprimirDocumento')
-      .mockImplementation(() => undefined);
+    const spy = vi.spyOn(componente, 'imprimirDocumento').mockImplementation(() => undefined);
 
     componente.imprimirComprobante();
     componente.imprimirComprobante();
@@ -323,9 +314,7 @@ describe('ComprobanteVentaView (CU23)', () => {
     expect(componente.puedeImprimir()).toBe(false);
 
     // El ciclo se libera con `afterprint` (o con el respaldo temporizado).
-    document
-      .querySelector('iframe')
-      ?.contentWindow?.dispatchEvent(new Event('afterprint'));
+    document.querySelector('iframe')?.contentWindow?.dispatchEvent(new Event('afterprint'));
     expect(componente.imprimiendo()).toBe(false);
     expect(document.querySelectorAll('iframe').length).toBe(0);
   });
