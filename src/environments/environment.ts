@@ -9,7 +9,7 @@
  */
 export const environment = {
   //apiUrl: 'http://127.0.0.1:8000',
-  apiUrl: 'https://fashionstore-api-qv8n.onrender.com',
+  apiUrl: 'https://fashionstore-api-qv8n.onrender.com/',
   /**
    * Publishable key de Stripe (CU22 - pago electrónico).
    *
