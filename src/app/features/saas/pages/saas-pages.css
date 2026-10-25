@@ -1,0 +1,26 @@
+.saas-layout { padding: clamp(2rem, 5vw, 5rem) 1rem; min-height: 100dvh; display: grid; place-items: start center; background: var(--bg); color: var(--text); }
+.saas-panel { width: min(100%, 1040px); border: 1px solid var(--line-strong); border-radius: 20px; padding: clamp(1.25rem, 3vw, 2.5rem); background: var(--surface); box-shadow: var(--shadow-md); }
+.saas-login { max-width: 520px; }
+.saas-eyebrow { color: var(--accent-text); text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: bold; }
+.saas-panel h1 { margin: .5rem 0 1rem; }
+.saas-panel h2 { font-size: 1.3rem; margin: 1.3rem 0 1rem; }
+.saas-panel p { margin: .65rem 0 1.2rem; color: var(--text-2); }
+.saas-panel form { display: grid; gap: 1rem; margin: 1.5rem 0; }
+.saas-panel label { display: grid; gap: .3rem; font-weight: 600; }
+.saas-panel input, .saas-panel select { width: 100%; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--surface-2); color: var(--text); padding: .7rem .9rem; font: inherit; }
+.saas-panel button { border: 1px solid var(--line-strong); border-radius: 9px; padding: .6rem .9rem; color: var(--text); background: var(--surface-2); }
+.saas-panel button:hover:not(:disabled) { border-color: var(--accent); }
+.saas-panel button:disabled { opacity: .55; cursor: not-allowed; }
+.saas-panel .saas-primary { background: var(--accent); color: white; font-weight: 700; border-color: transparent; }
+.saas-panel .saas-error { color: #ff9292; }
+.saas-panel .saas-success { color: #77e5b2; }
+.saas-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+.saas-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px),1fr)); gap: 1.25rem; }
+.saas-block { padding: 1rem; border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; }
+.saas-panel table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: .9rem; }
+.saas-panel th, .saas-panel td { text-align: left; padding: .7rem; border-bottom: 1px solid var(--line); }
+.saas-panel th { color: var(--text-2); font-weight: 650; }
+.saas-panel .saas-inline { display: inline-flex; align-items: center; gap: .5rem; }
+.saas-panel .saas-inline select { width: auto; }
+.saas-panel .saas-inline button { white-space: nowrap; }
+.saas-muted { font-size: .86rem; opacity: .75; }
