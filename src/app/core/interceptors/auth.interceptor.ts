@@ -11,6 +11,7 @@ import { AuthService } from '../../features/autenticacion-seguridad/auth/service
 const RUTAS_LOGIN_SIN_TOKEN = new Set([
   '/auth/clientes/login',
   '/auth/personal/login',
+  '/auth/tenant/login',
 ]);
 
 /**
@@ -43,6 +44,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Endpoints de login: no enviar un token viejo.
   if (RUTAS_LOGIN_SIN_TOKEN.has(ruta)) {
+    return next(req);
+  }
+
+  // CU03: no sobreescribir el JWT empresarial que ya envía el servicio
+  // SaaS. La sesión legacy nunca puede sustituir la identidad tenant.
+  if (req.headers.has('Authorization')) {
     return next(req);
   }
 
