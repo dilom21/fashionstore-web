@@ -94,13 +94,13 @@ export class TenantApiService {
   private headers(): HttpHeaders {
     const token = this.token();
     return token
-      ? new HttpHeaders({ Authorization: \`Bearer \${token}\` })
+      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
       : new HttpHeaders();
   }
 
   login(datos: TenantLogin): Observable<TenantLoginRespuesta> {
     return this.http
-      .post<TenantLoginRespuesta>(\`\${this.base}/auth/tenant/login\`, datos)
+      .post<TenantLoginRespuesta>(`${this.base}/auth/tenant/login`, datos)
       .pipe(
         tap((response) => {
           this.storage?.setItem(this.storageKey, response.access_token);
@@ -111,7 +111,7 @@ export class TenantApiService {
 
   me(): Observable<TenantIdentidad> {
     return this.http
-      .get<TenantIdentidad>(\`\${this.base}/auth/tenant/me\`, {
+      .get<TenantIdentidad>(`${this.base}/auth/tenant/me`, {
         headers: this.headers(),
       })
       .pipe(tap((identidad) => this._identidad.set(identidad)));
@@ -119,21 +119,21 @@ export class TenantApiService {
 
   sucursales(): Observable<TenantSucursal[]> {
     return this.http.get<TenantSucursal[]>(
-      \`\${this.base}/tenant/empresa/sucursales\`,
+      `${this.base}/tenant/empresa/sucursales`,
       { headers: this.headers() },
     );
   }
 
   miembros(): Observable<TenantMiembro[]> {
     return this.http.get<TenantMiembro[]>(
-      \`\${this.base}/tenant/empresa/usuarios\`,
+      `${this.base}/tenant/empresa/usuarios`,
       { headers: this.headers() },
     );
   }
 
   roles(): Observable<TenantRol[]> {
     return this.http.get<TenantRol[]>(
-      \`\${this.base}/tenant/empresa/roles\`,
+      `${this.base}/tenant/empresa/roles`,
       { headers: this.headers() },
     );
   }
@@ -145,7 +145,7 @@ export class TenantApiService {
     telefono: string | null;
   }): Observable<TenantSucursal> {
     return this.http.post<TenantSucursal>(
-      \`\${this.base}/tenant/empresa/sucursales\`,
+      `${this.base}/tenant/empresa/sucursales`,
       datos,
       { headers: this.headers() },
     );
@@ -153,7 +153,7 @@ export class TenantApiService {
 
   cambiarEstadoSucursal(id: number, estado: boolean): Observable<TenantSucursal> {
     return this.http.patch<TenantSucursal>(
-      \`\${this.base}/tenant/empresa/sucursales/\${id}/estado\`,
+      `${this.base}/tenant/empresa/sucursales/${id}/estado`,
       { estado },
       { headers: this.headers() },
     );
@@ -161,7 +161,7 @@ export class TenantApiService {
 
   cambiarRol(id: number, rol_id: number): Observable<TenantMiembro> {
     return this.http.patch<TenantMiembro>(
-      \`\${this.base}/tenant/empresa/usuarios/\${id}/rol\`,
+      `${this.base}/tenant/empresa/usuarios/${id}/rol`,
       { rol_id },
       { headers: this.headers() },
     );
@@ -169,7 +169,7 @@ export class TenantApiService {
 
   cambiarEstadoMiembro(id: number, estado: boolean): Observable<TenantMiembro> {
     return this.http.patch<TenantMiembro>(
-      \`\${this.base}/tenant/empresa/usuarios/\${id}/estado\`,
+      `${this.base}/tenant/empresa/usuarios/${id}/estado`,
       { estado },
       { headers: this.headers() },
     );
