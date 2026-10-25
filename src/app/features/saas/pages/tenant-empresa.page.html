@@ -1,0 +1,87 @@
+<main class="saas-layout">
+  <section class="saas-panel">
+    <header class="saas-head">
+      <div>
+        <p class="saas-eyebrow">FashionStore · CU04 y CU05</p>
+        <h1>{{ api.identidad()?.empresa_nombre || 'Mi empresa' }}</h1>
+        <p class="saas-muted">
+          {{ api.identidad()?.empresa_slug }} · Plan {{ api.identidad()?.plan_codigo }} ·
+          Administrador
+        </p>
+      </div>
+      <div class="saas-inline">
+        <a routerLink="/">Volver a la tienda</a>
+        <button type="button" (click)="salir()">Cerrar sesión</button>
+      </div>
+    </header>
+    @if (cargando()) { <p>Consultando datos empresariales en el servidor...</p> }
+    @if (error()) { <p role="alert" class="saas-error">{{ error() }}</p> }
+    @if (exito()) { <p role="status" class="saas-success">{{ exito() }}</p> }
+    <div class="saas-cols">
+      <section class="saas-block">
+        <h2>Sucursales</h2>
+        <p>Listado y estado de las sucursales de esta empresa, con límites validados por FastAPI.</p>
+        <table aria-label="Sucursales de la empresa">
+          <thead><tr><th>Nombre</th><th>Dirección</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody>
+            @for (sucursal of sucursales(); track sucursal.id) {
+              <tr>
+                <td>{{ sucursal.nombre }}</td>
+                <td>{{ sucursal.direccion }}</td>
+                <td>{{ sucursal.estado ? 'Activa' : 'Inactiva' }}</td>
+                <td><button type="button" [disabled]="procesando()"
+                  (click)="estadoSucursal(sucursal)">Cambiar</button></td>
+              </tr>
+            } @empty { <tr><td colspan="4">No hay sucursales registradas.</td></tr> }
+          </tbody>
+        </table>
+        <h2>Registrar sucursal</h2>
+        <form [formGroup]="formSucursal" (ngSubmit)="registrarSucursal()">
+          <label>ID de ciudad activa
+            <input formControlName="ciudad_id" type="number" min="1" required />
+          </label>
+          <label>Nombre
+            <input formControlName="nombre" maxlength="120" required />
+          </label>
+          <label>Dirección
+            <input formControlName="direccion" maxlength="255" required />
+          </label>
+          <label>Teléfono (opcional)
+            <input formControlName="telefono" maxlength="30" />
+          </label>
+          <button class="saas-primary" type="submit"
+            [disabled]="procesando() || formSucursal.invalid">Guardar sucursal</button>
+        </form>
+      </section>
+      <section class="saas-block">
+        <h2>Usuarios y roles de mi empresa</h2>
+        <p>Los cambios modifican exclusivamente la membresía empresarial; no el rol global.</p>
+        <table aria-label="Personal y permisos empresariales">
+          <thead><tr><th>Usuario</th><th>Rol</th><th>Acceso</th><th>Acción</th></tr></thead>
+          <tbody>
+            @for (miembro of usuarios(); track miembro.usuario_id) {
+              <tr>
+                <td>{{ miembro.nombres || miembro.correo }}
+                  <div class="saas-muted">{{ miembro.correo }}</div></td>
+                <td>
+                  <select [value]="miembro.rol_id"
+                    [disabled]="procesando() || miembro.usuario_id === api.identidad()?.usuario_id"
+                    (change)="cambiarRol(miembro, $event)"
+                    [attr.aria-label]="'Rol de ' + miembro.correo">
+                    @for (rol of roles(); track rol.id) {
+                      <option [value]="rol.id">{{ rol.nombre }}</option>
+                    }
+                  </select>
+                </td>
+                <td>{{ miembro.membresia_activa ? 'Habilitado' : 'Revocado' }}</td>
+                <td><button type="button"
+                  [disabled]="procesando() || miembro.usuario_id === api.identidad()?.usuario_id"
+                  (click)="estadoUsuario(miembro)">Cambiar acceso</button></td>
+              </tr>
+            } @empty { <tr><td colspan="4">No hay personal registrado.</td></tr> }
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </section>
+</main>
