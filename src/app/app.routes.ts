@@ -14,6 +14,22 @@ import { personalAuthGuard } from './core/guards/personal-auth.guard';
  *  - dashboard            -> Zona del personal (protegida)
  */
 export const routes: Routes = [
+  // SaaS multitenant: sesión/JWT empresarial independiente del login legacy.
+  // La seguridad de permisos está en el backend; estas rutas no abren SaaS.
+  {
+    path: 'saas/ingresar',
+    loadComponent: () =>
+      import('./features/saas/pages/tenant-login.page').then(
+        (m) => m.TenantLoginPage,
+      ),
+  },
+  {
+    path: 'saas/empresa',
+    loadComponent: () =>
+      import('./features/saas/pages/tenant-empresa.page').then(
+        (m) => m.TenantEmpresaPage,
+      ),
+  },
   {
     path: '',
     pathMatch: 'full',
