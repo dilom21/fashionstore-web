@@ -1,0 +1,23 @@
+<main class="saas-layout">
+  <section class="saas-panel saas-login">
+    <p class="saas-eyebrow">FashionStore · CU03</p>
+    <h1>Acceso por empresa</h1>
+    <p>Inicia sesión como administrador de tu propia empresa. Tus datos y permisos se verifican en el servidor.</p>
+    <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+      <label>Identificador de empresa
+        <input type="text" formControlName="empresa_slug" autocomplete="organization" placeholder="mi-empresa" />
+      </label>
+      <label>Correo electrónico
+        <input type="email" formControlName="correo" autocomplete="username" />
+      </label>
+      <label>Contraseña
+        <input type="password" formControlName="password" autocomplete="current-password" />
+      </label>
+      @if (error()) { <p role="alert" class="saas-error">{{ error() }}</p> }
+      <button class="saas-primary" type="submit" [disabled]="enviando() || form.invalid">
+        {{ enviando() ? 'Verificando...' : 'Entrar a mi empresa' }}
+      </button>
+    </form>
+    <a routerLink="/">Volver a la tienda</a>
+  </section>
+</main>
