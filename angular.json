@@ -31,7 +31,11 @@
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": [
+                "fashionstore-web-taupe.vercel.app",
+                "localhost",
+                "127.0.0.1"
+              ]
             },
             "ssr": {
               "entry": "src/server.ts"
@@ -39,6 +43,7 @@
           },
           "configurations": {
             "production": {
+              "serviceWorker": "ngsw-config.json",
               "budgets": [
                 {
                   "type": "initial",
@@ -57,6 +62,52 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "saas-local": {
+              "serviceWorker": "ngsw-config.json",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.saas-local.ts"
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "10kB",
+                  "maximumError": "20kB"
+                }
+              ],
+              "outputHashing": "all",
+              "outputPath": "dist/fashionstore-web-saas-local"
+            },
+            "saas-unified": {
+              "serviceWorker": "ngsw-config.json",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.saas-unified.ts"
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "10kB",
+                  "maximumError": "20kB"
+                }
+              ],
+              "outputHashing": "all",
+              "outputPath": "dist/fashionstore-web-saas-unified"
             }
           },
           "defaultConfiguration": "production"
@@ -69,6 +120,12 @@
             },
             "development": {
               "buildTarget": "fashionstore-web:build:development"
+            },
+            "saas-local": {
+              "buildTarget": "fashionstore-web:build:saas-local"
+            },
+            "saas-unified": {
+              "buildTarget": "fashionstore-web:build:saas-unified"
             }
           },
           "defaultConfiguration": "development"

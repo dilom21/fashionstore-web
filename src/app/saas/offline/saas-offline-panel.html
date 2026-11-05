@@ -1,0 +1,209 @@
+<section
+  class="offline"
+  [class.offline--compacto]="compacto()"
+  aria-label="Estado de conexión y operaciones pendientes"
+>
+  <div class="offline__barra">
+    <span
+      class="offline__estado"
+      [class.offline__estado--sin]="!enLinea()"
+      role="status"
+    >
+      <span class="offline__punto" aria-hidden="true"></span>
+      {{ enLinea() ? 'En línea' : 'Sin conexión' }}
+    </span>
+
+    <span class="offline__contador">
+      <app-admin-icon icono="actualizar" aria-hidden="true" />
+      {{ pendientes().length }} pendiente(s)
+    </span>
+
+    @if (conflictos().length > 0) {
+      <span class="offline__alerta" role="alert">
+        <app-admin-icon icono="alerta" aria-hidden="true" />
+        {{ conflictos().length }} en conflicto
+      </span>
+    }
+
+    <button
+      type="button"
+      class="offline__boton"
+      (click)="sincronizarAhora()"
+      [disabled]="!enLinea() || sincronizando()"
+      [attr.aria-busy]="sincronizando()"
+    >
+      <app-admin-icon icono="actualizar" aria-hidden="true" />
+      <span>{{ sincronizando() ? 'Sincronizando…' : 'Sincronizar' }}</span>
+    </button>
+  </div>
+
+  @if (!compacto()) {
+    @if (!enLinea()) {
+      <p class="offline__aviso" role="status">
+        Sin conexión: puedes registrar ventas y reservas. Se guardan en este
+        dispositivo y se envían cuando vuelvas a estar en línea. La información
+        consultada puede estar desactualizada.
+      </p>
+    }
+
+    @if (mensaje(); as texto) {
+      <p class="offline__mensaje" role="status">{{ texto }}</p>
+    }
+
+    @if (conflictos().length > 0) {
+      <div class="offline__conflictos" role="alert">
+        <h3 class="offline__subtitulo">Operaciones en conflicto</h3>
+        <p class="offline__texto">
+          El servidor rechazó estas operaciones por estado o stock. No se
+          borraron: revisa el detalle y decide si reintentarlas o descartarlas.
+        </p>
+        <ul class="offline__lista">
+          @for (operacion of conflictos(); track operacion.operacion_id) {
+            <li class="offline__item offline__item--conflicto">
+              <div class="offline__item-cabecera">
+                <strong>{{ tipo(operacion) }}</strong>
+                <code class="offline__mono">{{ referencia(operacion) }}…</code>
+                <span class="offline__chip offline__chip--conflicto">
+                  {{ estado(operacion) }}
+                </span>
+              </div>
+              <p class="offline__detalle">{{ detalle(operacion) }}</p>
+              <p class="offline__fecha">
+                Registrada el
+                {{ operacion.creada_en | date: 'dd/MM/yyyy HH:mm' }}
+              </p>
+              <div class="offline__acciones">
+                <button
+                  type="button"
+                  class="offline__boton offline__boton--secundario"
+                  (click)="reintentar(operacion)"
+                  [disabled]="!enLinea() || sincronizando()"
+                  [attr.aria-label]="
+                    'Reintentar ' + tipo(operacion) + ' ' + referencia(operacion)
+                  "
+                >
+                  Reintentar
+                </button>
+                <button
+                  type="button"
+                  class="offline__boton offline__boton--peligro"
+                  (click)="descartar(operacion)"
+                  [attr.aria-label]="
+                    'Descartar ' + tipo(operacion) + ' ' + referencia(operacion)
+                  "
+                >
+                  Descartar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="offline__cola">
+      <h3 class="offline__subtitulo">
+        Cola local
+        <span class="offline__chip">{{ visibles().length }}</span>
+      </h3>
+
+      @if (cargando()) {
+        <p class="offline__texto" role="status">Leyendo operaciones locales…</p>
+      } @else if (visibles().length === 0) {
+        <p class="offline__texto">
+          No hay operaciones guardadas en este dispositivo para esta empresa y
+          usuario.
+        </p>
+      } @else {
+        <div class="offline__tabla-scroll" role="region" tabindex="0">
+          <table class="offline__tabla">
+            <caption class="vm-sr-only">
+              Operaciones offline del usuario actual.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Operación</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Intentos</th>
+                <th scope="col">Detalle</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (operacion of visibles(); track operacion.operacion_id) {
+                <tr>
+                  <th scope="row">
+                    <span class="offline__tipo">{{ tipo(operacion) }}</span>
+                    <code class="offline__mono">
+                      {{ referencia(operacion) }}…
+                    </code>
+                    <span class="offline__fecha">
+                      {{ operacion.creada_en | date: 'dd/MM HH:mm' }}
+                    </span>
+                  </th>
+                  <td>
+                    <span
+                      class="offline__chip"
+                      [class.offline__chip--ok]="operacion.estado === 'CONFIRMADO'"
+                      [class.offline__chip--conflicto]="operacion.estado === 'CONFLICTO'"
+                      [class.offline__chip--error]="operacion.estado === 'ERROR'"
+                    >
+                      {{ estado(operacion) }}
+                    </span>
+                    @if (operacion.resultado; as resultado) {
+                      <span class="offline__resultado">
+                        Ref. {{ resultado.referencia_id ?? '—' }}
+                        @if (resultado.idempotente) {
+                          · ya registrada
+                        }
+                      </span>
+                    }
+                  </td>
+                  <td>{{ operacion.intentos }}</td>
+                  <td class="offline__detalle-celda">
+                    {{ detalle(operacion) ?? '—' }}
+                  </td>
+                  <td>
+                    @if (operacion.estado === 'CONFLICTO' || operacion.estado === 'ERROR') {
+                      <div class="offline__acciones">
+                        <button
+                          type="button"
+                          class="offline__boton offline__boton--secundario"
+                          (click)="reintentar(operacion)"
+                          [disabled]="!enLinea() || sincronizando()"
+                          [attr.aria-label]="
+                            'Reintentar ' +
+                            tipo(operacion) +
+                            ' ' +
+                            referencia(operacion)
+                          "
+                        >
+                          Reintentar
+                        </button>
+                        <button
+                          type="button"
+                          class="offline__boton offline__boton--peligro"
+                          (click)="descartar(operacion)"
+                          [attr.aria-label]="
+                            'Descartar ' +
+                            tipo(operacion) +
+                            ' ' +
+                            referencia(operacion)
+                          "
+                        >
+                          Descartar
+                        </button>
+                      </div>
+                    } @else {
+                      <span class="offline__texto">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</section>

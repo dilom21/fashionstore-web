@@ -1,0 +1,29 @@
+{
+  "id": "/",
+  "name": "FashionStore · VANTER MEN",
+  "short_name": "FashionStore",
+  "description": "Plataforma SaaS de comercio de moda masculina: catálogo, reservas, ventas y operación offline por empresa.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#050914",
+  "theme_color": "#050914",
+  "categories": ["shopping", "business"],
+  "icons": [
+    {
+      "src": "images/products/prod-polera.jpg",
+      "sizes": "1400x1400",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "images/hero/vanter-hero.png",
+      "sizes": "327x378",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+<section class="aviso" aria-labelledby="sin-permiso-titulo">
+  <p class="aviso__eyebrow">Acceso restringido</p>
+  <h1 class="aviso__titulo" id="sin-permiso-titulo">
+    No tienes permiso para esta sección
+  </h1>
+  <p class="aviso__texto">
+    Tu rol (<strong>{{ rol() }}</strong>) en {{ empresa() }} no incluye esta
+    función. Si necesitas acceso, pide a un administrador de la empresa que
+    ajuste tus permisos.
+  </p>
+  <div class="aviso__acciones">
+    <a class="aviso__boton" routerLink="/saas/inicio">Volver al inicio</a>
+  </div>
+</section>

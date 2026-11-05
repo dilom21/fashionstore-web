@@ -1,0 +1,41 @@
+<main class="store" aria-labelledby="store-title">
+  <header class="hero">
+    <p class="eyebrow">Tienda oficial</p>
+    <h1 id="store-title">{{ company()?.nombre_comercial ?? 'Catálogo' }}</h1>
+    <p>Productos activos y disponibilidad consolidada de esta empresa.</p>
+    <form class="search" (ngSubmit)="load()">
+      <label for="store-search">Buscar productos</label>
+      <div><input id="store-search" [formControl]="search" maxlength="80" /><button type="submit">Buscar</button></div>
+    </form>
+  </header>
+
+  @if (error(); as message) { <p class="notice error" role="alert">{{ message }}</p> }
+  @if (loading()) {
+    <p class="notice" role="status">Cargando catálogo…</p>
+  } @else if (!error()) {
+    <section aria-labelledby="products-title">
+      <div class="section-title"><h2 id="products-title">Productos</h2><span>{{ products().length }} resultados</span></div>
+      @if (products().length === 0) { <p class="notice">No hay productos publicados con este filtro.</p> }
+      <div class="grid">
+        @for (product of products(); track product.id) {
+          <article class="card">
+            @if (product.imagen_url) { <img [src]="product.imagen_url" [alt]="product.nombre" /> }
+            <div class="card-body">
+              <span>{{ product.categoria_nombre }}</span><h3>{{ product.nombre }}</h3>
+              <p>{{ product.descripcion || 'Sin descripción.' }}</p>
+              <footer><strong>{{ product.precio | currency:'BOB':'symbol-narrow' }}</strong><small>{{ product.stock_disponible }} disponibles</small></footer>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+    <section aria-labelledby="branches-title">
+      <div class="section-title"><h2 id="branches-title">Dónde encontrarnos</h2></div>
+      <div class="branches">
+        @for (branch of branches(); track branch.id) {
+          <article><strong>{{ branch.nombre }}</strong><span>{{ branch.ciudad_nombre }}</span><p>{{ branch.direccion }}</p></article>
+        }
+      </div>
+    </section>
+  }
+</main>

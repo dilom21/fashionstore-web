@@ -1,0 +1,466 @@
+:host {
+  display: block;
+}
+
+.saas {
+  --saas-sb-ancho: 268px;
+  --saas-sb-colapsada: 84px;
+  display: flex;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.saas--colapsada {
+  --saas-sb-ancho: var(--saas-sb-colapsada);
+}
+
+/* Enlace de salto: visible solo con teclado. */
+.saas__saltar {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 120;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.saas__saltar:focus-visible {
+  top: 1rem;
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+/* ================================ Lateral ================================ */
+.saas__lateral {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: var(--saas-sb-ancho);
+  border-right: 1px solid var(--line);
+  background: var(--bg-2);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.24s ease, transform 0.24s ease;
+}
+
+.saas__marca {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.saas__logo {
+  flex: none;
+}
+
+.saas__marca-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.saas__marca-nombre {
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.saas__marca-nombre em {
+  font-style: normal;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.saas__marca-tag {
+  font-size: 0.72rem;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saas__nav {
+  flex: 1;
+  padding: 0.75rem 0.6rem 1rem;
+}
+
+.saas__grupo + .saas__grupo {
+  margin-top: 1.1rem;
+}
+
+.saas__grupo-titulo {
+  margin: 0 0 0.35rem;
+  padding: 0 0.55rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.saas__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.52rem 0.6rem;
+  border-radius: var(--radius-m);
+  color: var(--text-2);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.saas__item + .saas__item {
+  margin-top: 2px;
+}
+
+.saas__item:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.saas__item:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.saas__item--activo {
+  color: var(--text);
+  background: var(--surface-3);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.saas__item--activo .saas__item-texto {
+  font-weight: 800;
+}
+
+/* Módulos P1: no interactivos, con badge textual (no solo color). */
+.saas__item--off {
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.saas__item--off:hover {
+  color: var(--text-3);
+  background: transparent;
+}
+
+.saas__item-icono {
+  flex: none;
+  display: inline-flex;
+  color: currentcolor;
+}
+
+.saas__item-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saas__badge {
+  margin-left: auto;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+/* Aviso de permiso: la escritura de esa sección está oculta. */
+.saas__badge--lectura {
+  border-style: dashed;
+  color: var(--text-3);
+}
+
+.saas__pie {
+  padding: 0.7rem 0.6rem 1rem;
+  border-top: 1px solid var(--line);
+}
+
+/* ================================= Botones ================================ */
+.saas__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 38px;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saas__btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.saas__btn:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.saas__btn--movil,
+.saas__btn--menu {
+  display: none;
+  width: auto;
+}
+
+/* ================================= Cuerpo =============================== */
+.saas__cuerpo {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--saas-sb-ancho);
+  transition: margin-left 0.24s ease;
+}
+
+.saas__cabecera {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 68px;
+  padding: 0.6rem clamp(0.8rem, 3vw, 1.6rem);
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.saas__empresa {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.saas__empresa-nombre {
+  font-size: 1rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saas__empresa-slug {
+  font-size: 0.76rem;
+  color: var(--text-2);
+}
+
+.saas__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.saas__chip {
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.saas__chip strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.saas__chip--entorno {
+  border-style: dashed;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.saas__salir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saas__salir:hover {
+  background: var(--surface-2);
+}
+
+.saas__salir:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.saas__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 1rem clamp(0.8rem, 3vw, 1.6rem) 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+}
+
+.saas__aviso-icono {
+  flex: none;
+  color: var(--accent-text);
+}
+
+.saas__aviso-texto {
+  font-size: 0.88rem;
+  color: var(--text);
+}
+
+.saas__aviso-enlace {
+  color: var(--accent-text);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.saas__aviso-enlace:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.saas__contenido {
+  padding: clamp(1rem, 3vw, 1.8rem) clamp(0.8rem, 3vw, 1.6rem) 2.5rem;
+}
+
+.saas__contenido:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: -2px;
+}
+
+/* ============================== Colapsada =============================== */
+.saas--colapsada .saas__marca-texto,
+.saas--colapsada .saas__grupo-titulo,
+.saas--colapsada .saas__item-texto,
+.saas--colapsada .saas__badge {
+  display: none;
+}
+
+.saas--colapsada .saas__marca,
+.saas--colapsada .saas__item {
+  justify-content: center;
+}
+
+/* =============================== Responsive ============================== */
+@media (max-width: 1199px) {
+  .saas__chip--entorno {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .saas__lateral {
+    width: 280px;
+    transform: translateX(-102%);
+    box-shadow: var(--shadow-md);
+  }
+
+  .saas__lateral--movil {
+    transform: translateX(0);
+  }
+
+  /* En el drawer siempre se ven las etiquetas. */
+  .saas--colapsada .saas__item-texto,
+  .saas--colapsada .saas__grupo-titulo,
+  .saas--colapsada .saas__marca-texto,
+  .saas--colapsada .saas__badge {
+    display: inline;
+  }
+
+  .saas__cuerpo,
+  .saas--colapsada .saas__cuerpo {
+    margin-left: 0;
+  }
+
+  .saas__btn--movil,
+  .saas__btn--menu {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+
+  .saas__btn--colapso {
+    display: none;
+  }
+
+  .saas__scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgb(3 6 14 / 55%);
+  }
+
+  .saas__cabecera {
+    flex-wrap: wrap;
+    min-height: 60px;
+  }
+
+  .saas__meta {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .saas__chip:not(.saas__chip--entorno) {
+    font-size: 0.7rem;
+  }
+
+  .saas__salir span {
+    display: none;
+  }
+
+  .saas__salir {
+    padding: 0.35rem 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .saas__lateral,
+  .saas__cuerpo {
+    transition: none;
+  }
+}

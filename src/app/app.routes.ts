@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { environment } from '../environments/environment';
 import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 import { personalAuthGuard } from './core/guards/personal-auth.guard';
 
@@ -13,7 +14,7 @@ import { personalAuthGuard } from './core/guards/personal-auth.guard';
  *                            (auth/personal/login -> Login del PERSONAL)
  *  - dashboard            -> Zona del personal (protegida)
  */
-export const routes: Routes = [
+const rutasLegacy: Routes = [
   {
     path: '',
     pathMatch: 'full',
@@ -184,3 +185,62 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: '' },
 ];
+
+/**
+ * Rutas del modo SaaS: la raíz redirige al panel de la empresa y todo lo demás
+ * entra por el prefijo `saas` (lazy). El wildcard nunca cae en la landing.
+ */
+const rutasSaas: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'saas/inicio' },
+  {
+    path: 'saas',
+    loadChildren: () =>
+      import('./saas/saas.routes').then((m) => m.saasRoutes),
+  },
+  { path: '**', redirectTo: 'saas/inicio' },
+];
+
+/**
+ * Rutas legacy sin su comodín final.
+ *
+ * El comodín se retira porque en la superficie unificada el orden de la tabla
+ * decide qué superficie atiende cada URL: si `**` quedara antes de `saas`,
+ * cualquier `/saas/...` caería en la redirección legacy a `/`.
+ */
+const rutasLegacySinComodin: Routes = rutasLegacy.filter(
+  (ruta) => ruta.path !== '**',
+);
+
+/**
+ * Rutas de la superficie unificada: un solo despliegue sirve las dos caras.
+ *
+ * Orden (importa):
+ * 1. Rutas legacy completas (sin comodín): la landing pública sigue en `/`.
+ * 2. Rama `saas` lazy: `/saas/**` resuelve al panel multiempresa.
+ * 3. Comodín final: cualquier URL desconocida vuelve a la landing legacy.
+ */
+const rutasUnificadas: Routes = [
+  ...rutasLegacySinComodin,
+  {
+    path: 'saas',
+    loadChildren: () =>
+      import('./saas/saas.routes').then((m) => m.saasRoutes),
+  },
+  { path: '**', redirectTo: '' },
+];
+
+/**
+ * Tabla de rutas activa.
+ *
+ * - Modo legacy (por defecto en `ng build` / `ng serve`): exactamente las rutas
+ *   de siempre.
+ * - Modo SaaS puro (`--configuration saas-local`): solo la rama `saas`; las
+ *   rutas legacy no se registran porque esta superficie no las publica.
+ * - Superficie unificada (`--configuration saas-unified`, `saasMode` +
+ *   `saasLegacySurface`): legacy en `/` y SaaS en `/saas`, contra una sola API.
+ */
+export const routes: Routes = !environment.saasMode
+  ? rutasLegacy
+  : environment.saasLegacySurface
+    ? rutasUnificadas
+    : rutasSaas;

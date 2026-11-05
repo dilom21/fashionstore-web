@@ -1,0 +1,52 @@
+<section class="reports" aria-labelledby="reports-title">
+  <header class="hero"><p>Análisis tenant</p><h1 id="reports-title">Reportes y analítica</h1><span>Métricas agregadas exclusivamente de la empresa activa.</span></header>
+  <form class="filters" [formGroup]="form" (ngSubmit)="load()">
+    <label>Desde<input type="date" formControlName="fecha_desde" /></label>
+    <label>Hasta<input type="date" formControlName="fecha_hasta" /></label>
+    <label>Tipo de reporte<select formControlName="tipo" (change)="selectReport()">
+      @for (type of reportTypes; track type.value) { <option [value]="type.value">{{ type.label }}</option> }
+    </select></label>
+    <button type="submit" [disabled]="loading()">{{ loading() ? 'Consultando…' : 'Actualizar resumen' }}</button>
+    <div class="exports" aria-label="Exportar reporte">
+      <button type="button" (click)="export('xlsx')" [disabled]="exporting()">Excel</button>
+      <button type="button" (click)="export('pdf')" [disabled]="exporting()">PDF</button>
+    </div>
+  </form>
+  <section class="dynamic" aria-labelledby="dynamic-title">
+    <h2 id="dynamic-title">Consulta dinámica</h2>
+    <label>Pregunta natural <input [formControl]="question" placeholder="Ej.: ventas del período" /></label>
+    <button type="button" (click)="ask()">Consultar</button>
+    @if (dynamic(); as report) {
+      <table><thead><tr><th>Métrica</th><th>Valor</th></tr></thead><tbody>
+        @for (row of report.filas; track row.metrica) { <tr><td>{{ row.metrica }}</td><td>{{ row.valor }}</td></tr> }
+      </tbody></table>
+      <svg class="report-chart" viewBox="0 0 200 110" role="img" aria-label="Gráfico del reporte seleccionado">
+        @for (bar of chartBars(); track bar.label) {
+          <rect [attr.x]="bar.x" [attr.y]="100 - bar.height" width="28" [attr.height]="bar.height" rx="3"></rect>
+          <text [attr.x]="bar.x + 14" y="108" text-anchor="middle">{{ bar.label.slice(0, 5) }}</text>
+        }
+      </svg>
+    }
+  </section>
+  @if (error(); as message) { <p class="notice error" role="alert">{{ message }}</p> }
+  @if (summary(); as data) {
+    <div class="metrics" aria-label="Indicadores del período">
+      <article><span>Ventas completadas</span><strong>{{ data.ventas_completadas }}</strong><small>{{ data.ventas_pendientes }} pendientes</small></article>
+      <article><span>Total vendido</span><strong>Bs {{ data.total_vendido | number:'1.2-2' }}</strong><small>Ticket Bs {{ data.ticket_promedio | number:'1.2-2' }}</small></article>
+      <article><span>Reservas</span><strong>{{ data.reservas_total }}</strong><small>{{ data.reservas_pendientes }} pendientes</small></article>
+      <article><span>Stock disponible</span><strong>{{ data.stock_disponible }}</strong><small>{{ data.stock_reservado }} reservado</small></article>
+    </div>
+    <section class="ai" aria-labelledby="ai-title">
+      <div><p>Capacidad del plan</p><h2 id="ai-title">Interpretación generativa</h2><span>El proveedor recibe solo el resumen agregado visible arriba.</span></div>
+      <button type="button" (click)="generate()" [disabled]="!allowsAi() || generating()">{{ generating() ? 'Generando…' : 'Generar análisis' }}</button>
+      @if (!allowsAi()) { <p class="plan">El plan actual no incluye reportes generativos.</p> }
+      @if (generated(); as report) {
+        <div class="generated"><p>{{ report.resumen }}</p>@if (report.alertas.length) { <ul>@for (alert of report.alertas; track alert) { <li>{{ alert }}</li> }</ul> }</div>
+      }
+    </section>
+  }
+  <section class="ml" aria-labelledby="ml-title"><h2 id="ml-title">Analítica local reproducible</h2>
+    <button type="button" (click)="loadMl()">Calcular modelos</button>
+    @if (ml(); as model) { <p>Accuracy: {{ model.supervisado.accuracy }} · Silhouette: {{ model.no_supervisado.silhouette }}</p> }
+  </section>
+</section>

@@ -1,0 +1,710 @@
+<section
+  class="ventas"
+  aria-labelledby="ventas-titulo"
+  [attr.aria-busy]="enviando()"
+>
+  <header class="ventas__cabecera">
+    <div class="ventas__cabecera-texto">
+      <p class="ventas__eyebrow">Comercial</p>
+      <h1 class="ventas__titulo" id="ventas-titulo">Venta de contado</h1>
+      <p class="ventas__ayuda">
+        Registra una venta presencial cobrada en el momento. Eliges el inventario
+        de la sucursal; el backend resuelve precios, total y stock.
+      </p>
+    </div>
+    <div class="ventas__resumen" role="status">
+      <span>{{ sucursalesActivas().length }} sucursales activas</span>
+      <span class="ventas__resumen-sep" aria-hidden="true">·</span>
+      <span>{{ numeroLineas() }} de {{ maxLineas }} líneas</span>
+    </div>
+  </header>
+
+  <app-saas-offline-panel
+    [tipos]="['VENTA_CONTADO']"
+    (sincronizado)="recargarTrasSincronizacion()"
+  />
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (avisoOffline(); as aviso) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="actualizar" />
+      <span>{{ aviso }}</span>
+    </p>
+  }
+
+  @if (!puedeRegistrar()) {
+    <p class="aviso aviso--atencion" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>
+        Tu rol no tiene el permiso VENTAS/REGISTRAR, así que el formulario de
+        venta está oculto. Solicita el permiso al administrador de la empresa.
+      </span>
+    </p>
+  }
+
+  @if (puedeRegistrar()) {
+    <section class="panel" aria-labelledby="venta-form-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="venta-form-titulo">Nueva venta</h2>
+          <p class="panel__ayuda">
+            Cada venta usa un identificador de operación distinto. Un reintento
+            idéntico con el mismo identificador no duplica la venta.
+          </p>
+        </div>
+        <p class="ventas__operacion">
+          <span class="ventas__operacion-label">Operación</span>
+          <code class="ventas__operacion-valor">{{ operacionId() }}</code>
+        </p>
+      </div>
+
+      @if (errorSucursales(); as mensaje) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>{{ mensaje }}</p>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="recargarSucursales()"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (!cargandoSucursales() && sucursalesActivas().length === 0) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            No hay sucursales activas en la empresa. Activa o crea una sucursal
+            antes de registrar ventas.
+          </span>
+        </p>
+      }
+
+      @if (error(); as errorVenta) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p class="aviso__titulo-error">
+              @switch (tipoError()) {
+                @case ('operacion') {
+                  El identificador de operación ya se usó con otra carga.
+                }
+                @case ('inventario') {
+                  La operación no está autorizada para esta empresa/sucursal.
+                }
+                @case ('deshabilitado') {
+                  El módulo de ventas SaaS todavía no está habilitado.
+                }
+                @case ('stock') {
+                  Conflicto de stock al registrar la venta.
+                }
+                @case ('validacion') {
+                  El backend rechazó los datos enviados.
+                }
+                @default {
+                  No se pudo registrar la venta.
+                }
+              }
+            </p>
+            <p>{{ errorVenta.mensaje }}</p>
+
+            @switch (tipoError()) {
+              @case ('operacion') {
+                <p class="aviso__detalle">
+                  Este identificador ya quedó asociado a otra venta. No vuelvas a
+                  enviar esta carga: inicia una venta nueva para obtener un
+                  identificador distinto.
+                </p>
+                <button
+                  type="button"
+                  class="boton boton--primario"
+                  (click)="iniciarVentaNueva()"
+                >
+                  <app-admin-icon icono="actualizar" />
+                  <span>Iniciar venta nueva</span>
+                </button>
+              }
+              @case ('inventario') {
+                <p class="aviso__detalle">
+                  Revisa el inventario elegido: el backend solo acepta inventario
+                  de la sucursal y empresa de tu sesión. Las líneas se conservan
+                  para que corrijas el dato.
+                </p>
+              }
+              @case ('deshabilitado') {
+                <p class="aviso__detalle">
+                  La empresa todavía no tiene ventas SaaS habilitadas en el
+                  servidor. No es un problema de tus datos: las líneas se
+                  conservan.
+                </p>
+              }
+              @case ('stock') {
+                <p class="aviso__detalle">
+                  El stock disponible no alcanza para una de las líneas. Ajusta
+                  las cantidades y reintenta; el identificador de operación se
+                  mantiene para que el reintento siga siendo idempotente.
+                </p>
+              }
+              @case ('validacion') {
+                <p class="aviso__detalle">
+                  Revisa las líneas y los campos de cabecera antes de reintentar.
+                </p>
+              }
+              @case ('otro') {
+                <p class="aviso__detalle">
+                  Puedes reintentar con las mismas líneas: el identificador de
+                  operación se conserva.
+                </p>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      @if (mensajeValidacion(); as mensaje) {
+        <p class="aviso aviso--atencion" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>{{ mensaje }}</span>
+        </p>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+        <fieldset class="ventas__campos" [disabled]="enviando()">
+          <legend class="vm-sr-only">Cabecera de la venta</legend>
+
+          <div class="campo">
+            <label class="campo__label" for="venta-sucursal">Sucursal</label>
+            <select
+              #sucursalInput
+              id="venta-sucursal"
+              class="campo__input campo__input--select"
+              formControlName="sucursal_id"
+              [attr.aria-invalid]="
+                form.controls.sucursal_id.touched &&
+                form.controls.sucursal_id.invalid
+              "
+              [attr.aria-describedby]="'venta-sucursal-aviso'"
+            >
+              <option [ngValue]="null">Selecciona una sucursal…</option>
+              @for (sucursal of sucursalesActivas(); track sucursal.id) {
+                <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+              }
+            </select>
+            <p class="campo__aviso" id="venta-sucursal-aviso">
+              La sesión no publica tu sucursal asignada: se preselecciona la
+              primera sucursal activa y puedes cambiarla.
+            </p>
+            @if (
+              form.controls.sucursal_id.touched &&
+              form.controls.sucursal_id.invalid
+            ) {
+              <p class="campo__error" role="alert">
+                Selecciona la sucursal de la venta.
+              </p>
+            }
+            @if (sucursalesLocales()) {
+              <p class="ventas__dato-local" role="status">
+                <app-admin-icon icono="alerta" />
+                Sucursales guardadas en este dispositivo: pueden estar
+                desactualizadas.
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="venta-metodo">
+              Método de pago
+            </label>
+            <select
+              id="venta-metodo"
+              class="campo__input campo__input--select"
+              formControlName="metodo_pago"
+            >
+              @for (metodo of metodos; track metodo.valor) {
+                <option [ngValue]="metodo.valor">{{ metodo.etiqueta }}</option>
+              }
+            </select>
+            <p class="campo__aviso">
+              Por defecto EFECTIVO. El backend registra el pago con este medio.
+            </p>
+          </div>
+        </fieldset>
+
+        <div class="ventas__lineas-cabecera">
+          <div>
+            <h3 class="ventas__lineas-titulo" id="ventas-lineas-titulo">
+              Líneas de la venta
+            </h3>
+            <p class="ventas__lineas-ayuda">
+              Entre 1 y {{ maxLineas }} líneas; cada cantidad admite de 1 a
+              {{ maxCantidad }} unidades.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="agregarLinea()"
+            [disabled]="!puedeAgregarLinea() || enviando()"
+          >
+            <app-admin-icon icono="mas" />
+            <span>Agregar línea</span>
+          </button>
+        </div>
+
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            El stock disponible y el precio son autoridad del servidor: se
+            muestran para ayudarte a elegir, pero el backend vuelve a validarlos
+            al registrar la venta.
+          </span>
+        </p>
+
+        @if (inventarioLocal()) {
+          <p class="ventas__dato-local" role="status">
+            <app-admin-icon icono="alerta" />
+            Inventario guardado en este dispositivo
+            @if (inventarioActualizadoEn(); as fecha) {
+              el {{ fecha | date: 'dd/MM/yyyy HH:mm' }}
+            }
+            : puede estar desactualizado. El servidor revalidará el stock al
+            confirmar la venta.
+          </p>
+        }
+
+        @if (inventarioSinPermiso()) {
+          <div class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p>
+                Tu sesión no tiene el permiso VENTAS/CONSULTAR, así que no se
+                puede listar el inventario y no es posible elegir líneas. Puedes
+                seguir consultando las ventas recientes.
+              </p>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="recargarInventario()"
+              >
+                Reintentar inventario
+              </button>
+            </div>
+          </div>
+        } @else if (errorInventario(); as errorStock) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p>No se pudo cargar el inventario de la sucursal.</p>
+              <p class="aviso__detalle">{{ errorStock }}</p>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="recargarInventario()"
+              >
+                Reintentar inventario
+              </button>
+            </div>
+          </div>
+        } @else if (
+          !cargandoInventario() &&
+          form.controls.sucursal_id.value !== null &&
+          inventario().length === 0
+        ) {
+          <p class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <span>
+              La sucursal seleccionada no tiene inventario registrado. Elige otra
+              sucursal o registra stock antes de vender.
+            </span>
+          </p>
+        }
+
+        <div
+          class="tabla-scroll"
+          role="region"
+          aria-labelledby="ventas-lineas-titulo"
+        >
+          <table class="tabla tabla--lineas">
+            <caption class="vm-sr-only">
+              Líneas de la venta: {{ numeroLineas() }} de {{ maxLineas }}.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Inventario</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody formArrayName="lineas">
+              @for (linea of lineas.controls; track $index; let i = $index) {
+                <tr [formGroupName]="i">
+                  <th scope="row" class="tabla__numero">{{ i + 1 }}</th>
+                  <td>
+                    <label class="vm-sr-only" [for]="'linea-inventario-' + i">
+                      Inventario de la línea {{ i + 1 }}
+                    </label>
+                    <select
+                      [id]="'linea-inventario-' + i"
+                      class="campo__input campo__input--select"
+                      formControlName="inventario_id"
+                      (change)="cambiarInventarioLinea(i)"
+                      [disabled]="cargandoInventario() || inventario().length === 0"
+                      [attr.aria-invalid]="
+                        lineaInvalida(i, 'inventario_id') ||
+                        errorLinea(i, 'inventario_id') !== null
+                      "
+                      [attr.aria-describedby]="
+                        errorLinea(i, 'inventario_id') !== null
+                          ? 'linea-inventario-error-' + i
+                          : 'ventas-inventario-aviso'
+                      "
+                    >
+                      <option [ngValue]="null">Selecciona un inventario…</option>
+                      @for (item of inventario(); track item.id) {
+                        <option
+                          [ngValue]="item.id"
+                          [disabled]="item.stock_disponible <= 0"
+                        >
+                          {{ etiquetaInventario(item) }}
+                        </option>
+                      }
+                    </select>
+                    @if (errorLinea(i, 'inventario_id'); as mensaje) {
+                      <p
+                        class="campo__error"
+                        [id]="'linea-inventario-error-' + i"
+                        role="alert"
+                      >
+                        {{ mensaje }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <label class="vm-sr-only" [for]="'linea-cantidad-' + i">
+                      Cantidad de la línea {{ i + 1 }}
+                    </label>
+                    <input
+                      [id]="'linea-cantidad-' + i"
+                      class="campo__input"
+                      type="number"
+                      min="1"
+                      [max]="maximoCantidad(i)"
+                      step="1"
+                      inputmode="numeric"
+                      formControlName="cantidad"
+                      (input)="limpiarErroresLineas()"
+                      [attr.aria-invalid]="
+                        lineaInvalida(i, 'cantidad') ||
+                        errorLinea(i, 'cantidad') !== null
+                      "
+                      [attr.aria-describedby]="
+                        errorLinea(i, 'cantidad') !== null
+                          ? 'linea-cantidad-error-' + i
+                          : null
+                      "
+                    />
+                    @if (errorLinea(i, 'cantidad'); as mensaje) {
+                      <p
+                        class="campo__error"
+                        [id]="'linea-cantidad-error-' + i"
+                        role="alert"
+                      >
+                        {{ mensaje }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="boton boton--fila"
+                      (click)="quitarLinea(i)"
+                      [disabled]="!puedeQuitarLinea() || enviando()"
+                      [attr.aria-label]="'Quitar la línea ' + (i + 1)"
+                    >
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="ventas__nota" id="ventas-inventario-aviso">
+          El precio unitario, el subtotal y el total los calcula el backend; la
+          pantalla no envía montos. La cantidad máxima de cada línea es el menor
+          valor entre {{ maxCantidad }} y el stock disponible de la fila.
+        </p>
+
+        <div class="ventas__acciones">
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="
+              enviando() ||
+              !puedeRegistrar() ||
+              cargandoSucursales() ||
+              cargandoInventario() ||
+              sucursalesActivas().length === 0
+            "
+          >
+            <app-admin-icon icono="ventas" />
+            <span>{{ enviando() ? 'Registrando…' : 'Registrar venta' }}</span>
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="iniciarVentaNueva()"
+            [disabled]="enviando()"
+          >
+            Limpiar e iniciar otra
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (resultado(); as venta) {
+    <section class="panel panel--resultado" aria-labelledby="resultado-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="resultado-titulo">
+            Venta #{{ venta.venta_id }} registrada
+          </h2>
+          <p class="panel__ayuda">
+            Respuesta del backend. Los montos y el stock son los que devolvió el
+            servidor, sin recálculos.
+          </p>
+        </div>
+        @if (venta.idempotente) {
+          <span class="etiqueta etiqueta--atencion">
+            Reintento idempotente
+          </span>
+        } @else {
+          <span class="etiqueta">Venta nueva</span>
+        }
+      </div>
+
+      @if (venta.idempotente) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="actualizar" />
+          <span>Venta ya registrada (reintento idempotente).</span>
+        </p>
+      }
+
+      <dl class="datos">
+        <div class="datos__fila">
+          <dt>Venta</dt>
+          <dd>{{ venta.venta_id }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Pago</dt>
+          <dd>{{ venta.pago_id }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Estado</dt>
+          <dd>{{ venta.estado }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Canal</dt>
+          <dd>{{ venta.canal }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Método de pago</dt>
+          <dd>{{ etiquetaMetodo(venta.metodo_pago) }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Total</dt>
+          <dd class="datos__total">
+            {{ monto(venta.total) }}
+            <span class="datos__moneda">{{ venta.moneda }}</span>
+          </dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Operación</dt>
+          <dd class="datos__mono">{{ venta.operacion_id }}</dd>
+        </div>
+      </dl>
+
+      <div class="ventas__acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="verComprobante()"
+        >
+          Ver comprobante
+        </button>
+      </div>
+
+      @if (comprobante(); as recibo) {
+        <p class="aviso aviso--exito" role="status">
+          Comprobante de la venta #{{ recibo.venta_id }} listo. Total:
+          {{ monto(recibo.total) }}.
+        </p>
+      }
+
+      <h3 class="panel__subtitulo">Líneas cobradas</h3>
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Líneas de la venta registrada"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Inventario (id)</th>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Precio unitario</th>
+              <th scope="col">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (linea of venta.lineas; track $index) {
+              <tr>
+                <th scope="row" class="tabla__mono">
+                  {{ linea.inventario_id }}
+                </th>
+                <td>{{ linea.cantidad }}</td>
+                <td class="tabla__precio">
+                  {{ monto(linea.precio_unitario) }}
+                </td>
+                <td class="tabla__precio">{{ monto(linea.subtotal) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="panel__subtitulo">Stock resultante</h3>
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Stock resultante de la venta"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Inventario (id)</th>
+              <th scope="col">Stock actual</th>
+              <th scope="col">Stock reservado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (stock of venta.stock; track $index) {
+              <tr>
+                <th scope="row" class="tabla__mono">
+                  {{ stock.inventario_id }}
+                </th>
+                <td>{{ stock.stock_actual }}</td>
+                <td>{{ stock.stock_reservado }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <section class="panel" aria-labelledby="recientes-titulo">
+    <div class="panel__cabecera">
+      <div>
+        <h2 class="panel__titulo" id="recientes-titulo">Ventas recientes</h2>
+        <p class="panel__ayuda">
+          Vista mínima del backend: solo identificador y estado. No incluye
+          total, líneas, cliente ni fecha, y el listado exige rol
+          ADMINISTRADOR.
+        </p>
+      </div>
+      @if (!ventasSinPermiso()) {
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargarVentas()"
+          [disabled]="cargandoVentas()"
+        >
+          <app-admin-icon icono="actualizar" />
+          <span>Actualizar</span>
+        </button>
+      }
+    </div>
+
+    @if (cargandoVentas()) {
+      <p class="vm-sr-only" role="status">Cargando las ventas recientes…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (ventasSinPermiso()) {
+      <p class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <span>
+          El backend solo expone este listado al rol ADMINISTRADOR. Tu rol puede
+          registrar ventas, pero no consultar el historial.
+        </span>
+      </p>
+    } @else if (errorVentas(); as mensaje) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargarVentas()"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    } @else if (ventasRecientes().length === 0) {
+      <p class="estado-vacio">
+        Todavía no hay ventas registradas en esta empresa.
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Ventas recientes de la empresa"
+        tabindex="0"
+      >
+        <table class="tabla tabla--recientes">
+          <caption class="vm-sr-only">
+            Ventas recientes: {{ ventasRecientes().length }} registros con
+            identificador y estado.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Venta (id)</th>
+              <th scope="col">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (venta of ventasRecientes(); track venta.id) {
+              <tr>
+                <th scope="row" class="tabla__mono">{{ venta.id }}</th>
+                <td>
+                  <span class="estado">
+                    <app-admin-icon class="estado__icono" icono="check" />
+                    {{ venta.estado }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

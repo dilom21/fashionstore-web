@@ -1,0 +1,12 @@
+<section class="pendiente" aria-labelledby="pendiente-titulo">
+  <p class="pendiente__eyebrow">Etapa en construcción</p>
+  <h1 class="pendiente__titulo" id="pendiente-titulo">{{ titulo() }}</h1>
+  <p class="pendiente__texto">{{ descripcion() }}</p>
+  <p class="pendiente__nota">
+    Pantalla en construcción para esta etapa. No mostramos datos simulados:
+    cuando el backend publique el endpoint, esta sección se habilitará.
+  </p>
+  <div class="pendiente__acciones">
+    <a class="pendiente__boton" routerLink="/saas/inicio">Volver al inicio</a>
+  </div>
+</section>

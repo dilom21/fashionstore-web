@@ -1,0 +1,118 @@
+<section class="login" aria-labelledby="saas-login-titulo">
+  <div class="login__panel">
+    <header class="login__cabecera">
+      <p class="login__eyebrow">Acceso de empresa · {{ entorno }}</p>
+      <h1 class="login__titulo" id="saas-login-titulo">
+        Inicia sesión en tu empresa
+      </h1>
+      <p class="login__ayuda">
+        Usa el slug de tu empresa y tu cuenta. El contexto indica si entras como
+        personal de la empresa o como cliente.
+      </p>
+    </header>
+
+    @if (mensajeError()) {
+      <p class="login__error" role="alert">{{ mensajeError() }}</p>
+    }
+
+    <form class="login__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="campo">
+        <label class="campo__label" for="saas-slug">Slug de la empresa</label>
+        <input
+          #slugInput
+          id="saas-slug"
+          class="campo__input"
+          type="text"
+          formControlName="empresa_slug"
+          autocomplete="organization"
+          spellcheck="false"
+          placeholder="mi-empresa"
+          [attr.aria-invalid]="mensajeSlug() !== null"
+          [attr.aria-describedby]="
+            mensajeSlug() !== null ? 'saas-slug-ayuda saas-slug-error' : 'saas-slug-ayuda'
+          "
+        />
+        <p class="campo__ayuda" id="saas-slug-ayuda">
+          Solo minúsculas, números y guiones. Ejemplo: mi-empresa.
+        </p>
+        @if (mensajeSlug()) {
+          <p class="campo__error" id="saas-slug-error" role="alert">
+            {{ mensajeSlug() }}
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label class="campo__label" for="saas-correo">Correo electrónico</label>
+        <input
+          #correoInput
+          id="saas-correo"
+          class="campo__input"
+          type="email"
+          formControlName="correo"
+          autocomplete="username"
+          inputmode="email"
+          [attr.aria-invalid]="mensajeCorreo() !== null"
+          [attr.aria-describedby]="mensajeCorreo() !== null ? 'saas-correo-error' : null"
+        />
+        @if (mensajeCorreo()) {
+          <p class="campo__error" id="saas-correo-error" role="alert">
+            {{ mensajeCorreo() }}
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label class="campo__label" for="saas-password">Contraseña</label>
+        <input
+          #passwordInput
+          id="saas-password"
+          class="campo__input"
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          [attr.aria-invalid]="mensajePassword() !== null"
+          [attr.aria-describedby]="mensajePassword() !== null ? 'saas-password-error' : null"
+        />
+        @if (mensajePassword()) {
+          <p class="campo__error" id="saas-password-error" role="alert">
+            {{ mensajePassword() }}
+          </p>
+        }
+      </div>
+
+      <fieldset class="campo campo--contexto">
+        <legend class="campo__label">Contexto de acceso</legend>
+        <div class="contexto">
+          <label class="contexto__opcion">
+            <input type="radio" formControlName="contexto" value="personal" />
+            <span class="contexto__texto">
+              <span class="contexto__titulo">Personal</span>
+              <span class="contexto__detalle">Trabajo en esta empresa</span>
+            </span>
+          </label>
+          <label class="contexto__opcion">
+            <input type="radio" formControlName="contexto" value="cliente" />
+            <span class="contexto__texto">
+              <span class="contexto__titulo">Cliente</span>
+              <span class="contexto__detalle">Compro en esta empresa</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <button type="submit" class="login__enviar" [disabled]="enviando()">
+        {{ enviando() ? 'Verificando…' : 'Iniciar sesión' }}
+      </button>
+    </form>
+
+    <footer class="login__pie">
+      <p>
+        ¿Recibiste una invitación?
+        <a class="login__enlace" routerLink="/saas/invitacion">
+          Activa tu cuenta
+        </a>
+      </p>
+    </footer>
+  </div>
+</section>

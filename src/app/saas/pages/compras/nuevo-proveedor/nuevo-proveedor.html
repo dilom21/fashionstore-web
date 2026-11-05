@@ -1,0 +1,245 @@
+<section
+  class="panel panel--interno proveedor-alta"
+  aria-labelledby="proveedor-alta-titulo"
+>
+  <div class="panel__cabecera">
+    <div>
+      <h3 class="panel__titulo" id="proveedor-alta-titulo">Nuevo proveedor</h3>
+      <p class="panel__ayuda">
+        El proveedor se crea en la empresa de tu sesión. Marca los productos
+        que podrá abastecer: la orden de compra exige que el producto de la
+        variante esté asociado a su proveedor.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="boton boton--secundario"
+      (click)="cancelar.emit()"
+      [disabled]="guardando()"
+    >
+      <app-admin-icon icono="close" />
+      <span>Cerrar</span>
+    </button>
+  </div>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (error(); as normalizado) {
+    <div class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <div class="aviso__cuerpo">
+        <p class="aviso__titulo-error">
+          @switch (tipoError()) {
+            @case ('permiso') {
+              Tu rol no puede dar de alta proveedores.
+            }
+            @case ('deshabilitado') {
+              El módulo de compras SaaS no está habilitado.
+            }
+            @case ('conflicto') {
+              Ya existe un proveedor con ese NIT en la empresa.
+            }
+            @case ('validacion') {
+              El backend rechazó los datos enviados.
+            }
+            @default {
+              No se pudo crear el proveedor.
+            }
+          }
+        </p>
+        <p>{{ normalizado.mensaje }}</p>
+        @switch (tipoError()) {
+          @case ('permiso') {
+            <p class="aviso__detalle">
+              Se requiere personal con el permiso COMPRAS/GESTIONAR. Los datos
+              escritos se conservan.
+            </p>
+          }
+          @case ('conflicto') {
+            <p class="aviso__detalle">
+              Corrige el NIT o busca el proveedor existente en el listado. Los
+              datos escritos se conservan.
+            </p>
+          }
+          @case ('validacion') {
+            <p class="aviso__detalle">
+              Revisa la razón social, el correo y los límites de longitud.
+            </p>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+    <div class="formulario">
+      <div class="campo">
+        <label class="campo__label" for="proveedor-razon">Razón social</label>
+        <input
+          id="proveedor-razon"
+          class="campo__input"
+          type="text"
+          formControlName="razon_social"
+          [attr.maxlength]="maxRazonSocial"
+          [attr.aria-invalid]="mensajeCampo('razon_social') !== null"
+          [attr.aria-describedby]="
+            mensajeCampo('razon_social') !== null
+              ? 'proveedor-razon-error'
+              : null
+          "
+        />
+        @if (mensajeCampo('razon_social'); as mensaje) {
+          <p class="campo__error" id="proveedor-razon-error" role="alert">
+            {{ mensaje }}
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label class="campo__label" for="proveedor-nit">
+          NIT <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="proveedor-nit"
+          class="campo__input"
+          type="text"
+          formControlName="nit"
+          [attr.maxlength]="maxNit"
+          [attr.aria-invalid]="mensajeCampo('nit') !== null"
+        />
+        @if (mensajeCampo('nit'); as mensaje) {
+          <p class="campo__error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label class="campo__label" for="proveedor-correo">
+          Correo <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="proveedor-correo"
+          class="campo__input"
+          type="email"
+          formControlName="correo"
+          [attr.maxlength]="maxCorreo"
+          [attr.aria-invalid]="mensajeCampo('correo') !== null"
+        />
+        @if (mensajeCampo('correo'); as mensaje) {
+          <p class="campo__error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label class="campo__label" for="proveedor-telefono">
+          Teléfono <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="proveedor-telefono"
+          class="campo__input"
+          type="tel"
+          formControlName="telefono"
+          [attr.maxlength]="maxTelefono"
+          [attr.aria-invalid]="mensajeCampo('telefono') !== null"
+        />
+        @if (mensajeCampo('telefono'); as mensaje) {
+          <p class="campo__error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+
+      <div class="campo campo--ancho">
+        <label class="campo__label" for="proveedor-direccion">
+          Dirección <span class="campo__opcional">(opcional)</span>
+        </label>
+        <input
+          id="proveedor-direccion"
+          class="campo__input"
+          type="text"
+          formControlName="direccion"
+          [attr.maxlength]="maxDireccion"
+          [attr.aria-invalid]="mensajeCampo('direccion') !== null"
+        />
+        @if (mensajeCampo('direccion'); as mensaje) {
+          <p class="campo__error" role="alert">{{ mensaje }}</p>
+        }
+      </div>
+    </div>
+
+    <fieldset class="proveedor-alta__productos">
+      <legend class="campo__label">
+        Productos que abastece
+        <span class="campo__opcional">(máximo {{ maxProductos }})</span>
+      </legend>
+
+      @if (cargandoProductos()) {
+        <p class="campo__aviso" role="status">Cargando productos…</p>
+      } @else if (productosSinPermiso()) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            Tu sesión no puede consultar el catálogo; el proveedor se creará sin
+            productos asociados.
+          </span>
+        </p>
+      } @else if (errorProductos(); as mensaje) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>{{ mensaje }}</p>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="cargarProductos()"
+            >
+              Reintentar productos
+            </button>
+          </div>
+        </div>
+      } @else if (productos().length === 0) {
+        <p class="campo__aviso" role="status">
+          La empresa no tiene productos registrados. El proveedor se creará sin
+          asociaciones.
+        </p>
+      } @else {
+        <div class="proveedor-alta__lista">
+          @for (producto of productos(); track producto.id) {
+            <label class="proveedor-alta__opcion">
+              <input
+                type="checkbox"
+                [checked]="estaSeleccionado(producto.id)"
+                (change)="alternarProducto(producto.id, $event)"
+              />
+              <span>{{ producto.nombre }}</span>
+              <span class="proveedor-alta__meta">#{{ producto.id }}</span>
+            </label>
+          }
+        </div>
+      }
+
+      <p class="campo__aviso" role="status">{{ mensajeSeleccion() }}</p>
+    </fieldset>
+
+    <div class="acciones">
+      <button
+        type="submit"
+        class="boton boton--primario"
+        [disabled]="!puedeGuardar()"
+      >
+        <app-admin-icon icono="mas" />
+        <span>{{ guardando() ? 'Creando…' : 'Crear proveedor' }}</span>
+      </button>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        (click)="cancelar.emit()"
+        [disabled]="guardando()"
+      >
+        Cancelar
+      </button>
+    </div>
+  </form>
+</section>

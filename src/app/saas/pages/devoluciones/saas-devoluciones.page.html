@@ -1,0 +1,1277 @@
+<section
+  class="devoluciones"
+  aria-labelledby="devoluciones-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="devoluciones__cabecera">
+    <div class="devoluciones__cabecera-texto">
+      <p class="devoluciones__eyebrow">Postventa</p>
+      <h1 class="devoluciones__titulo" id="devoluciones-titulo">
+        Devoluciones
+      </h1>
+      <p class="devoluciones__ayuda">
+        Gestiona devoluciones solicitadas por los clientes: apruébalas o
+        recházalas y, una vez aprobadas, procésalas para reponer stock. Los
+        reembolsos son informativos.
+      </p>
+    </div>
+    <div class="devoluciones__resumen" role="status">
+      <span>{{ devoluciones().length }} devoluciones en esta página</span>
+      <span class="devoluciones__resumen-sep" aria-hidden="true">·</span>
+      <span>página {{ pagina() + 1 }}</span>
+    </div>
+  </header>
+
+  <p class="aviso aviso--atencion" role="status">
+    <app-admin-icon class="aviso__icono" icono="alerta" />
+    <span>
+      Puedes crear devoluciones indicando el número de venta del comprobante. El
+      backend calcula el monto estimado y el reembolso es solo informativo: esta
+      pantalla no ejecuta pagos.
+    </span>
+  </p>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (!puedeOperar()) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>
+        El backend solo permite operar devoluciones a ADMINISTRADOR y
+        ENCARGADO_SUCURSAL. Tu rol puede consultar el listado, pero las acciones
+        están ocultas.
+      </span>
+    </p>
+  }
+
+  <!-- ========================= Alta de devolución ======================= -->
+  @if (altaAbierta()) {
+    <section class="panel" aria-labelledby="devolucion-alta-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="devolucion-alta-titulo">
+            Nueva devolución
+          </h2>
+          <p class="panel__ayuda">
+            Indica el número de venta del comprobante, carga sus líneas y elige
+            cuántas unidades devuelve cada una. La devolución se crea en estado
+            SOLICITADA.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarAlta()"
+          [disabled]="creando()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Cerrar</span>
+        </button>
+      </div>
+
+      @if (errorCreacion(); as error) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p class="aviso__titulo-error">
+              @switch (tipoErrorCreacion()) {
+                @case ('permiso') {
+                  Tu rol no puede crear devoluciones.
+                }
+                @case ('no-existe') {
+                  Esa venta no existe en tu empresa.
+                }
+                @case ('deshabilitado') {
+                  El módulo de devoluciones SaaS no está habilitado.
+                }
+                @case ('conflicto') {
+                  Conflicto al crear la devolución.
+                }
+                @case ('validacion') {
+                  El backend rechazó los datos enviados.
+                }
+                @default {
+                  No se pudo crear la devolución.
+                }
+              }
+            </p>
+            <p>{{ error.mensaje }}</p>
+            @switch (tipoErrorCreacion()) {
+              @case ('conflicto') {
+                <p class="aviso__detalle">
+                  Puede ser disponibilidad insuficiente o un identificador de
+                  operación reutilizado con otra carga. Los datos y el
+                  identificador se conservan para reintentar.
+                </p>
+              }
+              @case ('permiso') {
+                <p class="aviso__detalle">
+                  El backend solo autoriza a ADMINISTRADOR y
+                  ENCARGADO_SUCURSAL.
+                </p>
+              }
+              @case ('no-existe') {
+                <p class="aviso__detalle">
+                  Revisa el número de venta del comprobante y vuelve a cargar
+                  sus líneas.
+                </p>
+              }
+              @case ('deshabilitado') {
+                <p class="aviso__detalle">
+                  La empresa todavía no tiene devoluciones SaaS habilitadas en el
+                  servidor. Los datos se conservan.
+                </p>
+              }
+              @case ('validacion') {
+                <p class="aviso__detalle">
+                  Revisa el motivo y las cantidades de cada línea.
+                </p>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      @if (mensajeValidacionDevolucion(); as mensaje) {
+        <p class="aviso aviso--atencion" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>{{ mensaje }}</span>
+        </p>
+      }
+
+      <form
+        [formGroup]="formDevolucion"
+        (ngSubmit)="enviarDevolucion()"
+        novalidate
+      >
+        <div class="formulario">
+          <div class="campo">
+            <label class="campo__label" for="devolucion-venta">
+              Número de venta
+            </label>
+            <div class="devoluciones__venta">
+              <input
+                #ventaInput
+                id="devolucion-venta"
+                class="campo__input campo__input--numero"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                formControlName="venta_id"
+                [attr.aria-invalid]="mensajeVentaId() !== null"
+                [attr.aria-describedby]="
+                  mensajeVentaId() !== null
+                    ? 'devolucion-venta-aviso devolucion-venta-error'
+                    : 'devolucion-venta-aviso'
+                "
+              />
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="cargarLineasVenta()"
+                [disabled]="cargandoLineas() || creando()"
+              >
+                {{ cargandoLineas() ? 'Cargando…' : 'Cargar líneas' }}
+              </button>
+            </div>
+            <p class="campo__aviso" id="devolucion-venta-aviso">
+              Es el número que figura en el comprobante de la venta.
+            </p>
+            @if (mensajeVentaId()) {
+              <p class="campo__error" id="devolucion-venta-error" role="alert">
+                {{ mensajeVentaId() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="devolucion-motivo">
+              Motivo general
+            </label>
+            <input
+              #motivoDevolucionInput
+              id="devolucion-motivo"
+              class="campo__input"
+              type="text"
+              formControlName="motivo"
+              [attr.maxlength]="maxMotivo"
+              [attr.aria-invalid]="mensajeMotivo() !== null"
+              [attr.aria-describedby]="
+                mensajeMotivo() !== null
+                  ? 'devolucion-motivo-aviso devolucion-motivo-error'
+                  : 'devolucion-motivo-aviso'
+              "
+            />
+            <p class="campo__aviso" id="devolucion-motivo-aviso">
+              Obligatorio, de 1 a {{ maxMotivo }} caracteres.
+            </p>
+            @if (mensajeMotivo()) {
+              <p class="campo__error" id="devolucion-motivo-error" role="alert">
+                {{ mensajeMotivo() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label class="campo__label" for="devolucion-observacion">
+              Observación <span class="campo__opcional">(opcional)</span>
+            </label>
+            <textarea
+              #observacionDevolucionInput
+              id="devolucion-observacion"
+              class="campo__input campo__input--area"
+              formControlName="observacion"
+              rows="2"
+              [attr.maxlength]="maxObservacionDevolucion"
+              [attr.aria-invalid]="mensajeObservacion() !== null"
+              [attr.aria-describedby]="
+                mensajeObservacion() !== null
+                  ? 'devolucion-observacion-aviso devolucion-observacion-error'
+                  : 'devolucion-observacion-aviso'
+              "
+            ></textarea>
+            <p class="campo__aviso" id="devolucion-observacion-aviso">
+              Hasta {{ maxObservacionDevolucion }} caracteres. Si se deja vacía,
+              se omite del cuerpo.
+            </p>
+            @if (mensajeObservacion()) {
+              <p
+                class="campo__error"
+                id="devolucion-observacion-error"
+                role="alert"
+              >
+                {{ mensajeObservacion() }}
+              </p>
+            }
+          </div>
+        </div>
+
+        @if (errorLineas(); as errorVenta) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p class="aviso__titulo-error">
+                @switch (tipoErrorLineas()) {
+                  @case ('no-existe') {
+                    Esa venta no existe en tu empresa.
+                  }
+                  @case ('permiso') {
+                    Tu rol no puede consultar las líneas de esa venta.
+                  }
+                  @case ('deshabilitado') {
+                    El módulo de devoluciones SaaS no está habilitado.
+                  }
+                  @default {
+                    No se pudieron cargar las líneas de la venta.
+                  }
+                }
+              </p>
+              <p>{{ errorVenta.mensaje }}</p>
+            </div>
+          </div>
+        }
+
+        @if (cargandoLineas()) {
+          <p class="vm-sr-only" role="status">
+            Cargando las líneas de la venta…
+          </p>
+          <div class="esqueleto" aria-hidden="true">
+            <div class="esqueleto__bloque"></div>
+            <div class="esqueleto__bloque"></div>
+          </div>
+        } @else if (lineasVenta(); as venta) {
+          <dl class="datos">
+            <div class="datos__fila">
+              <dt>Venta</dt>
+              <dd class="datos__mono">{{ venta.venta_id }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Sucursal</dt>
+              <dd>Sucursal #{{ venta.sucursal_id }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Estado</dt>
+              <dd>{{ venta.estado }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Total de la venta</dt>
+              <dd>{{ monto(venta.total) }}</dd>
+            </div>
+          </dl>
+
+          <h3 class="panel__subtitulo">Líneas devolvibles</h3>
+          @if (venta.lineas.length === 0) {
+            <p class="estado-vacio">
+              La venta no tiene líneas para devolver.
+            </p>
+          } @else {
+            <div
+              class="tabla-scroll"
+              role="region"
+              aria-label="Líneas devolvibles de la venta"
+            >
+              <table class="tabla tabla--alta">
+                <thead>
+                  <tr>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Talla/Color</th>
+                    <th scope="col" class="tabla__numero">Vendidas</th>
+                    <th scope="col" class="tabla__numero">Ya devueltas</th>
+                    <th scope="col" class="tabla__numero">Disponibles</th>
+                    <th scope="col">Cantidad a devolver</th>
+                    <th scope="col">Reponer stock</th>
+                    <th scope="col">Motivo del ítem</th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  @for (
+                    item of itemsDevolucion.controls;
+                    track $index;
+                    let i = $index
+                  ) {
+                    <tr [formGroupName]="i">
+                      <th scope="row" class="tabla__mono">
+                        {{ venta.lineas[i].sku }}
+                      </th>
+                      <td>
+                        {{ venta.lineas[i].producto_nombre }} ·
+                        {{ venta.lineas[i].talla }}/{{ venta.lineas[i].color }}
+                      </td>
+                      <td class="tabla__numero">
+                        {{ venta.lineas[i].cantidad }}
+                      </td>
+                      <td class="tabla__numero">
+                        {{ venta.lineas[i].cantidad_devuelta }}
+                      </td>
+                      <td class="tabla__numero">
+                        <strong>{{ disponibleDeItem(i) }}</strong>
+                      </td>
+                      <td>
+                        @if (itemSinDisponible(i)) {
+                          <p class="devoluciones__sin-stock" role="status">
+                            Sin unidades disponibles para devolver
+                          </p>
+                        } @else {
+                          <label class="vm-sr-only" [for]="'devolucion-cantidad-' + i">
+                            Cantidad a devolver de la línea {{ i + 1 }}
+                          </label>
+                          <input
+                            #devolucionCantidadInput
+                            [id]="'devolucion-cantidad-' + i"
+                            class="campo__input campo__input--numero"
+                            type="number"
+                            min="0"
+                            [max]="disponibleDeItem(i)"
+                            step="1"
+                            inputmode="numeric"
+                            formControlName="cantidad"
+                            (input)="limpiarErroresDevolucion()"
+                            [attr.aria-invalid]="
+                              itemInvalido(i, 'cantidad') ||
+                              errorItem(i, 'cantidad') !== null
+                            "
+                            [attr.aria-describedby]="
+                              errorItem(i, 'cantidad') !== null
+                                ? 'devolucion-cantidad-error-' + i
+                                : null
+                            "
+                          />
+                          @if (errorItem(i, 'cantidad'); as mensajeItem) {
+                            <p
+                              class="campo__error"
+                              [id]="'devolucion-cantidad-error-' + i"
+                              role="alert"
+                            >
+                              {{ mensajeItem }}
+                            </p>
+                          }
+                        }
+                      </td>
+                      <td>
+                        <label class="vm-sr-only" [for]="'devolucion-reponer-' + i">
+                          Reponer stock de la línea {{ i + 1 }}
+                        </label>
+                        <input
+                          [id]="'devolucion-reponer-' + i"
+                          type="checkbox"
+                          formControlName="reponer"
+                          [disabled]="itemSinDisponible(i)"
+                        />
+                      </td>
+                      <td>
+                        <label class="vm-sr-only" [for]="'devolucion-motivo-item-' + i">
+                          Motivo de la línea {{ i + 1 }}
+                        </label>
+                        <input
+                          #devolucionMotivoItemInput
+                          [id]="'devolucion-motivo-item-' + i"
+                          class="campo__input"
+                          type="text"
+                          [attr.maxlength]="maxMotivo"
+                          formControlName="motivo"
+                          [disabled]="itemSinDisponible(i)"
+                          (input)="limpiarErroresDevolucion()"
+                          [attr.aria-invalid]="
+                            itemInvalido(i, 'motivo') ||
+                            errorItem(i, 'motivo') !== null
+                          "
+                          [attr.aria-describedby]="
+                            errorItem(i, 'motivo') !== null
+                              ? 'devolucion-motivo-item-error-' + i
+                              : null
+                          "
+                        />
+                        @if (errorItem(i, 'motivo'); as mensajeItem) {
+                          <p
+                            class="campo__error"
+                            [id]="'devolucion-motivo-item-error-' + i"
+                            role="alert"
+                          >
+                            {{ mensajeItem }}
+                          </p>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <p class="operacion">
+          <span class="operacion__label">Operación</span>
+          <code class="operacion__valor">{{ operacionDevolucion() }}</code>
+        </p>
+
+        <p class="devoluciones__nota">
+          El backend valida la disponibilidad y calcula el monto estimado. El
+          reembolso es informativo: esta pantalla no mueve dinero.
+        </p>
+
+        <div class="acciones">
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="creando() || lineasVenta() === null"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>{{ creando() ? 'Creando…' : 'Crear devolución' }}</span>
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarAlta()"
+            [disabled]="creando()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <!-- ======================= Resultado del alta ========================= -->
+  @if (resultadoCreacion(); as creada) {
+    <section class="panel panel--resultado" aria-labelledby="devolucion-creada-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="devolucion-creada-titulo">
+            Devolución #{{ creada.devolucion_id }} creada
+          </h2>
+          <p class="panel__ayuda">
+            Respuesta del backend, sin recálculos. Venta #{{ creada.venta_id }}.
+          </p>
+        </div>
+        @if (creada.idempotente) {
+          <span class="etiqueta etiqueta--atencion">
+            Reintento idempotente
+          </span>
+        } @else {
+          <span class="etiqueta">Devolución nueva</span>
+        }
+      </div>
+
+      <dl class="datos">
+        <div class="datos__fila">
+          <dt>Estado</dt>
+          <dd>{{ etiquetaEstado(creada.estado) }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Motivo</dt>
+          <dd>{{ creada.motivo }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Unidades</dt>
+          <dd>{{ creada.unidades }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Monto estimado</dt>
+          <dd>{{ monto(creada.monto_estimado) }} {{ creada.moneda }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Stock modificado</dt>
+          <dd>{{ textoBooleano(creada.stock_modificado) }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Operación</dt>
+          <dd class="datos__mono">{{ creada.operacion_id }}</dd>
+        </div>
+      </dl>
+
+      <h3 class="panel__subtitulo">Reembolso declarado</h3>
+      <dl class="datos">
+        <div class="datos__fila">
+          <dt>Medio</dt>
+          <dd class="datos__literal">{{ creada.reembolso.medio }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Ejecutado</dt>
+          <dd class="datos__literal">{{ creada.reembolso.ejecutado }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Monto</dt>
+          <dd>{{ monto(creada.reembolso.monto) }} {{ creada.moneda }}</dd>
+        </div>
+      </dl>
+      <p class="acciones__nota" role="status">
+        {{ textoReembolso(creada.reembolso.medio, creada.reembolso.ejecutado) }}.
+        Es informativo: no se ejecutó ningún pago desde esta pantalla.
+      </p>
+    </section>
+  }
+
+  <section class="panel" aria-labelledby="devoluciones-lista-titulo">
+    <div class="panel__cabecera">
+      <div>
+        <h2 class="panel__titulo" id="devoluciones-lista-titulo">
+          Devoluciones de la empresa
+        </h2>
+        <p class="panel__ayuda">
+          Sin total del servidor: se muestran hasta {{ limite }} devoluciones por
+          página y el botón Siguiente se habilita solo con una página completa.
+        </p>
+      </div>
+      @if (!sinPermiso()) {
+        <div class="devoluciones__paginacion">
+          @if (puedeOperar()) {
+            <button
+              type="button"
+              class="boton boton--primario"
+              (click)="abrirAlta()"
+              [disabled]="altaAbierta() || creando()"
+            >
+              <app-admin-icon icono="mas" />
+              <span>Nueva devolución</span>
+            </button>
+          }
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+            [disabled]="cargando()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Actualizar</span>
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="devoluciones__filtros">
+      <div class="campo campo--filtro">
+        <label class="campo__label" for="devoluciones-filtro-estado">
+          Filtrar por estado
+        </label>
+        <select
+          id="devoluciones-filtro-estado"
+          class="campo__input campo__input--select"
+          [value]="filtroEstado() ?? ''"
+          (change)="cambiarFiltro($event)"
+          [disabled]="cargando()"
+        >
+          <option value="">Todos los estados</option>
+          @for (estado of estados; track estado.valor) {
+            <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+          }
+        </select>
+      </div>
+      <p class="devoluciones__rango" aria-live="polite">{{ textoRango() }}</p>
+    </div>
+
+    @if (cargando()) {
+      <p class="vm-sr-only" role="status">Cargando las devoluciones…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (sinPermiso()) {
+      <div class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>
+            El backend solo expone las devoluciones a ADMINISTRADOR y
+            ENCARGADO_SUCURSAL. Tu rol actual no puede consultarlas.
+          </p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (errorListado(); as mensaje) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (devoluciones().length === 0) {
+      <p class="estado-vacio">
+        @if (filtroEstado() !== null) {
+          No hay devoluciones en estado
+          «{{ etiquetaEstado(filtroEstado() ?? '') }}». Prueba con otro estado o
+          quita el filtro.
+        } @else {
+          No hay devoluciones registradas en esta empresa para esta página.
+        }
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de devoluciones"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Devoluciones de la empresa: {{ devoluciones().length }} registros.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Devolución (id)</th>
+              <th scope="col">Venta (id)</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Motivo</th>
+              <th scope="col">Sucursal</th>
+              <th scope="col" class="tabla__numero">Unidades</th>
+              <th scope="col" class="tabla__numero">Monto estimado</th>
+              <th scope="col">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (devolucion of devoluciones(); track devolucion.id) {
+              <tr
+                [class.tabla__fila--activa]="
+                  devolucionSeleccionada()?.id === devolucion.id
+                "
+              >
+                <th scope="row" class="tabla__mono">{{ devolucion.id }}</th>
+                <td class="tabla__mono">{{ devolucion.venta_id }}</td>
+                <td>{{ fechaHora(devolucion.fecha_hora) }}</td>
+                <td>
+                  <span class="estado estado--{{ devolucion.estado }}">
+                    {{ etiquetaEstado(devolucion.estado) }}
+                  </span>
+                </td>
+                <td class="tabla__motivo" [title]="devolucion.motivo">
+                  {{ devolucion.motivo }}
+                </td>
+                <td>{{ devolucion.sucursal_nombre }}</td>
+                <td class="tabla__numero">{{ devolucion.unidades }}</td>
+                <td class="tabla__numero">
+                  {{ montoSimple(devolucion.monto_estimado) }}
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="boton boton--fila"
+                    [attr.aria-label]="
+                      'Ver el detalle de la devolución ' + devolucion.id
+                    "
+                    [attr.aria-expanded]="
+                      devolucionSeleccionada()?.id === devolucion.id
+                    "
+                    (click)="verDetalle(devolucion)"
+                    [disabled]="cargandoDetalle()"
+                  >
+                    Ver detalle
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="devoluciones__pie">
+      <div class="devoluciones__paginacion">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaAnterior()"
+          [disabled]="pagina() === 0 || cargando()"
+        >
+          <app-admin-icon icono="chevron-left" />
+          <span>Anterior</span>
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaSiguiente()"
+          [disabled]="!hayPaginaSiguiente() || cargando()"
+        >
+          <span>Siguiente</span>
+          <app-admin-icon icono="chevron-right" />
+        </button>
+      </div>
+      <p class="devoluciones__nota">
+        La devolución se crea en estado SOLICITADA y se aprueba o rechaza desde
+        este listado. El contrato no permite editar ni borrar una devolución.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========================= Panel de detalle ========================= -->
+  @if (devolucionSeleccionada(); as resumen) {
+    <section
+      class="panel panel--detalle"
+      aria-labelledby="devolucion-detalle-titulo"
+    >
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="devolucion-detalle-titulo">
+            Devolución #{{ resumen.id }}
+          </h2>
+          <p class="panel__ayuda">
+            Venta #{{ resumen.venta_id }} · {{ resumen.sucursal_nombre }} ·
+            estado {{ etiquetaEstado(resumen.estado) }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarDetalle()"
+          [disabled]="confirmando() || procesando()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Cerrar</span>
+        </button>
+      </div>
+
+      @if (cargandoDetalle()) {
+        <p class="vm-sr-only" role="status">
+          Cargando el detalle de la devolución…
+        </p>
+        <div class="esqueleto" aria-hidden="true">
+          <div class="esqueleto__bloque"></div>
+          <div class="esqueleto__bloque"></div>
+        </div>
+      } @else if (errorDetalle(); as mensaje) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>{{ mensaje }}</p>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="recargarDetalle()"
+            >
+              <app-admin-icon icono="actualizar" />
+              <span>Reintentar</span>
+            </button>
+          </div>
+        </div>
+      } @else if (detalle(); as devolucion) {
+        <dl class="datos">
+          <div class="datos__fila">
+            <dt>Venta</dt>
+            <dd class="datos__mono">{{ devolucion.venta_id }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Fecha y hora</dt>
+            <dd>{{ fechaHora(devolucion.fecha_hora) }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Estado</dt>
+            <dd>
+              <span class="estado estado--{{ devolucion.estado }}">
+                {{ etiquetaEstado(devolucion.estado) }}
+              </span>
+            </dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Sucursal</dt>
+            <dd>{{ devolucion.sucursal_nombre }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Motivo</dt>
+            <dd>{{ devolucion.motivo }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Observación</dt>
+            <dd>
+              @if (devolucion.observacion) {
+                {{ devolucion.observacion }}
+              } @else {
+                <span class="datos__vacio">—</span>
+              }
+            </dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Unidades</dt>
+            <dd>{{ devolucion.unidades }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Total de la venta</dt>
+            <dd>{{ monto(devolucion.venta_total) }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Monto estimado</dt>
+            <dd>{{ monto(devolucion.monto_estimado) }}</dd>
+          </div>
+        </dl>
+
+        <!-- Acciones según el estado -->
+        @if (puedeOperar()) {
+          @switch (devolucion.estado) {
+            @case ('SOLICITADA') {
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="boton boton--primario"
+                  (click)="abrirConfirmacion('aprobar')"
+                  [disabled]="confirmando()"
+                >
+                  <app-admin-icon icono="check" />
+                  <span>Aprobar</span>
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--peligro"
+                  (click)="abrirConfirmacion('rechazar')"
+                  [disabled]="confirmando()"
+                >
+                  <app-admin-icon icono="cancelar" />
+                  <span>Rechazar</span>
+                </button>
+              </div>
+            }
+            @case ('APROBADA') {
+              <div class="proceso">
+                <div>
+                  <h3 class="panel__subtitulo">Procesar devolución</h3>
+                  <p class="proceso__ayuda">
+                    El backend repone el stock según los ítems y registra el
+                    reembolso declarado. Esta pantalla no ejecuta pagos.
+                  </p>
+                  <p class="operacion">
+                    <span class="operacion__label">Operación</span>
+                    <code class="operacion__valor">{{
+                      operacionProceso()
+                    }}</code>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="boton boton--primario"
+                  (click)="procesar()"
+                  [disabled]="procesando()"
+                >
+                  <app-admin-icon icono="actualizar" />
+                  <span>{{ procesando() ? 'Procesando…' : 'Procesar' }}</span>
+                </button>
+              </div>
+            }
+          }
+        }
+
+        @if (devolucion.estado === 'COMPLETADA' || devolucion.estado === 'RECHAZADA') {
+          <p class="acciones__nota" role="status">
+            La devolución está {{ etiquetaEstado(devolucion.estado) }}: su
+            detalle es de solo lectura.
+          </p>
+        }
+
+        @if (errorProceso(); as error) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p class="aviso__titulo-error">
+                @switch (tipoErrorProceso()) {
+                  @case ('permiso') {
+                    Tu rol no puede procesar devoluciones.
+                  }
+                  @case ('deshabilitado') {
+                    El módulo de devoluciones SaaS no está habilitado.
+                  }
+                  @case ('conflicto') {
+                    Conflicto en la devolución.
+                  }
+                  @default {
+                    No se pudo procesar la devolución.
+                  }
+                }
+              </p>
+              <p>{{ error.mensaje }}</p>
+              @switch (tipoErrorProceso()) {
+                @case ('conflicto') {
+                  <p class="aviso__detalle">
+                    El identificador de operación ya se usó con otra carga o la
+                    devolución cambió de estado. Conserva el identificador solo
+                    si reintentas exactamente la misma operación.
+                  </p>
+                }
+                @case ('permiso') {
+                  <p class="aviso__detalle">
+                    El backend solo autoriza a ADMINISTRADOR y
+                    ENCARGADO_SUCURSAL.
+                  </p>
+                }
+                @case ('deshabilitado') {
+                  <p class="aviso__detalle">
+                    La empresa todavía no tiene devoluciones SaaS habilitadas en
+                    el servidor. El identificador de operación se conserva.
+                  </p>
+                }
+                @default {
+                  <p class="aviso__detalle">
+                    Puedes reintentar: el identificador de operación se
+                    conserva.
+                  </p>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Ítems de la devolución -->
+        <h3 class="panel__subtitulo">Ítems devueltos</h3>
+        <div
+          class="tabla-scroll"
+          role="region"
+          aria-label="Ítems de la devolución"
+          tabindex="0"
+        >
+          <table class="tabla tabla--items">
+            <thead>
+              <tr>
+                <th scope="col">SKU</th>
+                <th scope="col" class="tabla__numero">Cantidad</th>
+                <th scope="col">Reponer</th>
+                <th scope="col">Motivo</th>
+                <th scope="col" class="tabla__numero">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of devolucion.items; track item.detalle_devolucion_id) {
+                <tr>
+                  <th scope="row" class="tabla__mono">{{ item.sku }}</th>
+                  <td class="tabla__numero">{{ item.cantidad }}</td>
+                  <td>
+                    <span
+                      class="etiqueta"
+                      [class.etiqueta--atencion]="!item.reponer"
+                    >
+                      {{ textoBooleano(item.reponer) }}
+                    </span>
+                  </td>
+                  <td class="tabla__motivo">
+                    @if (item.motivo) {
+                      {{ item.motivo }}
+                    } @else {
+                      <span class="datos__vacio">—</span>
+                    }
+                  </td>
+                  <td class="tabla__numero">{{ monto(item.subtotal) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Reembolso informativo -->
+        <h3 class="panel__subtitulo">Reembolso</h3>
+        @if (devolucion.reembolso; as reembolso) {
+          <dl class="datos">
+            <div class="datos__fila">
+              <dt>Reembolso (id)</dt>
+              <dd class="datos__mono">{{ reembolso.reembolso_id }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Estado</dt>
+              <dd>{{ reembolso.estado }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Medio</dt>
+              <dd class="datos__literal">{{ reembolso.medio }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Ejecutado</dt>
+              <dd class="datos__literal">{{ reembolso.ejecutado }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Monto</dt>
+              <dd>{{ monto(reembolso.monto) }} {{ reembolso.moneda }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Referencia</dt>
+              <dd>
+                @if (reembolso.referencia) {
+                  {{ reembolso.referencia }}
+                } @else {
+                  <span class="datos__vacio">—</span>
+                }
+              </dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Creado</dt>
+              <dd>{{ fechaHora(reembolso.fecha_creacion) }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Ejecutado el</dt>
+              <dd>{{ fechaHora(reembolso.fecha_ejecucion) }}</dd>
+            </div>
+          </dl>
+
+          @if (reembolsoNoDisponible(reembolso)) {
+            <p class="aviso aviso--atencion" role="status">
+              <app-admin-icon class="aviso__icono" icono="alerta" />
+              <span>Reembolso no ejecutado por el sistema (informativo)</span>
+            </p>
+          }
+        } @else {
+          <p class="estado-vacio">
+            La devolución todavía no tiene un reembolso registrado. El backend lo
+            crea al procesarla.
+          </p>
+        }
+
+        @if (resultadoProceso(); as resultado) {
+          <section
+            class="panel panel--interno panel--resultado"
+            aria-labelledby="proceso-resultado-titulo"
+          >
+            <div class="panel__cabecera">
+              <div>
+                <h3 class="panel__titulo" id="proceso-resultado-titulo">
+                  Devolución #{{ resultado.devolucion_id }} procesada
+                </h3>
+                <p class="panel__ayuda">
+                  Datos devueltos por el backend, sin recálculos.
+                </p>
+              </div>
+              @if (resultado.idempotente) {
+                <span class="etiqueta etiqueta--atencion">
+                  Reintento idempotente
+                </span>
+              } @else {
+                <span class="etiqueta">Proceso nuevo</span>
+              }
+            </div>
+
+            <dl class="datos">
+              <div class="datos__fila">
+                <dt>Estado</dt>
+                <dd>{{ resultado.estado }}</dd>
+              </div>
+              <div class="datos__fila">
+                <dt>Unidades</dt>
+                <dd>{{ resultado.unidades }}</dd>
+              </div>
+              <div class="datos__fila">
+                <dt>Unidades repuestas</dt>
+                <dd>{{ resultado.unidades_repuestas }}</dd>
+              </div>
+              <div class="datos__fila">
+                <dt>Operación</dt>
+                <dd class="datos__mono">{{ resultado.operacion_id }}</dd>
+              </div>
+            </dl>
+
+            <h4 class="panel__subtitulo">Stock resultante</h4>
+            <div
+              class="tabla-scroll"
+              role="region"
+              aria-label="Stock resultante de la devolución"
+              tabindex="0"
+            >
+              <table class="tabla tabla--stock">
+                <thead>
+                  <tr>
+                    <th scope="col">Inventario (id)</th>
+                    <th scope="col" class="tabla__numero">Stock actual</th>
+                    <th scope="col" class="tabla__numero">Stock reservado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (stock of resultado.stock; track stock.inventario_id) {
+                    <tr>
+                      <th scope="row" class="tabla__mono">
+                        {{ stock.inventario_id }}
+                      </th>
+                      <td class="tabla__numero">{{ stock.stock_actual }}</td>
+                      <td class="tabla__numero">
+                        {{ stock.stock_reservado }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <h4 class="panel__subtitulo">Reembolso declarado</h4>
+            <dl class="datos">
+              <div class="datos__fila">
+                <dt>Medio</dt>
+                <dd class="datos__literal">{{ resultado.reembolso.medio }}</dd>
+              </div>
+              <div class="datos__fila">
+                <dt>Ejecutado</dt>
+                <dd class="datos__literal">
+                  {{ resultado.reembolso.ejecutado }}
+                </dd>
+              </div>
+              <div class="datos__fila">
+                <dt>Monto</dt>
+                <dd>
+                  {{ monto(resultado.reembolso.monto) }}
+                  {{ resultado.reembolso.moneda }}
+                </dd>
+              </div>
+            </dl>
+
+            @if (reembolsoNoDisponible(resultado.reembolso)) {
+              <p class="aviso aviso--atencion" role="status">
+                <app-admin-icon class="aviso__icono" icono="alerta" />
+                <span>Reembolso no ejecutado por el sistema (informativo)</span>
+              </p>
+            }
+
+            <div class="acciones">
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="cerrarResultadoProceso()"
+              >
+                Ocultar resultado
+              </button>
+            </div>
+          </section>
+        }
+      }
+    </section>
+  }
+</section>
+
+<!-- ==================== Confirmación aprobar/rechazar =================== -->
+@if (confirmacion(); as pendiente) {
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="devolucion-confirmar-titulo"
+    aria-describedby="devolucion-confirmar-detalle"
+    (keydown.escape)="cerrarConfirmacion()"
+    (keydown)="contenerFoco($event)"
+  >
+    <div class="modal__panel">
+      <h2 class="modal__titulo" id="devolucion-confirmar-titulo">
+        {{ tituloConfirmacion(pendiente) }}
+      </h2>
+      <p class="modal__detalle" id="devolucion-confirmar-detalle">
+        @if (pendiente.tipo === 'aprobar') {
+          La devolución pasará a estado APROBADA y quedará lista para
+          procesarse. No se mueve stock ni dinero en este paso.
+        } @else {
+          La devolución pasará a estado RECHAZADA y quedará cerrada. Esta acción
+          no registra reembolsos.
+        }
+      </p>
+      <p class="modal__detalle">
+        Venta #{{ pendiente.devolucion.venta_id }} ·
+        {{ pendiente.devolucion.sucursal_nombre }} · monto estimado
+        {{ monto(pendiente.devolucion.monto_estimado) }}
+      </p>
+
+      @if (errorConfirmacion(); as error) {
+        <div class="modal__error" role="alert">
+          <p class="modal__error-titulo">
+            @switch (tipoErrorConfirmacion()) {
+              @case ('permiso') {
+                Tu rol no puede {{ pendiente.tipo }} esta devolución.
+              }
+              @case ('deshabilitado') {
+                El módulo de devoluciones SaaS no está habilitado.
+              }
+              @case ('conflicto') {
+                Conflicto en la devolución.
+              }
+              @default {
+                No se pudo completar la acción.
+              }
+            }
+          </p>
+          <p>{{ error.mensaje }}</p>
+          @switch (tipoErrorConfirmacion()) {
+            @case ('conflicto') {
+              <p class="modal__error-detalle">
+                La devolución ya no está en estado SOLICITADA. Actualiza el
+                detalle para ver su estado vigente.
+              </p>
+            }
+          }
+        </div>
+      }
+
+      <div class="modal__acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarConfirmacion()"
+          [disabled]="confirmando()"
+          autofocus
+        >
+          Volver
+        </button>
+        <button
+          type="button"
+          class="boton"
+          [class.boton--primario]="pendiente.tipo === 'aprobar'"
+          [class.boton--peligro]="pendiente.tipo === 'rechazar'"
+          (click)="confirmarAccion()"
+          [disabled]="confirmando()"
+        >
+          {{
+            confirmando()
+              ? 'Aplicando…'
+              : pendiente.tipo === 'aprobar'
+                ? 'Sí, aprobar'
+                : 'Sí, rechazar'
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

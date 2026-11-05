@@ -39,6 +39,27 @@ testem.log
 /typings
 __screenshots__/
 
+# E2E (Playwright, etapa 5BZ)
+/e2e-results.json
+/test-results/
+/playwright-report/
+
 # System files
 .DS_Store
 Thumbs.db
+
+# Coordination and evidence artifacts
+CTX_*.md
+PROMPT_*.md
+CONTEXTO_*.md
+REP_*.md
+Master_Prompt*.md
+odd/tasks/
+
+# Local databases, dumps, backups, and temporary data
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+*.backup

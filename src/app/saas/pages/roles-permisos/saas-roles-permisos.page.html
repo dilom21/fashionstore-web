@@ -1,0 +1,213 @@
+<section
+  class="roles"
+  aria-labelledby="roles-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="roles__cabecera">
+    <div class="roles__cabecera-texto">
+      <p class="roles__eyebrow">Control de acceso</p>
+      <h1 class="roles__titulo" id="roles-titulo">Roles y permisos</h1>
+      <p class="roles__ayuda">
+        Matriz función/acción de cada rol de la empresa. Los cambios se guardan
+        como excepciones de la empresa y tienen prioridad sobre el default del
+        rol.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="boton boton--secundario"
+      (click)="recargar()"
+      [disabled]="cargando()"
+    >
+      <app-admin-icon icono="actualizar" />
+      <span>{{ cargando() ? 'Actualizando…' : 'Actualizar' }}</span>
+    </button>
+  </header>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (mensajeErrorGuardar(); as error) {
+    <p class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>{{ error }}</span>
+    </p>
+  }
+
+  @if (mensajeError(); as mensaje) {
+    <div class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <div class="aviso__cuerpo">
+        <p>{{ mensaje }}</p>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargar()"
+        >
+          Reintentar
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="vm-sr-only" role="status">
+      Cargando los roles y su matriz de permisos…
+    </p>
+    <div class="esqueleto" aria-hidden="true">
+      <div class="esqueleto__columna"></div>
+      <div class="esqueleto__columna esqueleto__columna--ancha"></div>
+    </div>
+  } @else if (!mensajeError()) {
+    <div class="disposicion">
+      <section class="columna" aria-labelledby="roles-lista-titulo">
+        <h2 class="columna__titulo" id="roles-lista-titulo">
+          Roles de la empresa
+        </h2>
+
+        @if (roles().length === 0) {
+          <p class="estado-vacio">
+            No hay roles disponibles para esta empresa.
+          </p>
+        } @else {
+          <ul class="lista-roles">
+            @for (rol of roles(); track rol.id) {
+              <li>
+                <button
+                  type="button"
+                  class="rol"
+                  [class.rol--activo]="rolSeleccionado() === rol.id"
+                  [attr.aria-pressed]="rolSeleccionado() === rol.id"
+                  (click)="seleccionarRol(rol.id)"
+                >
+                  <span class="rol__nombre">{{ rol.nombre }}</span>
+                  @if (rol.estado) {
+                    <span class="rol__badge rol__badge--activo">Activo</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+
+        <p class="columna__nota">
+          Esta versión no permite crear ni renombrar roles: el backend no
+          publica ese endpoint.
+        </p>
+      </section>
+
+      <section class="columna columna--matriz" aria-labelledby="matriz-titulo">
+        <h2 class="columna__titulo" id="matriz-titulo">
+          Matriz del rol
+          @if (rolActual(); as rol) {
+            <span class="columna__rol">{{ rol }}</span>
+          }
+        </h2>
+
+        @if (esAdministradorSeleccionado()) {
+          <p class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <span>
+              La matriz del rol ADMINISTRADOR es de solo lectura: el backend la
+              protege para evitar que la empresa se quede sin administración.
+            </span>
+          </p>
+        } @else if (!puedeEditarPermisos()) {
+          <p class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <span>
+              Tu rol no tiene PERSONAL/ADMINISTRAR: la matriz se muestra en
+              modo lectura.
+            </span>
+          </p>
+        }
+
+        @if (filaActual() === null) {
+          <p class="estado-vacio">
+            Selecciona un rol para ver su matriz de permisos.
+          </p>
+        } @else if (grupos().length === 0) {
+          <p class="estado-vacio">
+            Este rol no tiene permisos declarados en el catálogo.
+          </p>
+        } @else {
+          <div class="matriz">
+            @for (grupo of grupos(); track grupo.funcion) {
+              <fieldset class="grupo">
+                <legend class="grupo__titulo">{{ grupo.funcion }}</legend>
+                <ul class="grupo__lista">
+                  @for (
+                    permiso of grupo.permisos;
+                    track permiso.funcion + '|' + permiso.accion
+                  ) {
+                    <li class="permiso">
+                      <label class="permiso__label">
+                        <input
+                          type="checkbox"
+                          class="permiso__check"
+                          [checked]="valor(permiso.funcion, permiso.accion)"
+                          [disabled]="soloLectura()"
+                          (change)="alternar(permiso.funcion, permiso.accion, $event)"
+                        />
+                        <span class="permiso__accion">
+                          {{ permiso.accion }}
+                        </span>
+                      </label>
+                      <span
+                        class="permiso__origen"
+                        [class.permiso__origen--excepcion]="
+                          permiso.origen === 'EXCEPCION'
+                        "
+                      >
+                        {{
+                          permiso.origen === 'EXCEPCION' ? 'Excepción' : 'Default'
+                        }}
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </fieldset>
+            }
+          </div>
+        }
+
+        <div class="barra">
+          <p class="barra__estado" aria-live="polite">
+            @if (hayCambios()) {
+              {{ totalCambios() }} cambio(s) sin guardar.
+            } @else {
+              Sin cambios pendientes.
+            }
+          </p>
+          <div class="barra__acciones">
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="descartar()"
+              [disabled]="!hayCambios() || guardando()"
+            >
+              Descartar
+            </button>
+            <button
+              type="button"
+              class="boton boton--primario"
+              (click)="guardar()"
+              [disabled]="!hayCambios() || guardando() || soloLectura()"
+            >
+              {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="columna__nota">
+          Solo se envían las filas modificadas. El backend rechaza funciones o
+          acciones que no pertenezcan al catálogo (422).
+        </p>
+      </section>
+    </div>
+  }
+</section>

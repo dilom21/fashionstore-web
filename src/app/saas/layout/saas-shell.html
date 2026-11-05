@@ -1,0 +1,148 @@
+<a class="saas__saltar" href="#saas-main">Saltar al contenido</a>
+
+<div class="saas" [class.saas--colapsada]="colapsada()">
+  <aside
+    class="saas__lateral"
+    [class.saas__lateral--movil]="movilAbierta()"
+    aria-label="Menú de la empresa"
+  >
+    <div class="saas__marca">
+      <svg
+        class="saas__logo"
+        width="30"
+        height="30"
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path d="M4 6h24L17 27h-2L4 6z" fill="url(#saas-logo-grad)" />
+        <path d="M11 6l5 9 5-9" stroke="rgba(255,255,255,.85)" stroke-width="1.6" />
+        <defs>
+          <linearGradient
+            id="saas-logo-grad"
+            x1="4"
+            y1="6"
+            x2="28"
+            y2="27"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stop-color="#a855f7" />
+            <stop offset="1" stop-color="#d946ef" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="saas__marca-texto">
+        <span class="saas__marca-nombre">VANTER&nbsp;<em>MEN</em></span>
+        <span class="saas__marca-tag">{{ empresaNombre() }}</span>
+      </div>
+      <button
+        type="button"
+        class="saas__btn saas__btn--movil"
+        (click)="cerrarMovil()"
+        aria-label="Cerrar menú"
+      >
+        <app-admin-icon icono="close" />
+      </button>
+    </div>
+
+    <nav class="saas__nav" aria-label="Navegación principal">
+      @for (grupo of grupos(); track grupo.id) {
+        <div class="saas__grupo">
+          <h2 class="saas__grupo-titulo">{{ grupo.label }}</h2>
+
+          @for (item of grupo.items; track item.id) {
+            @if (item.disponible && item.route) {
+              <a
+                class="saas__item"
+                [routerLink]="item.route"
+                routerLinkActive="saas__item--activo"
+                (click)="cerrarMovil()"
+                [attr.title]="colapsada() ? item.label : null"
+                [attr.aria-label]="item.label"
+              >
+                <app-admin-icon class="saas__item-icono" [icono]="item.icon" />
+                <span class="saas__item-texto">{{ item.label }}</span>
+                @if (esSoloLectura(item)) {
+                  <span class="saas__badge saas__badge--lectura">
+                    Solo lectura
+                  </span>
+                }
+              </a>
+            } @else {
+              <div
+                class="saas__item saas__item--off"
+                aria-disabled="true"
+                [attr.title]="descripcionItem(item)"
+              >
+                <app-admin-icon class="saas__item-icono" [icono]="item.icon" />
+                <span class="saas__item-texto">{{ item.label }}</span>
+                <span class="saas__badge">Próx.</span>
+              </div>
+            }
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="saas__pie">
+      <button
+        type="button"
+        class="saas__btn saas__btn--colapso"
+        (click)="alternarColapso()"
+        [attr.aria-label]="colapsada() ? 'Expandir barra lateral' : 'Colapsar barra lateral'"
+        [attr.title]="colapsada() ? 'Expandir barra lateral' : 'Colapsar barra lateral'"
+      >
+        <app-admin-icon [icono]="colapsada() ? 'chevron-right' : 'chevron-left'" />
+        <span class="saas__item-texto">Contraer</span>
+      </button>
+    </div>
+  </aside>
+
+  @if (movilAbierta()) {
+    <div class="saas__scrim" (click)="cerrarMovil()" aria-hidden="true"></div>
+  }
+
+  <div class="saas__cuerpo">
+    <header class="saas__cabecera">
+      <button
+        type="button"
+        class="saas__btn saas__btn--menu"
+        (click)="abrirMovil()"
+        aria-label="Abrir menú"
+      >
+        <app-admin-icon icono="menu" />
+      </button>
+
+      <div class="saas__empresa">
+        <span class="saas__empresa-nombre">{{ empresaNombre() }}</span>
+        <span class="saas__empresa-slug">{{ empresaSlug() }}</span>
+      </div>
+
+      <div class="saas__meta">
+        <app-saas-offline-panel [compacto]="true" />
+        <span class="saas__chip">Plan: <strong>{{ planCodigo() }}</strong></span>
+        <span class="saas__chip">Rol: <strong>{{ rol() }}</strong></span>
+        <span class="saas__chip saas__chip--entorno">{{ entorno }}</span>
+        <button type="button" class="saas__salir" (click)="cerrarSesion()">
+          <app-admin-icon icono="logout" />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    </header>
+
+    @if (expirada()) {
+      <div class="saas__aviso" role="alert">
+        <app-admin-icon class="saas__aviso-icono" icono="alerta" />
+        <p class="saas__aviso-texto">
+          Tu sesión expiró o dejó de ser válida.
+          <a class="saas__aviso-enlace" routerLink="/saas/login">Vuelve a iniciar sesión</a>
+          para continuar.
+        </p>
+      </div>
+    }
+
+    <main class="saas__contenido" id="saas-main" tabindex="-1">
+      <router-outlet />
+    </main>
+  </div>
+</div>

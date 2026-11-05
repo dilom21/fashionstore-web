@@ -1,0 +1,113 @@
+<section class="invitacion" aria-labelledby="invitacion-titulo">
+  <div class="invitacion__panel">
+    <header class="invitacion__cabecera">
+      <p class="invitacion__eyebrow">Activación de cuenta</p>
+      <h1 class="invitacion__titulo" id="invitacion-titulo">
+        Acepta tu invitación
+      </h1>
+      <p class="invitacion__ayuda">
+        Pega el token que recibiste y define la contraseña con la que entrarás a
+        la empresa.
+      </p>
+    </header>
+
+    @if (aceptada()) {
+      <div class="invitacion__exito" role="status">
+        <h2 class="invitacion__exito-titulo">Invitación aceptada</h2>
+        <p class="invitacion__exito-texto">
+          Tu cuenta ya está activa. Inicia sesión con tu correo y la contraseña
+          que acabas de definir.
+        </p>
+        <a class="invitacion__enlace-principal" routerLink="/saas/login">
+          Ir al inicio de sesión
+        </a>
+      </div>
+    } @else {
+      @if (mensajeError()) {
+        <p class="invitacion__error" role="alert">{{ mensajeError() }}</p>
+      }
+
+      <form
+        class="invitacion__form"
+        [formGroup]="form"
+        (ngSubmit)="onSubmit()"
+        novalidate
+      >
+        <div class="campo">
+          <label class="campo__label" for="saas-token">Token de invitación</label>
+          <input
+            #tokenInput
+            id="saas-token"
+            class="campo__input"
+            type="text"
+            formControlName="token"
+            autocomplete="one-time-code"
+            spellcheck="false"
+            [attr.aria-invalid]="mensajeToken() !== null"
+            [attr.aria-describedby]="mensajeToken() !== null ? 'saas-token-error' : null"
+          />
+          @if (mensajeToken()) {
+            <p class="campo__error" id="saas-token-error" role="alert">
+              {{ mensajeToken() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="saas-nueva-password">
+            Contraseña
+          </label>
+          <input
+            #passwordInput
+            id="saas-nueva-password"
+            class="campo__input"
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+            [attr.aria-invalid]="mensajePassword() !== null"
+            [attr.aria-describedby]="mensajePassword() !== null ? 'saas-nueva-password-error' : null"
+          />
+          @if (mensajePassword()) {
+            <p class="campo__error" id="saas-nueva-password-error" role="alert">
+              {{ mensajePassword() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="saas-confirmacion">
+            Repite la contraseña
+          </label>
+          <input
+            #confirmacionInput
+            id="saas-confirmacion"
+            class="campo__input"
+            type="password"
+            formControlName="password_confirmacion"
+            autocomplete="new-password"
+            [attr.aria-invalid]="mensajeConfirmacion() !== null"
+            [attr.aria-describedby]="mensajeConfirmacion() !== null ? 'saas-confirmacion-error' : null"
+          />
+          @if (mensajeConfirmacion()) {
+            <p class="campo__error" id="saas-confirmacion-error" role="alert">
+              {{ mensajeConfirmacion() }}
+            </p>
+          }
+        </div>
+
+        <button type="submit" class="invitacion__enviar" [disabled]="enviando()">
+          {{ enviando() ? 'Activando…' : 'Aceptar invitación' }}
+        </button>
+      </form>
+
+      <footer class="invitacion__pie">
+        <p>
+          ¿Ya tienes cuenta?
+          <a class="invitacion__enlace" routerLink="/saas/login">
+            Inicia sesión
+          </a>
+        </p>
+      </footer>
+    }
+  </div>
+</section>

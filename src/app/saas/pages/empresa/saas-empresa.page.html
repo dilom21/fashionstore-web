@@ -1,0 +1,169 @@
+<section
+  class="empresa"
+  aria-labelledby="empresa-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="empresa__cabecera">
+    <div class="empresa__cabecera-texto">
+      <p class="empresa__eyebrow">Configuración de la empresa</p>
+      <h1 class="empresa__titulo" id="empresa-titulo">Mi empresa</h1>
+      <p class="empresa__ayuda">
+        Identidad de la empresa, suscripción vigente y capacidades del plan
+        contratado.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="boton boton--secundario"
+      (click)="recargar()"
+      [disabled]="cargando()"
+    >
+      <app-admin-icon icono="actualizar" />
+      <span>{{ cargando() ? 'Actualizando…' : 'Actualizar' }}</span>
+    </button>
+  </header>
+
+  @if (mensajeError(); as mensaje) {
+    <div class="alerta" role="alert">
+      <app-admin-icon class="alerta__icono" icono="alerta" />
+      <div class="alerta__cuerpo">
+        <p class="alerta__texto">{{ mensaje }}</p>
+        <button type="button" class="boton boton--secundario" (click)="recargar()">
+          Reintentar
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (cargando()) {
+    <p class="vm-sr-only" role="status">
+      Cargando los datos de tu empresa…
+    </p>
+    <div class="esqueleto" aria-hidden="true">
+      <div class="esqueleto__bloque esqueleto__bloque--alto"></div>
+      <div class="esqueleto__fila">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    </div>
+  } @else if (empresa(); as empresa) {
+    <div class="empresa__grid">
+      <article class="tarjeta" aria-labelledby="tarjeta-identidad">
+        <h2 class="tarjeta__titulo" id="tarjeta-identidad">Identidad</h2>
+        <dl class="datos">
+          <div class="datos__fila">
+            <dt>Nombre comercial</dt>
+            <dd>{{ empresa.nombre_comercial }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Slug</dt>
+            <dd class="datos__mono">{{ empresa.slug }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Identificador</dt>
+            <dd class="datos__mono">#{{ empresa.id }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      @if (suscripcion(); as suscripcion) {
+        <article class="tarjeta" aria-labelledby="tarjeta-plan">
+          <h2 class="tarjeta__titulo" id="tarjeta-plan">Plan y suscripción</h2>
+          <dl class="datos">
+            <div class="datos__fila">
+              <dt>Plan</dt>
+              <dd>{{ suscripcion.nombre }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Código</dt>
+              <dd class="datos__mono">{{ suscripcion.codigo }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Estado</dt>
+              <dd class="datos__estado">
+                <app-admin-icon
+                  class="datos__estado-icono"
+                  [icono]="esEstadoActivo(suscripcion.estado_suscripcion) ? 'check' : 'alerta'"
+                />
+                {{ suscripcion.estado_suscripcion }}
+              </dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Vigencia</dt>
+              <dd>
+                {{ formatearFecha(suscripcion.fecha_inicio) }} →
+                {{ formatearFecha(suscripcion.fecha_vencimiento) }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+
+        <article
+          class="tarjeta tarjeta--ancha"
+          aria-labelledby="tarjeta-sucursales"
+        >
+          <h2 class="tarjeta__titulo" id="tarjeta-sucursales">
+            Uso de sucursales
+          </h2>
+          <div
+            class="progreso"
+            role="progressbar"
+            [attr.aria-valuenow]="sucursalesActivas()"
+            aria-valuemin="0"
+            [attr.aria-valuemax]="sucursalesMaximo()"
+            [attr.aria-valuetext]="textoSucursales()"
+          >
+            <span
+              class="progreso__relleno"
+              [style.width.%]="porcentajeSucursales()"
+            ></span>
+          </div>
+          <p class="progreso__texto">
+            <strong>{{ sucursalesActivas() }}</strong> de
+            <strong>{{ sucursalesMaximo() }}</strong> sucursales activas
+            permitidas por el plan.
+          </p>
+        </article>
+
+        <article
+          class="tarjeta tarjeta--ancha"
+          aria-labelledby="tarjeta-capacidades"
+        >
+          <h2 class="tarjeta__titulo" id="tarjeta-capacidades">
+            Capacidades del plan
+          </h2>
+          <ul class="capacidades">
+            @for (capacidad of capacidades(); track capacidad.etiqueta) {
+              <li
+                class="capacidades__item"
+                [class.capacidades__item--no]="!capacidad.incluida"
+              >
+                <app-admin-icon
+                  class="capacidades__icono"
+                  [icono]="capacidad.incluida ? 'check' : 'cancelar'"
+                />
+                <span class="capacidades__nombre">{{ capacidad.etiqueta }}</span>
+                <span class="capacidades__texto">
+                  {{ capacidad.incluida ? 'Incluido' : 'No incluido' }}
+                </span>
+              </li>
+            }
+          </ul>
+        </article>
+      }
+    </div>
+
+    <p class="empresa__nota">
+      <app-admin-icon class="empresa__nota-icono" icono="alerta" />
+      <span>
+        El cambio de plan lo realiza el superadministrador de la plataforma. En
+        esta pantalla no hay ninguna acción que modifique la suscripción.
+      </span>
+    </p>
+  } @else if (!mensajeError()) {
+    <p class="estado-vacio">
+      No pudimos obtener los datos de la empresa. Intenta actualizar la
+      pantalla.
+    </p>
+  }
+</section>

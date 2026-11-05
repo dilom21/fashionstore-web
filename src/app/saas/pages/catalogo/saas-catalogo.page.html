@@ -1,0 +1,984 @@
+<section class="catalogo" aria-labelledby="catalogo-titulo">
+  <header class="catalogo__cabecera">
+    <div class="catalogo__cabecera-texto">
+      <p class="catalogo__eyebrow">Catálogo de la empresa</p>
+      <h1 class="catalogo__titulo" id="catalogo-titulo">Catálogo</h1>
+      <p class="catalogo__ayuda">
+        Categorías, productos y variantes con su precio. Las categorías no tienen
+        estado ni borrado: el contrato actual solo permite crear y editar.
+      </p>
+    </div>
+    <div class="catalogo__resumen" role="status">
+      <span>{{ categorias().length }} categorías</span>
+      <span class="catalogo__resumen-sep" aria-hidden="true">·</span>
+      <span>{{ productos().length }} productos en esta página</span>
+    </div>
+  </header>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  <div
+    class="catalogo__tabs"
+    role="tablist"
+    aria-label="Secciones del catálogo"
+  >
+    @for (tab of tabs; track tab) {
+      <button
+        #tabBoton
+        type="button"
+        role="tab"
+        class="catalogo__tab"
+        [id]="'catalogo-tab-' + tab"
+        [attr.aria-controls]="'catalogo-panel-' + tab"
+        [attr.aria-selected]="esTabActiva(tab)"
+        [attr.tabindex]="esTabActiva(tab) ? 0 : -1"
+        [class.catalogo__tab--activo]="esTabActiva(tab)"
+        (click)="activarTab(tab)"
+        (keydown)="navegarTab($event, tab)"
+      >
+        {{ tab === 'categorias' ? 'Categorías' : 'Productos' }}
+      </button>
+    }
+  </div>
+
+  <!-- ============================ Categorías ============================ -->
+  <section
+    class="catalogo__panel"
+    role="tabpanel"
+    id="catalogo-panel-categorias"
+    aria-labelledby="catalogo-tab-categorias"
+    tabindex="0"
+    [attr.aria-busy]="cargandoCategorias()"
+    [hidden]="!esTabActiva('categorias')"
+  >
+    <div class="catalogo__barra">
+      <div>
+        <h2 class="catalogo__barra-titulo">Categorías</h2>
+        <p class="catalogo__barra-ayuda">
+          Agrupan los productos. El backend no admite activar, desactivar ni
+          eliminar categorías.
+        </p>
+      </div>
+      @if (esAdministrador()) {
+        <button
+          type="button"
+          class="boton boton--primario"
+          (click)="abrirAltaCategoria()"
+          [disabled]="guardandoCategoria()"
+        >
+          <app-admin-icon icono="mas" />
+          <span>Nueva categoría</span>
+        </button>
+      }
+    </div>
+
+    @if (!esAdministrador()) {
+      <p class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <span>
+          Tu rol puede consultar el catálogo, pero solo el rol ADMINISTRADOR
+          puede crear o editar categorías, productos y variantes.
+        </span>
+      </p>
+    }
+
+    @if (categoriaFormVisible()) {
+      <section class="panel" aria-labelledby="categoria-form-titulo">
+        <h2 class="panel__titulo" id="categoria-form-titulo">
+          @if (categoriaEnEdicion(); as categoria) {
+            Editar categoría «{{ categoria.nombre }}»
+          } @else {
+            Nueva categoría
+          }
+        </h2>
+        <p class="panel__ayuda">
+          El nombre es obligatorio (1 a 100 caracteres) y la descripción admite
+          hasta 255. Solo se envían los campos modificados.
+        </p>
+
+        @if (errorCategoria(); as error) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <p>{{ error.mensaje }}</p>
+          </div>
+        }
+
+        <form
+          class="formulario"
+          [formGroup]="formCategoria"
+          (ngSubmit)="enviarCategoria()"
+          novalidate
+        >
+          <div class="campo">
+            <label class="campo__label" for="categoria-nombre">Nombre</label>
+            <input
+              #categoriaNombreInput
+              id="categoria-nombre"
+              class="campo__input"
+              type="text"
+              formControlName="nombre"
+              maxlength="100"
+              autocomplete="off"
+              [attr.aria-invalid]="mensajeCategoriaNombre() !== null"
+              [attr.aria-describedby]="
+                mensajeCategoriaNombre() !== null
+                  ? 'categoria-nombre-error'
+                  : null
+              "
+            />
+            @if (mensajeCategoriaNombre()) {
+              <p class="campo__error" id="categoria-nombre-error" role="alert">
+                {{ mensajeCategoriaNombre() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="categoria-descripcion">
+              Descripción <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="categoria-descripcion"
+              class="campo__input"
+              type="text"
+              formControlName="descripcion"
+              maxlength="255"
+              autocomplete="off"
+              [attr.aria-invalid]="mensajeCategoriaDescripcion() !== null"
+              [attr.aria-describedby]="
+                mensajeCategoriaDescripcion() !== null
+                  ? 'categoria-descripcion-error'
+                  : null
+              "
+            />
+            @if (mensajeCategoriaDescripcion()) {
+              <p
+                class="campo__error"
+                id="categoria-descripcion-error"
+                role="alert"
+              >
+                {{ mensajeCategoriaDescripcion() }}
+              </p>
+            }
+          </div>
+
+          <div class="formulario__acciones">
+            <button
+              type="submit"
+              class="boton boton--primario"
+              [disabled]="guardandoCategoria()"
+            >
+              {{
+                guardandoCategoria()
+                  ? 'Guardando…'
+                  : categoriaEnEdicion()
+                    ? 'Guardar cambios'
+                    : 'Crear categoría'
+              }}
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="cerrarFormularioCategoria()"
+              [disabled]="guardandoCategoria()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    @if (errorCategorias(); as mensaje) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargarCategorias()"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (cargandoCategorias()) {
+      <p class="vm-sr-only" role="status">Cargando las categorías…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (!errorCategorias()) {
+      @if (categorias().length === 0) {
+        <p class="estado-vacio">
+          Aún no hay categorías en esta empresa. Crea la primera para poder
+          registrar productos.
+        </p>
+      } @else {
+        <div
+          class="tabla-scroll"
+          role="region"
+          aria-label="Listado de categorías de la empresa"
+          tabindex="0"
+        >
+          <table class="tabla">
+            <caption class="vm-sr-only">
+              Categorías de la empresa:
+              {{ categorias().length }} registradas.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Descripción</th>
+                @if (esAdministrador()) {
+                  <th scope="col">Acciones</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (categoria of categorias(); track categoria.id) {
+                <tr>
+                  <th scope="row" class="tabla__nombre">
+                    {{ categoria.nombre }}
+                  </th>
+                  <td>
+                    @if (categoria.descripcion) {
+                      {{ categoria.descripcion }}
+                    } @else {
+                      <span class="tabla__vacio">—</span>
+                    }
+                  </td>
+                  @if (esAdministrador()) {
+                    <td>
+                      <button
+                        type="button"
+                        class="boton boton--fila"
+                        [attr.aria-label]="
+                          'Editar la categoría ' + categoria.nombre
+                        "
+                        (click)="editarCategoria(categoria)"
+                        [disabled]="guardandoCategoria()"
+                      >
+                        Editar
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="catalogo__nota">
+          El contrato actual no expone estado ni eliminación de categorías.
+        </p>
+      }
+    }
+  </section>
+
+  <!-- ============================= Productos ============================ -->
+  <section
+    class="catalogo__panel"
+    role="tabpanel"
+    id="catalogo-panel-productos"
+    aria-labelledby="catalogo-tab-productos"
+    tabindex="0"
+    [attr.aria-busy]="cargandoProductos()"
+    [hidden]="!esTabActiva('productos')"
+  >
+    <div class="catalogo__barra">
+      <div>
+        <h2 class="catalogo__barra-titulo">Productos</h2>
+        <p class="catalogo__barra-ayuda">
+          Precios por producto y sus variantes. El backend no publica un total
+          de resultados: la paginación avanza con el tamaño de página.
+        </p>
+      </div>
+      @if (esAdministrador()) {
+        <button
+          type="button"
+          class="boton boton--primario"
+          (click)="abrirAltaProducto()"
+          [disabled]="guardandoProducto()"
+        >
+          <app-admin-icon icono="mas" />
+          <span>Nuevo producto</span>
+        </button>
+      }
+    </div>
+
+    <div class="catalogo__filtros">
+      <div class="campo campo--filtro">
+        <label class="campo__label" for="catalogo-filtro-categoria">
+          Filtrar por categoría
+        </label>
+        <select
+          id="catalogo-filtro-categoria"
+          class="campo__input campo__input--select"
+          [value]="filtroCategoria() ?? ''"
+          (change)="cambiarFiltroCategoria($event)"
+          [disabled]="cargandoCategorias() || categorias().length === 0"
+        >
+          <option value="">Todas las categorías</option>
+          @for (categoria of categorias(); track categoria.id) {
+            <option [value]="categoria.id">{{ categoria.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="catalogo__paginacion">
+        <p class="catalogo__rango" aria-live="polite">
+          {{ textoRangoProductos() }}
+        </p>
+        <div class="catalogo__paginacion-botones">
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="paginaAnterior()"
+            [disabled]="pagina() === 0 || cargandoProductos()"
+          >
+            <app-admin-icon icono="chevron-left" />
+            <span>Anterior</span>
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="paginaSiguiente()"
+            [disabled]="!hayPaginaSiguiente() || cargandoProductos()"
+          >
+            <span>Siguiente</span>
+            <app-admin-icon icono="chevron-right" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (productoFormVisible()) {
+      <section class="panel" aria-labelledby="producto-form-titulo">
+        <h2 class="panel__titulo" id="producto-form-titulo">
+          @if (productoEnEdicion(); as producto) {
+            Editar producto «{{ producto.nombre }}»
+          } @else {
+            Nuevo producto
+          }
+        </h2>
+        <p class="panel__ayuda">
+          La categoría debe pertenecer a la empresa. El precio debe ser mayor que
+          0 y admite hasta 2 decimales; el backend lo valida otra vez.
+        </p>
+
+        @if (errorProducto(); as error) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p>{{ error.mensaje }}</p>
+              @if (error.campos.includes('precio')) {
+                <p class="aviso__detalle">
+                  Revisa el precio: debe ser mayor que 0 y tener como máximo 2
+                  decimales.
+                </p>
+              }
+            </div>
+          </div>
+        }
+
+        @if (categorias().length === 0) {
+          <p class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <span>
+              Necesitas al menos una categoría para crear productos. Crea una en
+              la pestaña Categorías.
+            </span>
+          </p>
+        }
+
+        <form
+          class="formulario"
+          [formGroup]="formProducto"
+          (ngSubmit)="enviarProducto()"
+          novalidate
+        >
+          <div class="campo">
+            <label class="campo__label" for="producto-categoria">
+              Categoría
+            </label>
+            <select
+              #productoCategoriaInput
+              id="producto-categoria"
+              class="campo__input campo__input--select"
+              formControlName="categoria_id"
+              [attr.aria-invalid]="mensajeProductoCategoria() !== null"
+              [attr.aria-describedby]="
+                mensajeProductoCategoria() !== null
+                  ? 'producto-categoria-error'
+                  : null
+              "
+            >
+              <option [ngValue]="null">Selecciona una categoría…</option>
+              @for (categoria of categorias(); track categoria.id) {
+                <option [ngValue]="categoria.id">{{ categoria.nombre }}</option>
+              }
+            </select>
+            @if (mensajeProductoCategoria()) {
+              <p class="campo__error" id="producto-categoria-error" role="alert">
+                {{ mensajeProductoCategoria() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="producto-nombre">Nombre</label>
+            <input
+              #productoNombreInput
+              id="producto-nombre"
+              class="campo__input"
+              type="text"
+              formControlName="nombre"
+              maxlength="150"
+              autocomplete="off"
+              [attr.aria-invalid]="mensajeProductoNombre() !== null"
+              [attr.aria-describedby]="
+                mensajeProductoNombre() !== null
+                  ? 'producto-nombre-error'
+                  : null
+              "
+            />
+            @if (mensajeProductoNombre()) {
+              <p class="campo__error" id="producto-nombre-error" role="alert">
+                {{ mensajeProductoNombre() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="producto-precio">
+              Precio (Bs)
+            </label>
+            <input
+              #productoPrecioInput
+              id="producto-precio"
+              class="campo__input"
+              type="text"
+              formControlName="precio"
+              maxlength="13"
+              inputmode="decimal"
+              autocomplete="off"
+              placeholder="149.90"
+              [attr.aria-invalid]="mensajeProductoPrecio() !== null"
+              [attr.aria-describedby]="
+                mensajeProductoPrecio() !== null
+                  ? 'producto-precio-aviso producto-precio-error'
+                  : 'producto-precio-aviso'
+              "
+            />
+            <p class="campo__aviso" id="producto-precio-aviso">
+              Mayor que 0, hasta 2 decimales. Usa punto o coma (149.90).
+            </p>
+            @if (mensajeProductoPrecio()) {
+              <p class="campo__error" id="producto-precio-error" role="alert">
+                {{ mensajeProductoPrecio() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label class="campo__label" for="producto-descripcion">
+              Descripción <span class="campo__opcional">(opcional)</span>
+            </label>
+            <textarea
+              id="producto-descripcion"
+              class="campo__input campo__input--area"
+              formControlName="descripcion"
+              rows="3"
+              maxlength="1000"
+              [attr.aria-invalid]="mensajeProductoDescripcion() !== null"
+              [attr.aria-describedby]="
+                mensajeProductoDescripcion() !== null
+                  ? 'producto-descripcion-error'
+                  : null
+              "
+            ></textarea>
+            @if (mensajeProductoDescripcion()) {
+              <p
+                class="campo__error"
+                id="producto-descripcion-error"
+                role="alert"
+              >
+                {{ mensajeProductoDescripcion() }}
+              </p>
+            }
+          </div>
+
+          <div class="formulario__acciones">
+            <button
+              type="submit"
+              class="boton boton--primario"
+              [disabled]="guardandoProducto() || categorias().length === 0"
+            >
+              {{
+                guardandoProducto()
+                  ? 'Guardando…'
+                  : productoEnEdicion()
+                    ? 'Guardar cambios'
+                    : 'Crear producto'
+              }}
+            </button>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="cerrarFormularioProducto()"
+              [disabled]="guardandoProducto()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    @if (errorProductos(); as mensaje) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargarProductos()"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (cargandoProductos()) {
+      <p class="vm-sr-only" role="status">Cargando los productos…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (!errorProductos()) {
+      @if (productos().length === 0) {
+        <p class="estado-vacio">
+          @if (filtroCategoria() !== null) {
+            No hay productos en la categoría «{{
+              nombreCategoria(filtroCategoria() ?? 0)
+            }}». Prueba con otra categoría o quita el filtro.
+          } @else {
+            Aún no hay productos en esta empresa. Crea el primero para poder
+            venderlo.
+          }
+        </p>
+      } @else {
+        <div
+          class="tabla-scroll"
+          role="region"
+          aria-label="Listado de productos de la empresa"
+          tabindex="0"
+        >
+          <table class="tabla">
+            <caption class="vm-sr-only">
+              Productos de la empresa: {{ textoRangoProductos() }}.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Categoría</th>
+                <th scope="col">Precio</th>
+                <th scope="col">Descripción</th>
+                <th scope="col">Variantes</th>
+                @if (esAdministrador()) {
+                  <th scope="col">Acciones</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (producto of productos(); track producto.id) {
+                <tr
+                  [class.tabla__fila--activa]="
+                    productoSeleccionado()?.id === producto.id
+                  "
+                >
+                  <th scope="row" class="tabla__nombre">
+                    {{ producto.nombre }}
+                  </th>
+                  <td>{{ producto.categoria_nombre }}</td>
+                  <td class="tabla__precio">{{ precio(producto.precio) }}</td>
+                  <td class="tabla__descripcion" [title]="producto.descripcion ?? ''">
+                    {{ descripcionCorta(producto.descripcion) }}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="boton boton--fila"
+                      [attr.aria-label]="
+                        'Ver variantes de ' + producto.nombre
+                      "
+                      [attr.aria-expanded]="
+                        productoSeleccionado()?.id === producto.id
+                      "
+                      (click)="verVariantes(producto)"
+                    >
+                      Ver variantes
+                    </button>
+                  </td>
+                  @if (esAdministrador()) {
+                    <td>
+                      <button
+                        type="button"
+                        class="boton boton--fila"
+                        [attr.aria-label]="'Editar ' + producto.nombre"
+                        (click)="editarProducto(producto)"
+                        [disabled]="guardandoProducto()"
+                      >
+                        Editar
+                      </button>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="catalogo__nota">
+          Sin total del servidor: se muestran hasta {{ limiteProductos }} por
+          página y el botón Siguiente se habilita solo con una página completa.
+          El contrato actual no expone estado ni eliminación de productos.
+        </p>
+      }
+    }
+
+    <!-- Detalle del producto y sus variantes -->
+    @if (productoSeleccionado(); as producto) {
+      <section class="panel panel--detalle" aria-labelledby="variantes-titulo">
+        <div class="panel__cabecera">
+          <div>
+            <h2 class="panel__titulo" id="variantes-titulo">
+              Variantes de «{{ producto.nombre }}»
+            </h2>
+            <p class="panel__ayuda">
+              {{ producto.categoria_nombre }} · {{ precio(producto.precio) }} ·
+              producto #{{ producto.id }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarDetalle()"
+            [disabled]="guardandoVariante()"
+          >
+            <app-admin-icon icono="close" />
+            <span>Cerrar</span>
+          </button>
+        </div>
+
+        @if (esAdministrador()) {
+          <div class="panel__acciones">
+            <button
+              type="button"
+              class="boton boton--primario"
+              (click)="abrirAltaVariante()"
+              [disabled]="guardandoVariante() || !catalogosVarianteDisponibles()"
+            >
+              <app-admin-icon icono="mas" />
+              <span>Agregar variante</span>
+            </button>
+          </div>
+        }
+
+        @if (avisoCatalogosVariante(); as aviso) {
+          <div class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p>{{ aviso }}</p>
+              @if (tallasSinPermiso() || errorTallas() !== null) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="recargarTallas()"
+                >
+                  Reintentar tallas
+                </button>
+              }
+              @if (coloresSinPermiso() || errorColores() !== null) {
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="recargarColores()"
+                >
+                  Reintentar colores
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        @if (varianteFormVisible()) {
+          <section class="panel panel--interno" aria-labelledby="variante-form-titulo">
+            <h3 class="panel__titulo" id="variante-form-titulo">
+              @if (varianteEnEdicion(); as variante) {
+                Editar variante {{ variante.sku }}
+              } @else {
+                Nueva variante
+              }
+            </h3>
+
+            @if (varianteEnEdicion(); as variante) {
+              <p class="panel__ayuda">
+                Talla actual: <strong>{{ variante.talla }}</strong> · Color
+                actual: <strong>{{ variante.color }}</strong>. Puedes cambiar el
+                SKU y, si lo necesitas, elegir otra talla u otro color.
+              </p>
+            } @else {
+              <p class="panel__ayuda">
+                Elige la talla y el color del diccionario global de la empresa.
+              </p>
+            }
+
+            @if (errorVariante(); as error) {
+              <div class="aviso aviso--error" role="alert">
+                <app-admin-icon class="aviso__icono" icono="alerta" />
+                <p>{{ error.mensaje }}</p>
+              </div>
+            }
+
+            <form
+              class="formulario"
+              [formGroup]="formVariante"
+              (ngSubmit)="enviarVariante()"
+              novalidate
+            >
+              <div class="campo">
+                <label class="campo__label" for="variante-sku">SKU</label>
+                <input
+                  #varianteSkuInput
+                  id="variante-sku"
+                  class="campo__input"
+                  type="text"
+                  formControlName="sku"
+                  maxlength="80"
+                  autocomplete="off"
+                  [attr.aria-invalid]="mensajeVarianteSku() !== null"
+                  [attr.aria-describedby]="
+                    mensajeVarianteSku() !== null
+                      ? 'variante-sku-error'
+                      : null
+                  "
+                />
+                @if (mensajeVarianteSku()) {
+                  <p class="campo__error" id="variante-sku-error" role="alert">
+                    {{ mensajeVarianteSku() }}
+                  </p>
+                }
+              </div>
+
+              <div class="campo">
+                <label class="campo__label" for="variante-talla">
+                  Talla
+                  @if (varianteEnEdicion() !== null) {
+                    <span class="campo__opcional">
+                      (opcional: solo si la cambias)
+                    </span>
+                  }
+                </label>
+                <select
+                  #varianteTallaInput
+                  id="variante-talla"
+                  class="campo__input campo__input--select"
+                  formControlName="talla_id"
+                  [attr.aria-invalid]="mensajeVarianteTalla() !== null"
+                  [attr.aria-describedby]="
+                    mensajeVarianteTalla() !== null
+                      ? 'variante-ids-aviso variante-talla-error'
+                      : 'variante-ids-aviso'
+                  "
+                >
+                  <option [ngValue]="null">
+                    @if (varianteEnEdicion() !== null) {
+                      Mantener la talla actual
+                    } @else {
+                      Selecciona una talla…
+                    }
+                  </option>
+                  @for (talla of tallas(); track talla.id) {
+                    <option [ngValue]="talla.id">{{ talla.nombre }}</option>
+                  }
+                </select>
+                @if (mensajeVarianteTalla()) {
+                  <p class="campo__error" id="variante-talla-error" role="alert">
+                    {{ mensajeVarianteTalla() }}
+                  </p>
+                }
+              </div>
+
+              <div class="campo">
+                <label class="campo__label" for="variante-color">
+                  Color
+                  @if (varianteEnEdicion() !== null) {
+                    <span class="campo__opcional">
+                      (opcional: solo si lo cambias)
+                    </span>
+                  }
+                </label>
+                <select
+                  #varianteColorInput
+                  id="variante-color"
+                  class="campo__input campo__input--select"
+                  formControlName="color_id"
+                  [attr.aria-invalid]="mensajeVarianteColor() !== null"
+                  [attr.aria-describedby]="
+                    mensajeVarianteColor() !== null
+                      ? 'variante-ids-aviso variante-color-error'
+                      : 'variante-ids-aviso'
+                  "
+                >
+                  <option [ngValue]="null">
+                    @if (varianteEnEdicion() !== null) {
+                      Mantener el color actual
+                    } @else {
+                      Selecciona un color…
+                    }
+                  </option>
+                  @for (color of colores(); track color.id) {
+                    <option [ngValue]="color.id">{{ color.nombre }}</option>
+                  }
+                </select>
+                @if (mensajeVarianteColor()) {
+                  <p class="campo__error" id="variante-color-error" role="alert">
+                    {{ mensajeVarianteColor() }}
+                  </p>
+                }
+              </div>
+
+              <p class="campo__aviso campo--ancho" id="variante-ids-aviso">
+                Las tallas y los colores provienen de los diccionarios globales
+                del sistema. El servidor valida que existan y estén activos.
+              </p>
+
+              <div class="formulario__acciones">
+                <button
+                  type="submit"
+                  class="boton boton--primario"
+                  [disabled]="
+                    guardandoVariante() ||
+                    (varianteEnEdicion() === null &&
+                      !catalogosVarianteDisponibles())
+                  "
+                >
+                  {{
+                    guardandoVariante()
+                      ? 'Guardando…'
+                      : textoBotonVariante()
+                  }}
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="cerrarFormularioVariante()"
+                  [disabled]="guardandoVariante()"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </section>
+        }
+
+        @if (errorVariantes(); as mensaje) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p>{{ mensaje }}</p>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="recargarVariantes()"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (cargandoVariantes()) {
+          <p class="vm-sr-only" role="status">
+            Cargando las variantes del producto…
+          </p>
+          <div class="esqueleto" aria-hidden="true">
+            <div class="esqueleto__bloque"></div>
+            <div class="esqueleto__bloque"></div>
+          </div>
+        } @else if (!errorVariantes()) {
+          @if (variantes().length === 0) {
+            <p class="estado-vacio">
+              Este producto todavía no tiene variantes. Cada variante representa
+              una talla y un color con su propio SKU.
+            </p>
+          } @else {
+            <div
+              class="tabla-scroll"
+              role="region"
+              aria-label="Variantes del producto seleccionado"
+              tabindex="0"
+            >
+              <table class="tabla">
+                <caption class="vm-sr-only">
+                  Variantes de {{ producto.nombre }}:
+                  {{ variantes().length }} registradas.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Talla</th>
+                    <th scope="col">Color</th>
+                    @if (esAdministrador()) {
+                      <th scope="col">Acciones</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (variante of variantes(); track variante.id) {
+                    <tr>
+                      <th scope="row" class="tabla__mono">{{ variante.sku }}</th>
+                      <td>{{ variante.talla }}</td>
+                      <td>{{ variante.color }}</td>
+                      @if (esAdministrador()) {
+                        <td>
+                          <button
+                            type="button"
+                            class="boton boton--fila"
+                            [attr.aria-label]="
+                              'Editar la variante ' + variante.sku
+                            "
+                            (click)="editarVariante(variante)"
+                            [disabled]="guardandoVariante()"
+                          >
+                            Editar SKU
+                          </button>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <p class="catalogo__nota">
+              El contrato no expone estado ni eliminación de variantes: solo se
+              pueden crear y editar.
+            </p>
+          }
+        }
+      </section>
+    }
+  </section>
+</section>

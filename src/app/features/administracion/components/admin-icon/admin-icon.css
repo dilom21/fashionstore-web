@@ -3,6 +3,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
 }
 
 .ai {

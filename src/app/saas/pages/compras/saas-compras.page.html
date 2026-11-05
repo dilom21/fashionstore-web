@@ -1,0 +1,1408 @@
+<section
+  class="compras"
+  aria-labelledby="compras-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="compras__cabecera">
+    <div class="compras__cabecera-texto">
+      <p class="compras__eyebrow">Abastecimiento</p>
+      <h1 class="compras__titulo" id="compras-titulo">Compras</h1>
+      <p class="compras__ayuda">
+        Consulta órdenes de compra, envíalas al proveedor y registra la
+        recepción de mercadería. El backend calcula el stock y el estado de la
+        orden; esta pantalla solo envía cantidades.
+      </p>
+    </div>
+    <div class="compras__resumen" role="status">
+      <span>{{ ordenes().length }} órdenes en esta página</span>
+      <span class="compras__resumen-sep" aria-hidden="true">·</span>
+      <span>página {{ pagina() + 1 }}</span>
+    </div>
+  </header>
+
+  <p class="aviso aviso--atencion" role="status">
+    <app-admin-icon class="aviso__icono" icono="alerta" />
+    <span>
+      Puedes crear órdenes de compra, enviarlas al proveedor y registrar la
+      recepción de mercadería. La edición de una orden no existe en el contrato
+      actual: solo se crea, se envía, se cancela o se recibe.
+    </span>
+  </p>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (!puedeOperar()) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>
+        El backend solo permite operar compras a ADMINISTRADOR y
+        ENCARGADO_SUCURSAL. Tu rol puede consultar el listado, pero las acciones
+        están ocultas.
+      </span>
+    </p>
+  }
+
+  <!-- ======================= Alta de orden de compra ==================== -->
+  @if (altaAbierta()) {
+    <section class="panel" aria-labelledby="orden-alta-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="orden-alta-titulo">
+            Nueva orden de compra
+          </h2>
+          <p class="panel__ayuda">
+            La orden se crea en estado BORRADOR. El backend calcula el total y
+            valida que la variante, la temporada y la sucursal pertenezcan a la
+            empresa.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarAlta()"
+          [disabled]="guardandoOrden()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Cerrar</span>
+        </button>
+      </div>
+
+      @if (cargandoCatalogosOrden()) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>Cargando proveedores, temporadas, variantes y sucursales…</span>
+        </p>
+      }
+
+      @if (
+        proveedoresSinPermiso() ||
+        temporadasSinPermiso() ||
+        variantesSinPermiso() ||
+        sucursalesSinPermiso()
+      ) {
+        <div class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>
+              Tu sesión no tiene los permisos COMPRAS/CONSULTAR, CATALOGO/CONSULTAR
+              o SUCURSALES/CONSULTAR necesarios para cargar los catálogos del
+              alta. Puedes seguir consultando las órdenes existentes.
+            </p>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="recargarCatalogosOrden()"
+            >
+              Reintentar catálogos
+            </button>
+          </div>
+        </div>
+      } @else if (
+        errorProveedores() ||
+        errorTemporadas() ||
+        errorVariantesEmpresa() ||
+        errorSucursalesEmpresa()
+      ) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>No se pudieron cargar todos los catálogos del alta.</p>
+            <p class="aviso__detalle">
+              {{ errorProveedores() ?? errorTemporadas() ?? errorVariantesEmpresa() ?? errorSucursalesEmpresa() }}
+            </p>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="recargarCatalogosOrden()"
+            >
+              Reintentar catálogos
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (!cargandoProveedores() && proveedores().length === 0 && !proveedoresSinPermiso()) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>{{ mensajeSinProveedores }}.</span>
+        </p>
+      }
+
+      @if (mostrarNuevoProveedor()) {
+        <app-saas-nuevo-proveedor
+          (creado)="alCrearProveedor($event)"
+          (cancelar)="cerrarNuevoProveedor()"
+        />
+      }
+
+      @if (!cargandoTemporadas() && temporadas().length === 0 && !temporadasSinPermiso()) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            La empresa no tiene temporadas registradas; no es posible crear
+            órdenes de compra sin una temporada.
+          </span>
+        </p>
+      }
+
+      @if (
+        !cargandoVariantesEmpresa() &&
+        variantesEmpresa().length === 0 &&
+        !variantesSinPermiso()
+      ) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            No hay variantes de producto registradas. Crea productos con
+            variantes en el catálogo antes de comprar.
+          </span>
+        </p>
+      }
+
+      @if (
+        !cargandoSucursalesEmpresa() &&
+        sucursalesEmpresa().length === 0 &&
+        !sucursalesSinPermiso()
+      ) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            No hay sucursales activas para recibir la mercadería. Activa o crea
+            una sucursal antes de comprar.
+          </span>
+        </p>
+      }
+
+      @if (errorAlta(); as error) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p class="aviso__titulo-error">
+              @switch (tipoErrorAlta()) {
+                @case ('permiso') {
+                  Tu rol no puede crear órdenes de compra.
+                }
+                @case ('deshabilitado') {
+                  El módulo de compras SaaS no está habilitado.
+                }
+                @case ('conflicto') {
+                  Conflicto al crear la orden de compra.
+                }
+                @case ('validacion') {
+                  El backend rechazó los datos enviados.
+                }
+                @default {
+                  No se pudo crear la orden de compra.
+                }
+              }
+            </p>
+            <p>{{ error.mensaje }}</p>
+            @switch (tipoErrorAlta()) {
+              @case ('permiso') {
+                <p class="aviso__detalle">
+                  El backend solo autoriza a ADMINISTRADOR y
+                  ENCARGADO_SUCURSAL.
+                </p>
+              }
+              @case ('deshabilitado') {
+                <p class="aviso__detalle">
+                  La empresa todavía no tiene compras SaaS habilitadas en el
+                  servidor. Los datos se conservan.
+                </p>
+              }
+              @case ('conflicto') {
+                <p class="aviso__detalle">
+                  Revisa la variante, la temporada y la sucursal: el servidor
+                  rechazó la combinación. Los datos se conservan.
+                </p>
+              }
+              @case ('validacion') {
+                <p class="aviso__detalle">
+                  Revisa los campos marcados y los límites de cantidad y costo.
+                </p>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      @if (mensajeValidacionOrden(); as mensaje) {
+        <p class="aviso aviso--atencion" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>{{ mensaje }}</span>
+        </p>
+      }
+
+      <form [formGroup]="formOrden" (ngSubmit)="enviarOrdenCompra()" novalidate>
+        <div class="formulario">
+          <div class="campo">
+            <label class="campo__label" for="orden-proveedor">Proveedor</label>
+            <select
+              #proveedorOrdenInput
+              id="orden-proveedor"
+              class="campo__input campo__input--select"
+              formControlName="proveedor_id"
+              [attr.aria-invalid]="mensajeProveedorOrden() !== null"
+              [attr.aria-describedby]="
+                mensajeProveedorOrden() !== null
+                  ? 'orden-proveedor-error'
+                  : null
+              "
+            >
+              <option [ngValue]="null">Selecciona un proveedor…</option>
+              @for (proveedor of proveedores(); track proveedor.id) {
+                <option [ngValue]="proveedor.id">
+                  {{ proveedor.razon_social }}
+                </option>
+              }
+            </select>
+            @if (mensajeProveedorOrden()) {
+              <p class="campo__error" id="orden-proveedor-error" role="alert">
+                {{ mensajeProveedorOrden() }}
+              </p>
+            }
+            @if (puedeOperar()) {
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="abrirNuevoProveedor()"
+                [disabled]="mostrarNuevoProveedor() || guardandoOrden()"
+              >
+                <app-admin-icon icono="mas" />
+                <span>Nuevo proveedor</span>
+              </button>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="orden-sucursal">Sucursal</label>
+            <select
+              #sucursalOrdenInput
+              id="orden-sucursal"
+              class="campo__input campo__input--select"
+              formControlName="sucursal_id"
+              [disabled]="cargandoSucursalesEmpresa() || sucursalesEmpresa().length === 0"
+              [attr.aria-invalid]="mensajeSucursalOrden() !== null"
+              [attr.aria-describedby]="
+                mensajeSucursalOrden() !== null ? 'orden-sucursal-error' : null
+              "
+            >
+              <option [ngValue]="null">Selecciona una sucursal…</option>
+              @for (sucursal of sucursalesEmpresa(); track sucursal.id) {
+                <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+              }
+            </select>
+            @if (mensajeSucursalOrden()) {
+              <p class="campo__error" id="orden-sucursal-error" role="alert">
+                {{ mensajeSucursalOrden() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="orden-fecha">
+              Fecha estimada <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              #fechaOrdenInput
+              id="orden-fecha"
+              class="campo__input"
+              type="datetime-local"
+              formControlName="fecha_estimada"
+              [attr.aria-invalid]="mensajeFechaOrden() !== null"
+              [attr.aria-describedby]="
+                mensajeFechaOrden() !== null ? 'orden-fecha-error' : 'orden-fecha-aviso'
+              "
+            />
+            <p class="campo__aviso" id="orden-fecha-aviso">
+              Se envía en ISO con zona horaria. Vacía significa sin fecha
+              estimada.
+            </p>
+            @if (mensajeFechaOrden()) {
+              <p class="campo__error" id="orden-fecha-error" role="alert">
+                {{ mensajeFechaOrden() }}
+              </p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label class="campo__label" for="orden-observacion">
+              Observación <span class="campo__opcional">(opcional)</span>
+            </label>
+            <textarea
+              #observacionOrdenInput
+              id="orden-observacion"
+              class="campo__input campo__input--area"
+              formControlName="observacion"
+              rows="2"
+              [attr.maxlength]="maxObservacionOrden"
+              [attr.aria-invalid]="mensajeObservacionOrden() !== null"
+              [attr.aria-describedby]="
+                mensajeObservacionOrden() !== null
+                  ? 'orden-observacion-error'
+                  : 'orden-observacion-aviso'
+              "
+            ></textarea>
+            <p class="campo__aviso" id="orden-observacion-aviso">
+              Hasta {{ maxObservacionOrden }} caracteres. Si se deja vacía, se
+              omite del cuerpo.
+            </p>
+            @if (mensajeObservacionOrden()) {
+              <p class="campo__error" id="orden-observacion-error" role="alert">
+                {{ mensajeObservacionOrden() }}
+              </p>
+            }
+          </div>
+        </div>
+
+        <div class="compras__lineas-cabecera">
+          <div>
+            <h3 class="panel__subtitulo">Líneas de la orden</h3>
+            <p class="panel__ayuda">
+              Entre 1 y {{ maxLineasOrden }} líneas; cantidad de 1 a
+              {{ maxCantidadOrden }} y costo con hasta 2 decimales.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="agregarLineaOrden()"
+            [disabled]="!puedeAgregarLineaOrden() || guardandoOrden()"
+          >
+            <app-admin-icon icono="mas" />
+            <span>Agregar línea</span>
+          </button>
+        </div>
+
+        <div
+          class="tabla-scroll"
+          role="region"
+          aria-label="Líneas de la nueva orden de compra"
+        >
+          <table class="tabla tabla--lineas tabla--alta">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Variante</th>
+                <th scope="col">Temporada</th>
+                <th scope="col" class="tabla__numero">Cantidad</th>
+                <th scope="col" class="tabla__numero">Costo unitario</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody formArrayName="lineas">
+              @for (linea of lineasOrden.controls; track $index; let i = $index) {
+                <tr [formGroupName]="i">
+                  <th scope="row" class="tabla__numero">{{ i + 1 }}</th>
+                  <td>
+                    <label class="vm-sr-only" [for]="'orden-variante-' + i">
+                      Variante de la línea {{ i + 1 }}
+                    </label>
+                    <select
+                      #ordenVarianteSelect
+                      [id]="'orden-variante-' + i"
+                      class="campo__input campo__input--select"
+                      formControlName="variante_producto_id"
+                      (change)="limpiarErroresOrden()"
+                      [disabled]="variantesEmpresa().length === 0"
+                      [attr.aria-invalid]="
+                        lineaOrdenInvalida(i, 'variante_producto_id') ||
+                        errorLineaOrden(i, 'variante_producto_id') !== null
+                      "
+                      [attr.aria-describedby]="
+                        errorLineaOrden(i, 'variante_producto_id') !== null
+                          ? 'orden-variante-error-' + i
+                          : null
+                      "
+                    >
+                      <option [ngValue]="null">Selecciona una variante…</option>
+                      @for (variante of variantesEmpresa(); track variante.id) {
+                        <option [ngValue]="variante.id">
+                          {{ etiquetaVariante(variante) }}
+                        </option>
+                      }
+                    </select>
+                    @if (errorLineaOrden(i, 'variante_producto_id'); as mensajeLinea) {
+                      <p
+                        class="campo__error"
+                        [id]="'orden-variante-error-' + i"
+                        role="alert"
+                      >
+                        {{ mensajeLinea }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <label class="vm-sr-only" [for]="'orden-temporada-' + i">
+                      Temporada de la línea {{ i + 1 }}
+                    </label>
+                    <select
+                      #ordenTemporadaSelect
+                      [id]="'orden-temporada-' + i"
+                      class="campo__input campo__input--select"
+                      formControlName="temporada_id"
+                      (change)="limpiarErroresOrden()"
+                      [disabled]="temporadas().length === 0"
+                      [attr.aria-invalid]="
+                        lineaOrdenInvalida(i, 'temporada_id') ||
+                        errorLineaOrden(i, 'temporada_id') !== null
+                      "
+                      [attr.aria-describedby]="
+                        errorLineaOrden(i, 'temporada_id') !== null
+                          ? 'orden-temporada-error-' + i
+                          : null
+                      "
+                    >
+                      <option [ngValue]="null">Selecciona una temporada…</option>
+                      @for (temporada of temporadas(); track temporada.id) {
+                        <option [ngValue]="temporada.id">
+                          {{ temporada.nombre }}
+                        </option>
+                      }
+                    </select>
+                    @if (errorLineaOrden(i, 'temporada_id'); as mensajeLinea) {
+                      <p
+                        class="campo__error"
+                        [id]="'orden-temporada-error-' + i"
+                        role="alert"
+                      >
+                        {{ mensajeLinea }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <label class="vm-sr-only" [for]="'orden-cantidad-' + i">
+                      Cantidad de la línea {{ i + 1 }}
+                    </label>
+                    <input
+                      #ordenCantidadInput
+                      [id]="'orden-cantidad-' + i"
+                      class="campo__input campo__input--numero"
+                      type="number"
+                      min="1"
+                      [max]="maxCantidadOrden"
+                      step="1"
+                      inputmode="numeric"
+                      formControlName="cantidad"
+                      (input)="limpiarErroresOrden()"
+                      [attr.aria-invalid]="
+                        lineaOrdenInvalida(i, 'cantidad') ||
+                        errorLineaOrden(i, 'cantidad') !== null
+                      "
+                      [attr.aria-describedby]="
+                        errorLineaOrden(i, 'cantidad') !== null
+                          ? 'orden-cantidad-error-' + i
+                          : null
+                      "
+                    />
+                    @if (errorLineaOrden(i, 'cantidad'); as mensajeLinea) {
+                      <p
+                        class="campo__error"
+                        [id]="'orden-cantidad-error-' + i"
+                        role="alert"
+                      >
+                        {{ mensajeLinea }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <label class="vm-sr-only" [for]="'orden-costo-' + i">
+                      Costo unitario de la línea {{ i + 1 }}
+                    </label>
+                    <input
+                      #ordenCostoInput
+                      [id]="'orden-costo-' + i"
+                      class="campo__input campo__input--numero"
+                      type="text"
+                      inputmode="decimal"
+                      maxlength="13"
+                      placeholder="45.50"
+                      formControlName="costo_unitario"
+                      (input)="limpiarErroresOrden()"
+                      [attr.aria-invalid]="
+                        lineaOrdenInvalida(i, 'costo_unitario') ||
+                        errorLineaOrden(i, 'costo_unitario') !== null
+                      "
+                      [attr.aria-describedby]="
+                        errorLineaOrden(i, 'costo_unitario') !== null
+                          ? 'orden-costo-error-' + i
+                          : null
+                      "
+                    />
+                    @if (errorLineaOrden(i, 'costo_unitario'); as mensajeLinea) {
+                      <p
+                        class="campo__error"
+                        [id]="'orden-costo-error-' + i"
+                        role="alert"
+                      >
+                        {{ mensajeLinea }}
+                      </p>
+                    }
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="boton boton--fila"
+                      (click)="quitarLineaOrden(i)"
+                      [disabled]="!puedeQuitarLineaOrden() || guardandoOrden()"
+                      [attr.aria-label]="'Quitar la línea ' + (i + 1)"
+                    >
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <p class="compras__nota">
+          El backend calcula el total de la orden y modifica el stock solo al
+          recibir mercadería. Esta pantalla no envía precios de venta ni
+          totales.
+        </p>
+
+        <div class="acciones">
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="!puedeGuardarOrden()"
+          >
+            <app-admin-icon icono="compras" />
+            <span>{{ guardandoOrden() ? 'Creando…' : 'Crear orden' }}</span>
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarAlta()"
+            [disabled]="guardandoOrden()"
+          >
+            Cancelar
+          </button>
+        </div>
+
+        @if (!catalogosOrdenListos() && !cargandoCatalogosOrden()) {
+          <p class="campo__aviso" role="status">
+            El alta queda bloqueada hasta que estén disponibles el proveedor, la
+            sucursal, la variante y la temporada.
+          </p>
+        }
+      </form>
+    </section>
+  }
+
+  <section class="panel" aria-labelledby="compras-lista-titulo">    <div class="panel__cabecera">
+      <div>
+        <h2 class="panel__titulo" id="compras-lista-titulo">
+          Órdenes de compra
+        </h2>
+        <p class="panel__ayuda">
+          Sin total del servidor: se muestran hasta {{ limite }} órdenes por
+          página y el botón Siguiente se habilita solo con una página completa.
+        </p>
+      </div>
+      @if (!sinPermiso()) {
+        <div class="compras__paginacion">
+          @if (puedeOperar()) {
+            <button
+              type="button"
+              class="boton boton--primario"
+              (click)="abrirAlta()"
+              [disabled]="altaAbierta() || guardandoOrden()"
+            >
+              <app-admin-icon icono="mas" />
+              <span>Nueva orden</span>
+            </button>
+          }
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+            [disabled]="cargando()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Actualizar</span>
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="compras__filtros">
+      <div class="campo campo--filtro">
+        <label class="campo__label" for="compras-filtro-estado">
+          Filtrar por estado
+        </label>
+        <select
+          id="compras-filtro-estado"
+          class="campo__input campo__input--select"
+          [value]="filtroEstado() ?? ''"
+          (change)="cambiarFiltro($event)"
+          [disabled]="cargando()"
+        >
+          <option value="">Todos los estados</option>
+          @for (estado of estados; track estado.valor) {
+            <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+          }
+        </select>
+      </div>
+      <p class="compras__rango" aria-live="polite">{{ textoRango() }}</p>
+    </div>
+
+    @if (cargando()) {
+      <p class="vm-sr-only" role="status">Cargando las órdenes de compra…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (sinPermiso()) {
+      <div class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>
+            El backend solo expone las órdenes de compra a ADMINISTRADOR y
+            ENCARGADO_SUCURSAL. Tu rol actual no puede consultarlas.
+          </p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (errorListado(); as mensaje) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (ordenes().length === 0) {
+      <p class="estado-vacio">
+        @if (filtroEstado() !== null) {
+          No hay órdenes de compra en estado
+          «{{ etiquetaEstado(filtroEstado() ?? '') }}». Prueba con otro estado o
+          quita el filtro.
+        } @else {
+          No hay órdenes de compra registradas en esta empresa para esta página.
+        }
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de órdenes de compra"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Órdenes de compra: {{ ordenes().length }} registros.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Orden (id)</th>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Fecha de orden</th>
+              <th scope="col" class="tabla__numero">Líneas</th>
+              <th scope="col">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (orden of ordenes(); track orden.id) {
+              <tr
+                [class.tabla__fila--activa]="
+                  ordenSeleccionada()?.id === orden.id
+                "
+              >
+                <th scope="row" class="tabla__mono">{{ orden.id }}</th>
+                <td class="tabla__nombre">{{ orden.proveedor_razon_social }}</td>
+                <td>{{ orden.sucursal_nombre }}</td>
+                <td>
+                  <span class="estado estado--{{ orden.estado }}">
+                    {{ etiquetaEstado(orden.estado) }}
+                  </span>
+                </td>
+                <td>{{ fecha(orden.fecha_orden) }}</td>
+                <td class="tabla__numero">{{ orden.total_lineas }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="boton boton--fila"
+                    [attr.aria-label]="'Ver el detalle de la orden ' + orden.id"
+                    [attr.aria-expanded]="
+                      ordenSeleccionada()?.id === orden.id
+                    "
+                    (click)="verDetalle(orden)"
+                    [disabled]="cargandoDetalle()"
+                  >
+                    Ver detalle
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="compras__pie">
+      <div class="compras__paginacion">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaAnterior()"
+          [disabled]="pagina() === 0 || cargando()"
+        >
+          <app-admin-icon icono="chevron-left" />
+          <span>Anterior</span>
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaSiguiente()"
+          [disabled]="!hayPaginaSiguiente() || cargando()"
+        >
+          <span>Siguiente</span>
+          <app-admin-icon icono="chevron-right" />
+        </button>
+      </div>
+      <p class="compras__nota">
+        El contrato no expone creación, edición ni eliminación de órdenes de
+        compra desde la empresa.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========================= Panel de detalle ========================= -->
+  @if (ordenSeleccionada(); as ordenResumen) {
+    <section class="panel panel--detalle" aria-labelledby="compra-detalle-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="compra-detalle-titulo">
+            Orden de compra #{{ ordenResumen.id }}
+          </h2>
+          <p class="panel__ayuda">
+            {{ ordenResumen.proveedor_razon_social }} ·
+            {{ ordenResumen.sucursal_nombre }} · estado
+            {{ etiquetaEstado(ordenResumen.estado) }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarDetalle()"
+          [disabled]="enviando() || cancelando() || recepcionando()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Cerrar</span>
+        </button>
+      </div>
+
+      @if (cargandoDetalle()) {
+        <p class="vm-sr-only" role="status">Cargando el detalle de la orden…</p>
+        <div class="esqueleto" aria-hidden="true">
+          <div class="esqueleto__bloque"></div>
+          <div class="esqueleto__bloque"></div>
+        </div>
+      } @else if (errorDetalle(); as mensaje) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>{{ mensaje }}</p>
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="recargarDetalle()"
+            >
+              <app-admin-icon icono="actualizar" />
+              <span>Reintentar</span>
+            </button>
+          </div>
+        </div>
+      } @else if (detalle(); as orden) {
+        <dl class="datos">
+          <div class="datos__fila">
+            <dt>Proveedor</dt>
+            <dd>{{ orden.proveedor_razon_social }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Sucursal destino</dt>
+            <dd>{{ orden.sucursal_nombre }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Estado</dt>
+            <dd>
+              <span class="estado estado--{{ orden.estado }}">
+                {{ etiquetaEstado(orden.estado) }}
+              </span>
+            </dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Fecha de orden</dt>
+            <dd>{{ fecha(orden.fecha_orden) }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Fecha estimada</dt>
+            <dd>{{ fecha(orden.fecha_estimada) }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Fecha de recepción</dt>
+            <dd>{{ fecha(orden.fecha_recepcion) }}</dd>
+          </div>
+          <div class="datos__fila">
+            <dt>Líneas</dt>
+            <dd>{{ orden.total_lineas }}</dd>
+          </div>
+        </dl>
+
+        <!-- Acciones según el estado -->
+        <div class="acciones">
+          @if (puedeOperar()) {
+            @switch (orden.estado) {
+              @case ('BORRADOR') {
+                <button
+                  type="button"
+                  class="boton boton--primario"
+                  (click)="enviarOrden()"
+                  [disabled]="enviando()"
+                >
+                  <app-admin-icon icono="arrow-right" />
+                  <span>{{ enviando() ? 'Enviando…' : 'Enviar' }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--peligro"
+                  (click)="abrirCancelacion()"
+                  [disabled]="enviando()"
+                >
+                  <app-admin-icon icono="cancelar" />
+                  <span>Cancelar</span>
+                </button>
+              }
+              @case ('ENVIADA') {
+                <button
+                  type="button"
+                  class="boton boton--primario"
+                  (click)="abrirRecepcion()"
+                  [disabled]="recepcionando()"
+                >
+                  <app-admin-icon icono="paquete" />
+                  <span>
+                    {{
+                      recepcionAbierta()
+                        ? 'Reiniciar recepción'
+                        : 'Recibir mercadería'
+                    }}
+                  </span>
+                </button>
+              }
+              @case ('PARCIAL') {
+                <button
+                  type="button"
+                  class="boton boton--primario"
+                  (click)="abrirRecepcion()"
+                  [disabled]="recepcionando()"
+                >
+                  <app-admin-icon icono="paquete" />
+                  <span>
+                    {{
+                      recepcionAbierta()
+                        ? 'Reiniciar recepción'
+                        : 'Recibir mercadería'
+                    }}
+                  </span>
+                </button>
+              }
+            }
+          }
+
+          @if (orden.estado === 'RECIBIDA' || orden.estado === 'CANCELADA') {
+            <p class="acciones__nota" role="status">
+              La orden está {{ etiquetaEstado(orden.estado) }}: su detalle es de
+              solo lectura. No admite envío, cancelación ni nuevas recepciones.
+            </p>
+          }
+        </div>
+
+        @if (errorAccion(); as error) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p class="aviso__titulo-error">
+                @switch (tipoErrorAccion()) {
+                  @case ('permiso') {
+                    Tu rol no puede operar compras.
+                  }
+                  @case ('deshabilitado') {
+                    El módulo de compras SaaS no está habilitado.
+                  }
+                  @case ('conflicto') {
+                    Conflicto en la orden de compra.
+                  }
+                  @default {
+                    No se pudo completar la acción.
+                  }
+                }
+              </p>
+              <p>{{ error.mensaje }}</p>
+              @switch (tipoErrorAccion()) {
+                @case ('permiso') {
+                  <p class="aviso__detalle">
+                    El backend solo autoriza a ADMINISTRADOR y
+                    ENCARGADO_SUCURSAL. No reintentes con el mismo rol.
+                  </p>
+                }
+                @case ('deshabilitado') {
+                  <p class="aviso__detalle">
+                    La empresa todavía no tiene compras SaaS habilitadas en el
+                    servidor. No es un problema de tus datos.
+                  </p>
+                }
+                @case ('conflicto') {
+                  <p class="aviso__detalle">
+                    La orden cambió de estado o ya no admite esta transición.
+                    Actualiza el detalle para ver el estado vigente antes de
+                    reintentar.
+                  </p>
+                }
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Líneas de la orden -->
+        <h3 class="panel__subtitulo">Líneas de la orden</h3>
+        <div
+          class="tabla-scroll"
+          role="region"
+          aria-label="Líneas de la orden de compra"
+          tabindex="0"
+        >
+          <table class="tabla tabla--lineas">
+            <thead>
+              <tr>
+                <th scope="col">SKU</th>
+                <th scope="col">Temporada</th>
+                <th scope="col" class="tabla__numero">Cantidad</th>
+                <th scope="col" class="tabla__numero">Costo unitario</th>
+                <th scope="col" class="tabla__numero">Recibido</th>
+                <th scope="col" class="tabla__numero">Pendiente</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (linea of orden.lineas; track linea.id) {
+                <tr>
+                  <th scope="row" class="tabla__mono">{{ linea.sku }}</th>
+                  <td>{{ linea.temporada_nombre }}</td>
+                  <td class="tabla__numero">{{ linea.cantidad }}</td>
+                  <td class="tabla__numero">
+                    {{ monto(linea.costo_unitario) }}
+                  </td>
+                  <td class="tabla__numero">{{ linea.cantidad_recibida }}</td>
+                  <td class="tabla__numero">{{ linea.cantidad_pendiente }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Recepción de mercadería -->
+        @if (recepcionAbierta()) {
+          <section class="panel panel--interno" aria-labelledby="recepcion-titulo">
+            <div class="panel__cabecera">
+              <div>
+                <h3 class="panel__titulo" id="recepcion-titulo">
+                  Recibir mercadería
+                </h3>
+                <p class="panel__ayuda">
+                  Indica cuántas unidades llegan por línea (0 a pendiente). Solo
+                  se envían las líneas con cantidad mayor que 0.
+                </p>
+              </div>
+              <p class="operacion">
+                <span class="operacion__label">Operación</span>
+                <code class="operacion__valor">{{ operacionRecepcion() }}</code>
+              </p>
+            </div>
+
+            @if (mensajeRecepcion(); as mensaje) {
+              <p class="aviso aviso--atencion" role="alert">
+                <app-admin-icon class="aviso__icono" icono="alerta" />
+                <span>{{ mensaje }}</span>
+              </p>
+            }
+
+            <form
+              [formGroup]="formRecepcion"
+              (ngSubmit)="recepcionar()"
+              novalidate
+            >
+              <div
+                class="tabla-scroll"
+                role="region"
+                aria-label="Cantidades a recibir por línea"
+              >
+                <table class="tabla tabla--recepcion">
+                  <thead>
+                    <tr>
+                      <th scope="col">SKU</th>
+                      <th scope="col" class="tabla__numero">Pendiente</th>
+                      <th scope="col">Cantidad a recibir</th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="lineas">
+                    @for (linea of orden.lineas; track linea.id; let i = $index) {
+                      <tr>
+                        <th scope="row" class="tabla__mono">{{ linea.sku }}</th>
+                        <td class="tabla__numero">
+                          {{ linea.cantidad_pendiente }}
+                        </td>
+                        <td>
+                          <label class="vm-sr-only" [for]="'recepcion-cantidad-' + i">
+                            Cantidad a recibir de {{ linea.sku }}
+                          </label>
+                          <input
+                            [id]="'recepcion-cantidad-' + i"
+                            class="campo__input campo__input--numero"
+                            type="number"
+                            min="0"
+                            [max]="linea.cantidad_pendiente"
+                            step="1"
+                            inputmode="numeric"
+                            [formControlName]="i"
+                            (input)="limpiarErroresRecepcion()"
+                            [attr.aria-invalid]="
+                              lineaRecepcionInvalida(i) ||
+                              errorLineaRecepcion(i) !== null
+                            "
+                            [attr.aria-describedby]="
+                              errorLineaRecepcion(i) !== null
+                                ? 'recepcion-cantidad-error-' + i
+                                : null
+                            "
+                          />
+                          @if (errorLineaRecepcion(i); as mensajeLinea) {
+                            <p
+                              class="campo__error"
+                              [id]="'recepcion-cantidad-error-' + i"
+                              role="alert"
+                            >
+                              {{ mensajeLinea }}
+                            </p>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="campo campo--ancho">
+                <label class="campo__label" for="recepcion-observacion">
+                  Observación <span class="campo__opcional">(opcional)</span>
+                </label>
+                <textarea
+                  id="recepcion-observacion"
+                  class="campo__input campo__input--area"
+                  formControlName="observacion"
+                  rows="2"
+                  [attr.maxlength]="maxObservacion"
+                  [attr.aria-describedby]="'recepcion-observacion-aviso'"
+                ></textarea>
+                <p class="campo__aviso" id="recepcion-observacion-aviso">
+                  Hasta {{ maxObservacion }} caracteres. Si se deja vacía, se
+                  omite del cuerpo.
+                </p>
+                @if (
+                  formRecepcion.controls.observacion.touched &&
+                  formRecepcion.controls.observacion.invalid
+                ) {
+                  <p class="campo__error" role="alert">
+                    La observación admite como máximo {{ maxObservacion }}
+                    caracteres.
+                  </p>
+                }
+              </div>
+
+              @if (errorRecepcion(); as error) {
+                <div class="aviso aviso--error" role="alert">
+                  <app-admin-icon class="aviso__icono" icono="alerta" />
+                  <div class="aviso__cuerpo">
+                    <p class="aviso__titulo-error">
+                      @switch (tipoErrorRecepcion()) {
+                        @case ('permiso') {
+                          Tu rol no puede registrar recepciones.
+                        }
+                        @case ('deshabilitado') {
+                          El módulo de compras SaaS no está habilitado.
+                        }
+                        @case ('conflicto') {
+                          Conflicto en la orden de compra.
+                        }
+                        @default {
+                          No se pudo registrar la recepción.
+                        }
+                      }
+                    </p>
+                    <p>{{ error.mensaje }}</p>
+                    @switch (tipoErrorRecepcion()) {
+                      @case ('conflicto') {
+                        <p class="aviso__detalle">
+                          El identificador de operación ya se usó con otra carga
+                          o el estado de la orden cambió. Si vas a reintentar la
+                          misma recepción, conserva el identificador; si cambian
+                          las cantidades, actualiza el detalle antes de enviar.
+                        </p>
+                      }
+                      @case ('permiso') {
+                        <p class="aviso__detalle">
+                          El backend solo autoriza a ADMINISTRADOR y
+                          ENCARGADO_SUCURSAL.
+                        </p>
+                      }
+                      @case ('deshabilitado') {
+                        <p class="aviso__detalle">
+                          La empresa todavía no tiene compras SaaS habilitadas
+                          en el servidor. Las cantidades y el identificador se
+                          conservan.
+                        </p>
+                      }
+                      @default {
+                        <p class="aviso__detalle">
+                          Puedes reintentar: las cantidades y el identificador
+                          de operación se conservan.
+                        </p>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="acciones">
+                <button
+                  type="submit"
+                  class="boton boton--primario"
+                  [disabled]="recepcionando() || numeroLineasRecepcion() === 0"
+                >
+                  <app-admin-icon icono="paquete" />
+                  <span>
+                    {{
+                      recepcionando()
+                        ? 'Registrando…'
+                        : 'Registrar recepción'
+                    }}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="cerrarRecepcion()"
+                  [disabled]="recepcionando()"
+                >
+                  Cerrar recepción
+                </button>
+              </div>
+            </form>
+
+            @if (resultadoRecepcion(); as resultado) {
+              <section
+                class="panel panel--interno panel--resultado"
+                aria-labelledby="recepcion-resultado-titulo"
+              >
+                <div class="panel__cabecera">
+                  <div>
+                    <h4
+                      class="panel__titulo"
+                      id="recepcion-resultado-titulo"
+                    >
+                      Recepción #{{ resultado.recepcion_id }} registrada
+                    </h4>
+                    <p class="panel__ayuda">
+                      Datos devueltos por el backend, sin recálculos.
+                    </p>
+                  </div>
+                  @if (resultado.idempotente) {
+                    <span class="etiqueta etiqueta--atencion">
+                      Reintento idempotente
+                    </span>
+                  } @else {
+                    <span class="etiqueta">Recepción nueva</span>
+                  }
+                </div>
+
+                <dl class="datos">
+                  <div class="datos__fila">
+                    <dt>Unidades recibidas</dt>
+                    <dd>{{ resultado.unidades_recibidas }}</dd>
+                  </div>
+                  <div class="datos__fila">
+                    <dt>Estado de la orden</dt>
+                    <dd>{{ etiquetaEstado(resultado.estado_orden) }}</dd>
+                  </div>
+                  <div class="datos__fila">
+                    <dt>Operación</dt>
+                    <dd class="datos__mono">{{ resultado.operacion_id }}</dd>
+                  </div>
+                </dl>
+
+                <h4 class="panel__subtitulo">Stock resultante</h4>
+                <div
+                  class="tabla-scroll"
+                  role="region"
+                  aria-label="Stock resultante de la recepción"
+                  tabindex="0"
+                >
+                  <table class="tabla tabla--stock">
+                    <thead>
+                      <tr>
+                        <th scope="col">Inventario (id)</th>
+                        <th scope="col" class="tabla__numero">Stock actual</th>
+                        <th scope="col" class="tabla__numero">
+                          Stock reservado
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (stock of resultado.stock; track stock.inventario_id) {
+                        <tr>
+                          <th scope="row" class="tabla__mono">
+                            {{ stock.inventario_id }}
+                          </th>
+                          <td class="tabla__numero">{{ stock.stock_actual }}</td>
+                          <td class="tabla__numero">
+                            {{ stock.stock_reservado }}
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="acciones">
+                  <button
+                    type="button"
+                    class="boton boton--secundario"
+                    (click)="cerrarResultadoRecepcion()"
+                  >
+                    Ocultar resultado
+                  </button>
+                </div>
+              </section>
+            }
+          </section>
+        }
+      }
+    </section>
+  }
+</section>
+
+<!-- ====================== Confirmación de cancelación ==================== -->
+@if (cancelacion(); as orden) {
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cancelar-orden-titulo"
+    aria-describedby="cancelar-orden-detalle"
+    (keydown.escape)="cerrarCancelacion()"
+    (keydown)="contenerFoco($event)"
+  >
+    <div class="modal__panel">
+      <h2 class="modal__titulo" id="cancelar-orden-titulo">
+        Cancelar la orden de compra #{{ orden.id }}
+      </h2>
+      <p class="modal__detalle" id="cancelar-orden-detalle">
+        La orden de {{ orden.proveedor_razon_social }} pasará a estado CANCELADA
+        si el backend acepta la transición. La observación es opcional (hasta
+        {{ maxObservacion }} caracteres).
+      </p>
+
+      @if (errorCancelacion(); as error) {
+        <div class="modal__error" role="alert">
+          <p class="modal__error-titulo">
+            @switch (tipoErrorCancelacion()) {
+              @case ('permiso') {
+                Tu rol no puede cancelar órdenes de compra.
+              }
+              @case ('deshabilitado') {
+                El módulo de compras SaaS no está habilitado.
+              }
+              @case ('conflicto') {
+                Conflicto en la orden de compra.
+              }
+              @default {
+                No se pudo cancelar la orden.
+              }
+            }
+          </p>
+          <p>{{ error.mensaje }}</p>
+          @switch (tipoErrorCancelacion()) {
+            @case ('conflicto') {
+              <p class="modal__error-detalle">
+                La orden ya fue enviada, recibida o cancelada. Actualiza el
+                detalle para ver su estado vigente.
+              </p>
+            }
+          }
+        </div>
+      }
+
+      <form
+        class="modal__form"
+        [formGroup]="formCancelacion"
+        (ngSubmit)="confirmarCancelacion()"
+        novalidate
+      >
+        <div class="campo">
+          <label class="campo__label" for="cancelar-orden-observacion">
+            Observación <span class="campo__opcional">(opcional)</span>
+          </label>
+          <textarea
+            id="cancelar-orden-observacion"
+            class="campo__input campo__input--area"
+            formControlName="observacion"
+            rows="3"
+            [attr.maxlength]="maxObservacion"
+          ></textarea>
+        </div>
+
+        <div class="modal__acciones">
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarCancelacion()"
+            [disabled]="cancelando()"
+            autofocus
+          >
+            Volver
+          </button>
+          <button
+            type="submit"
+            class="boton boton--peligro"
+            [disabled]="cancelando()"
+          >
+            {{ cancelando() ? 'Cancelando…' : 'Sí, cancelar la orden' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

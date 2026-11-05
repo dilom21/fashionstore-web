@@ -1,0 +1,628 @@
+<section
+  class="personal"
+  aria-labelledby="personal-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="personal__cabecera">
+    <div class="personal__cabecera-texto">
+      <p class="personal__eyebrow">Equipo de la empresa</p>
+      <h1 class="personal__titulo" id="personal-titulo">Personal</h1>
+      <p class="personal__ayuda">
+        Cuentas de trabajo vinculadas a la empresa, con su rol, sucursal y
+        estado de membresía.
+      </p>
+    </div>
+    <div class="personal__acciones">
+      <p class="personal__resumen">
+        {{ total() }} personas · {{ activos() }} membresías activas
+      </p>
+      @if (puedeAdministrar()) {
+        <button
+          type="button"
+          class="boton boton--primario"
+          (click)="abrirAlta()"
+          [disabled]="altaAbierta() || catalogosCargando()"
+        >
+          <app-admin-icon icono="mas" />
+          <span>Dar de alta personal</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (mensajeAccion(); as mensaje) {
+    <p class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>{{ mensaje }}</span>
+    </p>
+  }
+
+  @if (mensajeError(); as mensaje) {
+    <div class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <div class="aviso__cuerpo">
+        <p>{{ mensaje }}</p>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargar()"
+        >
+          Reintentar
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- El token de la invitación vive solo en memoria: no se guarda ni se
+       registra en logs. -->
+  @if (invitacion(); as alta) {
+    <section class="panel panel--token" aria-labelledby="invitacion-titulo">
+      <h2 class="panel__titulo" id="invitacion-titulo">
+        Invitación generada
+      </h2>
+      <p class="panel__ayuda">
+        Comparte este token con <strong>{{ alta.correo }}</strong>. Se muestra
+        <strong>una sola vez</strong>: si lo pierdes tendrás que generar una
+        invitación nueva.
+      </p>
+
+      <div class="token">
+        <code class="token__valor" tabindex="0">{{ alta.invitacion.token }}</code>
+        <button type="button" class="boton boton--secundario" (click)="copiarToken()">
+          <app-admin-icon icono="lista" />
+          <span>Copiar</span>
+        </button>
+      </div>
+
+      @if (copiado() === 'ok') {
+        <p class="token__estado" role="status">
+          Token copiado al portapapeles.
+        </p>
+      } @else if (copiado() === 'error') {
+        <p class="token__estado token__estado--error" role="alert">
+          No se pudo copiar automáticamente. Selecciona el token y cópialo
+          manualmente.
+        </p>
+      }
+
+      <dl class="datos">
+        <div class="datos__fila">
+          <dt>Vence</dt>
+          <dd>{{ formatearFecha(alta.invitacion.expira_en) }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Uso</dt>
+          <dd>
+            {{
+              alta.invitacion.uso === 'unico'
+                ? 'Un solo uso'
+                : alta.invitacion.uso
+            }}
+          </dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Rol asignado</dt>
+          <dd>{{ alta.rol }}</dd>
+        </div>
+        <div class="datos__fila">
+          <dt>Aceptación</dt>
+          <dd class="datos__mono">{{ alta.invitacion.aceptacion }}</dd>
+        </div>
+      </dl>
+
+      <p class="token__aviso">
+        La persona define su contraseña al aceptar la invitación. No se envía
+        ninguna contraseña desde este formulario.
+      </p>
+
+      <div class="panel__acciones">
+        <button type="button" class="boton" (click)="cerrarInvitacion()">
+          Listo, ocultar token
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (altaAbierta()) {
+    <section class="panel" aria-labelledby="form-alta-titulo">
+      <h2 class="panel__titulo" id="form-alta-titulo">Alta de personal</h2>
+      <p class="panel__ayuda">
+        Se crea una cuenta nueva y una invitación de un solo uso. El correo debe
+        ser nuevo y el documento no puede repetirse en esta empresa.
+      </p>
+
+      @if (errorCatalogos(); as error) {
+        <p class="aviso aviso--atencion" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>{{ error }} Sin roles o sucursales no es posible dar de alta.</span>
+        </p>
+      }
+
+      @if (sucursalesActivas().length === 0) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            No hay sucursales activas en la empresa. Crea o activa una sucursal
+            antes de dar de alta personal.
+          </span>
+        </p>
+      }
+
+      @if (rolesAsignables().length === 0) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            No hay roles asignables disponibles. El backend no publica la
+            creación de roles, así que revisa los roles existentes.
+          </span>
+        </p>
+      }
+
+      @if (errorAlta(); as error) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <p>{{ error.mensaje }}</p>
+        </div>
+      }
+
+      <form
+        class="formulario"
+        [formGroup]="formAlta"
+        (ngSubmit)="enviarAlta()"
+        novalidate
+      >
+        <div class="campo">
+          <label class="campo__label" for="alta-correo">
+            Correo electrónico
+          </label>
+          <input
+            #correoInput
+            id="alta-correo"
+            class="campo__input"
+            type="email"
+            formControlName="correo"
+            maxlength="150"
+            autocomplete="off"
+            inputmode="email"
+            [attr.aria-invalid]="mensajeCorreo() !== null"
+            [attr.aria-describedby]="
+              mensajeCorreo() !== null ? 'alta-correo-error' : null
+            "
+          />
+          @if (mensajeCorreo()) {
+            <p class="campo__error" id="alta-correo-error" role="alert">
+              {{ mensajeCorreo() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-nombres">Nombres</label>
+          <input
+            #nombresInput
+            id="alta-nombres"
+            class="campo__input"
+            type="text"
+            formControlName="nombres"
+            maxlength="120"
+            autocomplete="given-name"
+            [attr.aria-invalid]="mensajeNombres() !== null"
+            [attr.aria-describedby]="
+              mensajeNombres() !== null ? 'alta-nombres-error' : null
+            "
+          />
+          @if (mensajeNombres()) {
+            <p class="campo__error" id="alta-nombres-error" role="alert">
+              {{ mensajeNombres() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-apellidos">Apellidos</label>
+          <input
+            #apellidosInput
+            id="alta-apellidos"
+            class="campo__input"
+            type="text"
+            formControlName="apellidos"
+            maxlength="120"
+            autocomplete="family-name"
+            [attr.aria-invalid]="mensajeApellidos() !== null"
+            [attr.aria-describedby]="
+              mensajeApellidos() !== null ? 'alta-apellidos-error' : null
+            "
+          />
+          @if (mensajeApellidos()) {
+            <p class="campo__error" id="alta-apellidos-error" role="alert">
+              {{ mensajeApellidos() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-ci">
+            Documento de identidad
+          </label>
+          <input
+            #ciInput
+            id="alta-ci"
+            class="campo__input"
+            type="text"
+            formControlName="ci"
+            maxlength="35"
+            autocomplete="off"
+            [attr.aria-invalid]="mensajeCi() !== null"
+            [attr.aria-describedby]="
+              mensajeCi() !== null ? 'alta-ci-error' : null
+            "
+          />
+          @if (mensajeCi()) {
+            <p class="campo__error" id="alta-ci-error" role="alert">
+              {{ mensajeCi() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-telefono">
+            Teléfono <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            #telefonoInput
+            id="alta-telefono"
+            class="campo__input"
+            type="tel"
+            formControlName="telefono"
+            maxlength="30"
+            autocomplete="tel"
+            [attr.aria-invalid]="mensajeTelefono() !== null"
+            [attr.aria-describedby]="
+              mensajeTelefono() !== null ? 'alta-telefono-error' : null
+            "
+          />
+          @if (mensajeTelefono()) {
+            <p class="campo__error" id="alta-telefono-error" role="alert">
+              {{ mensajeTelefono() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-sucursal">Sucursal</label>
+          <select
+            #sucursalInput
+            id="alta-sucursal"
+            class="campo__input campo__input--select"
+            formControlName="sucursal_id"
+            [attr.aria-invalid]="mensajeSucursal() !== null"
+            [attr.aria-describedby]="
+              mensajeSucursal() !== null ? 'alta-sucursal-error' : null
+            "
+          >
+            <option [ngValue]="null">Selecciona una sucursal…</option>
+            @for (sucursal of sucursalesActivas(); track sucursal.id) {
+              <option [ngValue]="sucursal.id">{{ sucursal.nombre }}</option>
+            }
+          </select>
+          <p class="campo__aviso">
+            Solo se listan sucursales activas: el backend rechaza destinos
+            inactivos.
+          </p>
+          @if (mensajeSucursal()) {
+            <p class="campo__error" id="alta-sucursal-error" role="alert">
+              {{ mensajeSucursal() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-rol">Rol empresarial</label>
+          <select
+            #rolInput
+            id="alta-rol"
+            class="campo__input campo__input--select"
+            formControlName="rol_id"
+            [attr.aria-invalid]="mensajeRol() !== null"
+            [attr.aria-describedby]="mensajeRol() !== null ? 'alta-rol-error' : null"
+          >
+            <option [ngValue]="null">Selecciona un rol…</option>
+            @for (rol of rolesAsignables(); track rol.id) {
+              <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+            }
+          </select>
+          <p class="campo__aviso">
+            El rol CLIENTE no es asignable al personal de la empresa.
+          </p>
+          @if (mensajeRol()) {
+            <p class="campo__error" id="alta-rol-error" role="alert">
+              {{ mensajeRol() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="alta-expira">
+            Vigencia de la invitación (horas)
+          </label>
+          <input
+            #expiraInput
+            id="alta-expira"
+            class="campo__input"
+            type="number"
+            formControlName="expira_horas"
+            min="1"
+            max="168"
+            step="1"
+            inputmode="numeric"
+            [attr.aria-invalid]="mensajeExpira() !== null"
+            [attr.aria-describedby]="
+              mensajeExpira() !== null
+                ? 'alta-expira-aviso alta-expira-error'
+                : 'alta-expira-aviso'
+            "
+          />
+          <p class="campo__aviso" id="alta-expira-aviso">
+            Entre 1 y 168 horas; por defecto 72.
+          </p>
+          @if (mensajeExpira()) {
+            <p class="campo__error" id="alta-expira-error" role="alert">
+              {{ mensajeExpira() }}
+            </p>
+          }
+        </div>
+
+        <div class="formulario__acciones">
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="guardandoAlta() || catalogosCargando()"
+          >
+            {{ guardandoAlta() ? 'Generando invitación…' : 'Crear e invitar' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarAlta()"
+            [disabled]="guardandoAlta()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (!puedeAdministrar()) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>
+        Tu rol no puede administrar personal. Puedes consultar el listado; el
+        alta y los cambios requieren el permiso PERSONAL/ADMINISTRAR.
+      </span>
+    </p>
+  }
+
+  @if (cargando()) {
+    <p class="vm-sr-only" role="status">Cargando el personal de la empresa…</p>
+    <div class="esqueleto" aria-hidden="true">
+      <div class="esqueleto__bloque"></div>
+      <div class="esqueleto__bloque"></div>
+      <div class="esqueleto__bloque"></div>
+    </div>
+  } @else if (!mensajeError()) {
+    @if (personal().length === 0) {
+      <p class="estado-vacio">
+        Aún no hay personal registrado en esta empresa.
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de personal de la empresa"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Personal de la empresa: {{ total() }} personas,
+            {{ activos() }} membresías activas.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Correo</th>
+              <th scope="col">Nombres y apellidos</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Membresía</th>
+              <th scope="col">Empleado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of personal(); track fila.usuario_id) {
+              <tr [class.tabla__fila--propia]="esPropio(fila)">
+                <th scope="row" class="tabla__correo">
+                  {{ fila.correo }}
+                  @if (esPropio(fila)) {
+                    <span class="etiqueta">Tu cuenta</span>
+                  }
+                </th>
+                <td>{{ nombrePersona(fila) }}</td>
+                <td>
+                  @if (
+                    puedeEditarFila(fila) &&
+                    fila.empleado_activo === true &&
+                    esRolAsignable(fila.rol)
+                  ) {
+                    <select
+                      class="select"
+                      [value]="fila.rol_id"
+                      [attr.aria-label]="'Cambiar rol de ' + fila.correo"
+                      [disabled]="filaOcupadaId() === fila.usuario_id"
+                      (change)="cambiarRol(fila, $event)"
+                    >
+                      @for (rol of rolesAsignables(); track rol.id) {
+                        <option [value]="rol.id">{{ rol.nombre }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span class="tabla__rol">{{ fila.rol }}</span>
+                    @if (puedeEditarFila(fila) && fila.empleado_activo !== true) {
+                      <span class="tabla__nota">
+                        Requiere empleado activo para cambiar el rol.
+                      </span>
+                    }
+                  }
+                </td>
+                <td>
+                  @if (puedeEditarFila(fila) && fila.empleado_id !== null) {
+                    <select
+                      class="select"
+                      [value]="fila.sucursal_id ?? ''"
+                      [attr.aria-label]="'Cambiar sucursal de ' + fila.correo"
+                      [disabled]="filaOcupadaId() === fila.usuario_id"
+                      (change)="cambiarSucursal(fila, $event)"
+                    >
+                      <option value="">Selecciona…</option>
+                      @for (
+                        sucursal of opcionesSucursal(fila);
+                        track sucursal.id
+                      ) {
+                        <option [value]="sucursal.id">
+                          {{ sucursal.nombre
+                          }}{{ sucursal.estado ? '' : ' (inactiva)' }}
+                        </option>
+                      }
+                    </select>
+                  } @else {
+                    <span>{{ nombreSucursal(fila.sucursal_id) }}</span>
+                  }
+                </td>
+                <td>
+                  <span
+                    class="estado"
+                    [class.estado--inactivo]="!fila.usuario_activo"
+                  >
+                    <app-admin-icon
+                      class="estado__icono"
+                      [icono]="fila.usuario_activo ? 'check' : 'cancelar'"
+                    />
+                    {{ textoEstado(fila.usuario_activo) }}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    class="estado"
+                    [class.estado--inactivo]="!fila.membresia_activa"
+                  >
+                    <app-admin-icon
+                      class="estado__icono"
+                      [icono]="fila.membresia_activa ? 'check' : 'cancelar'"
+                    />
+                    {{ textoEstado(fila.membresia_activa) }}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    class="estado"
+                    [class.estado--inactivo]="!fila.empleado_activo"
+                  >
+                    <app-admin-icon
+                      class="estado__icono"
+                      [icono]="fila.empleado_activo ? 'check' : 'alerta'"
+                    />
+                    {{ textoEstado(fila.empleado_activo) }}
+                  </span>
+                </td>
+                <td>
+                  @if (puedeEditarFila(fila)) {
+                    @if (fila.membresia_activa) {
+                      <button
+                        type="button"
+                        class="boton boton--fila"
+                        (click)="pedirDesactivar(fila, $event)"
+                        [disabled]="filaOcupadaId() === fila.usuario_id"
+                      >
+                        Desactivar
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="boton boton--fila"
+                        (click)="activarMembresia(fila)"
+                        [disabled]="filaOcupadaId() === fila.usuario_id"
+                      >
+                        Activar
+                      </button>
+                    }
+                  } @else if (esPropio(fila)) {
+                    <span class="tabla__nota">
+                      No puedes cambiar tu propia membresía.
+                    </span>
+                  } @else {
+                    <span class="tabla__vacio">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</section>
+
+@if (confirmacion(); as fila) {
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirmar-titulo"
+    aria-describedby="confirmar-detalle"
+    (keydown.escape)="cancelarDesactivar()"
+    (keydown)="contenerFoco($event)"
+  >
+    <div class="modal__panel">
+      <h2 class="modal__titulo" id="confirmar-titulo">
+        Desactivar membresía
+      </h2>
+      <p class="modal__detalle" id="confirmar-detalle">
+        La membresía de «{{ fila.correo }}» quedará inactiva en esta empresa. La
+        cuenta global no se elimina y la empresa debe conservar al menos un
+        administrador activo.
+      </p>
+
+      @if (errorConfirmacion(); as error) {
+        <p class="modal__error" role="alert">{{ error }}</p>
+      }
+
+      <div class="modal__acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cancelarDesactivar()"
+          [disabled]="filaOcupadaId() !== null"
+          autofocus
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="boton boton--peligro"
+          (click)="confirmarDesactivar()"
+          [disabled]="filaOcupadaId() !== null"
+        >
+          {{ filaOcupadaId() !== null ? 'Aplicando…' : 'Sí, desactivar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

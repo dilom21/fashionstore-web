@@ -1,0 +1,40 @@
+<section class="pago" aria-labelledby="pago-titulo">
+  <button type="button" class="volver" (click)="volver()"><app-admin-icon icono="chevron-left" /> Volver a mis compras</button>
+  <header>
+    <p>Pago electrónico seguro</p>
+    <h1 id="pago-titulo">Completa tu compra</h1>
+    <span>Venta #{{ ventaId() }}</span>
+  </header>
+
+  @if (error(); as texto) { <p class="aviso" role="alert"><app-admin-icon icono="alerta" /> {{ texto }}</p> }
+
+  @if (estado()?.estado_pago === 'APROBADO' && estado()?.estado_venta === 'COMPLETADA') {
+    <section class="resultado resultado--exito" role="status">
+      <app-admin-icon icono="check" />
+      <div><h2>Compra completada</h2><p>El webhook confirmó el pago y la venta. Ya puedes consultar tu comprobante.</p></div>
+      <button type="button" class="boton" (click)="volver()">Ver mis compras</button>
+    </section>
+  } @else {
+    <div class="contenido">
+      <section class="panel">
+        <div class="paso"><span>1</span><div><strong>Datos de pago</strong><small>Procesados directamente por Stripe.</small></div></div>
+        @if (cargando()) { <p class="estado">Preparando el formulario seguro…</p> }
+        <div #paymentElement class="stripe-element" [class.stripe-element--oculto]="cargando()"></div>
+        <button type="button" class="boton boton--principal" (click)="pagar()" [disabled]="!listo() || confirmando() || esperando()">
+          @if (confirmando()) { Confirmando con Stripe… } @else if (esperando()) { Esperando confirmación… } @else { Pagar Bs {{ intencion()?.monto ?? 0 | number: '1.2-2' }} }
+        </button>
+      </section>
+      <aside class="resumen">
+        <p class="resumen__eyebrow">Resumen</p>
+        <h2>Venta #{{ ventaId() }}</h2>
+        <div><span>Total</span><strong>Bs {{ intencion()?.monto ?? 0 | number: '1.2-2' }}</strong></div>
+        <div><span>Moneda</span><strong>{{ (intencion()?.moneda ?? 'bob').toUpperCase() }}</strong></div>
+        <p><app-admin-icon icono="estado" /> El resultado final lo determina únicamente el webhook firmado del servidor.</p>
+        @if (estado(); as actual) { <div class="estado-pago"><span>Pago</span><strong>{{ actual.estado_pago ?? 'PENDIENTE' }}</strong></div> }
+        @if (!esperando() && estado()?.estado_pago !== 'APROBADO') {
+          <button type="button" class="consultar" (click)="consultarEstado()">Consultar estado sin cobrar otra vez</button>
+        }
+      </aside>
+    </div>
+  }
+</section>

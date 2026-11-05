@@ -1,0 +1,325 @@
+<section
+  class="inventario"
+  aria-labelledby="inventario-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="inventario__cabecera">
+    <div class="inventario__cabecera-texto">
+      <p class="inventario__eyebrow">Catálogo</p>
+      <h1 class="inventario__titulo" id="inventario-titulo">Inventario</h1>
+      <p class="inventario__ayuda">
+        Existencias por sucursal, producto y variante. El backend calcula el
+        stock disponible; esta pantalla solo consulta y resalta las filas sin
+        unidades disponibles.
+      </p>
+    </div>
+    <div class="inventario__resumen" role="status">
+      <span>{{ inventario().length }} filas en esta página</span>
+      <span class="inventario__resumen-sep" aria-hidden="true">·</span>
+      <span>{{ nombreSucursalFiltrada() }}</span>
+    </div>
+  </header>
+
+  <p class="aviso aviso--atencion" role="status">
+    <app-admin-icon class="aviso__icono" icono="alerta" />
+    <span>
+      Consulta de solo lectura: el contrato de empresa solo expone
+      <code>GET /tenant/inventario</code>. Los movimientos de stock se generan
+      desde ventas, compras y devoluciones, no desde esta pantalla.
+    </span>
+  </p>
+
+  <section class="panel" aria-labelledby="inventario-lista-titulo">
+    <div class="panel__cabecera">
+      <div>
+        <h2 class="panel__titulo" id="inventario-lista-titulo">
+          Existencias
+        </h2>
+        <p class="panel__ayuda">
+          El backend no devuelve un total de resultados: se muestran hasta
+          {{ limite() }} filas por página y «Siguiente» se habilita solo cuando la
+          página llega completa.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="boton boton--secundario"
+        (click)="recargar()"
+        [disabled]="cargando()"
+      >
+        <app-admin-icon icono="actualizar" />
+        <span>Actualizar</span>
+      </button>
+    </div>
+
+    @if (errorSucursales(); as mensaje) {
+      <div class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>
+            No se pudo cargar el listado de sucursales. Puedes consultar el
+            inventario de todas las sucursales.
+          </p>
+          <p class="aviso__detalle">{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargarSucursales()"
+            [disabled]="cargandoSucursales()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar sucursales</span>
+          </button>
+        </div>
+      </div>
+    } @else if (sucursalesSinPermiso()) {
+      <p class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <span>
+          Tu sesión no puede consultar las sucursales de la empresa; el filtro
+          por sucursal queda deshabilitado y se consulta el inventario completo.
+        </span>
+      </p>
+    }
+
+    <form
+      class="inventario__filtros"
+      role="search"
+      (submit)="
+        $event.preventDefault(); aplicarBusqueda(textoBusqueda.value)
+      "
+    >
+      <div class="campo campo--filtro">
+        <label class="campo__label" for="inventario-sucursal">
+          Sucursal
+        </label>
+        <select
+          id="inventario-sucursal"
+          class="campo__input campo__input--select"
+          [value]="filtroSucursal() ?? ''"
+          (change)="cambiarSucursal($event)"
+          [disabled]="cargando() || cargandoSucursales() || sucursalesSinPermiso()"
+        >
+          <option value="">Todas las sucursales</option>
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <option [value]="sucursal.id">{{ etiquetaSucursal(sucursal) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="campo campo--busqueda">
+        <label class="campo__label" for="inventario-texto">
+          Producto, SKU o variante
+        </label>
+        <div class="inventario__busqueda">
+          <input
+            #textoBusqueda
+            id="inventario-texto"
+            class="campo__input"
+            type="search"
+            autocomplete="off"
+            [attr.maxlength]="maxTexto"
+            [attr.placeholder]="'Hasta ' + maxTexto + ' caracteres'"
+            [value]="filtroTexto()"
+            [disabled]="cargando()"
+          />
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="cargando()"
+          >
+            <app-admin-icon icono="buscar" />
+            <span>Buscar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="campo campo--limite">
+        <label class="campo__label" for="inventario-limite">
+          Filas por página
+        </label>
+        <select
+          id="inventario-limite"
+          class="campo__input campo__input--select"
+          [value]="limite()"
+          (change)="cambiarLimite($event)"
+          [disabled]="cargando()"
+        >
+          @for (opcion of limites; track opcion) {
+            <option [value]="opcion">{{ opcion }}</option>
+          }
+        </select>
+      </div>
+
+      @if (tieneFiltros()) {
+        <button
+          type="button"
+          class="boton boton--secundario inventario__limpiar"
+          (click)="limpiarFiltros()"
+          [disabled]="cargando()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Quitar filtros</span>
+        </button>
+      }
+    </form>
+
+    <p class="inventario__rango" aria-live="polite">{{ textoRango() }}</p>
+
+    @if (filtroTexto().length > 0) {
+      <p class="inventario__chip" role="status">
+        <span>Búsqueda: «{{ filtroTexto() }}»</span>
+        <button
+          type="button"
+          class="boton boton--fila"
+          (click)="limpiarBusqueda()"
+          [disabled]="cargando()"
+        >
+          Quitar búsqueda
+        </button>
+      </p>
+    }
+
+    @if (cargando()) {
+      <p class="vm-sr-only" role="status">Cargando el inventario…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (sinPermiso()) {
+      <div class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>
+            Tu rol no tiene el permiso VENTAS/CONSULTAR, necesario para consultar
+            el inventario de la empresa.
+          </p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (error(); as normalizado) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p class="aviso__titulo-error">
+            @switch (normalizado.estado) {
+              @case (0) {
+                No pudimos conectarnos con el servicio.
+              }
+              @case (503) {
+                El módulo de inventario no está habilitado.
+              }
+              @default {
+                No se pudo cargar el inventario.
+              }
+            }
+          </p>
+          <p>{{ normalizado.mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (inventario().length === 0) {
+      <p class="estado-vacio">
+        @if (tieneFiltros()) {
+          No se encontraron existencias con los filtros seleccionados. Prueba
+          con otra sucursal, otro texto o quita los filtros.
+        } @else {
+          No hay existencias registradas en esta empresa para esta página.
+        }
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de inventario"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Inventario: {{ inventario().length }} filas en esta página.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Sucursal</th>
+              <th scope="col">Producto</th>
+              <th scope="col">SKU</th>
+              <th scope="col">Talla</th>
+              <th scope="col">Color</th>
+              <th scope="col">Temporada</th>
+              <th scope="col" class="tabla__numero">Stock actual</th>
+              <th scope="col" class="tabla__numero">Stock reservado</th>
+              <th scope="col" class="tabla__numero">Stock disponible</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of inventario(); track item.id) {
+              <tr [class.tabla__fila--sin-stock]="sinDisponible(item)">
+                <td>{{ item.sucursal_nombre }}</td>
+                <td class="tabla__nombre">{{ item.producto_nombre }}</td>
+                <td class="tabla__mono">{{ item.sku }}</td>
+                <td>{{ item.talla }}</td>
+                <td>{{ item.color }}</td>
+                <td>{{ item.temporada_nombre }}</td>
+                <td class="tabla__numero">{{ item.stock_actual }}</td>
+                <td class="tabla__numero">{{ item.stock_reservado }}</td>
+                <td class="tabla__numero">
+                  <span
+                    class="stock"
+                    [class.stock--cero]="sinDisponible(item)"
+                  >
+                    {{ item.stock_disponible }}
+                  </span>
+                  @if (sinDisponible(item)) {
+                    <span class="etiqueta etiqueta--atencion">Sin disponible</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="inventario__pie">
+      <div class="inventario__paginacion">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaAnterior()"
+          [disabled]="pagina() === 0 || cargando()"
+        >
+          <app-admin-icon icono="chevron-left" />
+          <span>Anterior</span>
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaSiguiente()"
+          [disabled]="!hayPaginaSiguiente() || cargando()"
+        >
+          <span>Siguiente</span>
+          <app-admin-icon icono="chevron-right" />
+        </button>
+      </div>
+      <p class="inventario__nota">
+        Página {{ pagina() + 1 }} · sin total del servidor. La existencia se
+        resalta solo cuando el stock disponible es cero o negativo.
+      </p>
+    </div>
+  </section>
+</section>

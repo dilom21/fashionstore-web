@@ -1,0 +1,337 @@
+:host {
+  display: block;
+}
+
+.empresa {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  max-width: 1120px;
+}
+
+/* =============================== Cabecera =============================== */
+.empresa__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background:
+    radial-gradient(circle at 90% 0%, var(--accent-soft), transparent 62%),
+    var(--surface);
+}
+
+.empresa__cabecera-texto {
+  min-width: 0;
+}
+
+.empresa__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.empresa__titulo {
+  margin-top: 0.2rem;
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+}
+
+.empresa__ayuda {
+  margin-top: 0.4rem;
+  max-width: 60ch;
+  font-size: 0.88rem;
+  color: var(--text-2);
+}
+
+/* ================================ Botones =============================== */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.boton:hover:not(:disabled) {
+  border-color: var(--accent-strong);
+  background: var(--surface-3);
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.boton:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+/* ================================= Alertas ============================== */
+.alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-m);
+  background: var(--accent-soft);
+}
+
+.alerta__icono {
+  flex: none;
+  color: var(--accent-text);
+}
+
+.alerta__cuerpo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.alerta__texto {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* =============================== Esqueleto ============================== */
+.esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.esqueleto__fila {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.esqueleto__bloque {
+  height: 148px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: linear-gradient(
+    100deg,
+    var(--surface) 30%,
+    var(--surface-2) 50%,
+    var(--surface) 70%
+  );
+  background-size: 220% 100%;
+  animation: brillo 1.5s ease-in-out infinite;
+}
+
+.esqueleto__bloque--alto {
+  height: 96px;
+}
+
+@keyframes brillo {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -30% 0;
+  }
+}
+
+/* ================================ Tarjetas ============================== */
+.empresa__grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.tarjeta {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.tarjeta--ancha {
+  grid-column: 1 / -1;
+}
+
+.tarjeta__titulo {
+  margin-bottom: 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.datos__fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.datos__fila dt {
+  color: var(--text-2);
+}
+
+.datos__fila dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.datos__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.84rem;
+}
+
+.datos__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.datos__estado-icono {
+  color: var(--text-2);
+}
+
+/* =============================== Progreso =============================== */
+.progreso {
+  height: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+
+.progreso__relleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--grad-accent);
+  transition: width 0.3s ease;
+}
+
+.progreso__texto {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.progreso__texto strong {
+  color: var(--text);
+}
+
+/* ============================== Capacidades ============================= */
+.capacidades {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.capacidades__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--bg-2);
+  font-size: 0.85rem;
+}
+
+.capacidades__icono {
+  flex: none;
+  color: var(--accent-text);
+}
+
+.capacidades__nombre {
+  font-weight: 600;
+}
+
+.capacidades__texto {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.capacidades__item--no {
+  border-style: dashed;
+}
+
+.capacidades__item--no .capacidades__icono,
+.capacidades__item--no .capacidades__texto {
+  color: var(--text-3);
+}
+
+/* ================================= Notas ================================ */
+.empresa__nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  max-width: 80ch;
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+.empresa__nota-icono {
+  flex: none;
+  color: var(--text-3);
+}
+
+.estado-vacio {
+  padding: 1rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-m);
+  font-size: 0.88rem;
+  color: var(--text-2);
+}
+
+@media (max-width: 520px) {
+  .datos__fila {
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .datos__fila dd {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto__bloque {
+    animation: none;
+  }
+
+  .progreso__relleno {
+    transition: none;
+  }
+}

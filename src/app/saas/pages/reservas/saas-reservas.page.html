@@ -1,0 +1,359 @@
+<section
+  class="reservas"
+  aria-labelledby="reservas-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="reservas__cabecera">
+    <div class="reservas__cabecera-texto">
+      <p class="reservas__eyebrow">Comercial</p>
+      <h1 class="reservas__titulo" id="reservas-titulo">Reservas</h1>
+      <p class="reservas__ayuda">
+        Consulta las reservas de la empresa y atiéndelas en sucursal. Cada
+        acción exige una confirmación y el backend valida el rol y el estado.
+      </p>
+    </div>
+    <div class="reservas__resumen" role="status">
+      <span>{{ reservas().length }} reservas en esta página</span>
+      <span class="reservas__resumen-sep" aria-hidden="true">·</span>
+      <span>página {{ pagina() + 1 }}</span>
+    </div>
+  </header>
+
+  <app-saas-offline-panel
+    [tipos]="['RESERVA_CREAR', 'RESERVA_CANCELAR', 'RESERVA_FINALIZAR']"
+    (sincronizado)="recargarTrasSincronizacion()"
+  />
+
+  <p class="aviso aviso--atencion" role="status">
+    <app-admin-icon class="aviso__icono" icono="alerta" />
+    <span>
+      El listado de reservas es solo para ADMINISTRADOR y el backend solo
+      publica id y estado; no hay detalle de prendas ni cliente en esta versión.
+    </span>
+  </p>
+
+  <p class="aviso aviso--atencion" role="status">
+    <app-admin-icon class="aviso__icono" icono="actualizar" />
+    <span>
+      Las acciones de cancelar y finalizar se guardan en este dispositivo cuando
+      no hay conexión. La creación de una reserva offline se realiza desde el
+      canal cliente (Mis compras), porque el contrato tenant de alta exige
+      sesión de cliente.
+    </span>
+  </p>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (avisoOffline(); as aviso) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="actualizar" />
+      <span>{{ aviso }}</span>
+    </p>
+  }
+
+  <section class="panel" aria-labelledby="reservas-lista-titulo">
+    <div class="panel__cabecera">
+      <div>
+        <h2 class="panel__titulo" id="reservas-lista-titulo">
+          Reservas de la empresa
+        </h2>
+        <p class="panel__ayuda">
+          Sin total del servidor: se muestran hasta {{ limite }} reservas por
+          página y el botón Siguiente se habilita solo con una página completa.
+        </p>
+      </div>
+      @if (!sinPermiso()) {
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargar()"
+          [disabled]="cargando()"
+        >
+          <app-admin-icon icono="actualizar" />
+          <span>Actualizar</span>
+        </button>
+      }
+    </div>
+
+    @if (cargando()) {
+      <p class="vm-sr-only" role="status">Cargando las reservas…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (sinPermiso()) {
+      <div class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>
+            El backend solo expone el listado de reservas al rol ADMINISTRADOR.
+            Tu rol actual no puede consultarlo en esta empresa.
+          </p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (errorListado(); as mensaje) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>{{ mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (reservas().length === 0) {
+      <p class="estado-vacio">
+        No hay reservas registradas en esta empresa para esta página.
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de reservas de la empresa"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Reservas de la empresa: {{ reservas().length }} registros con id y
+            estado.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Reserva (id)</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (reserva of reservas(); track reserva.id) {
+              <tr>
+                <th scope="row" class="tabla__mono">{{ reserva.id }}</th>
+                <td>
+                  <span class="estado">{{ reserva.estado }}</span>
+                </td>
+                <td>
+                  <div class="reservas__acciones-fila">
+                    <button
+                      type="button"
+                      class="boton boton--fila boton--peligro-suave"
+                      [attr.aria-label]="'Cancelar la reserva ' + reserva.id"
+                      (click)="abrirAccion('cancelar', reserva, $event)"
+                      [disabled]="ejecutando()"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      class="boton boton--fila"
+                      [attr.aria-label]="
+                        'Finalizar sin compra la reserva ' + reserva.id
+                      "
+                      (click)="
+                        abrirAccion('finalizar-sin-compra', reserva, $event)
+                      "
+                      [disabled]="ejecutando()"
+                    >
+                      Finalizar sin compra
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="reservas__pie">
+      <p class="reservas__rango" aria-live="polite">{{ textoRango() }}</p>
+      <div class="reservas__paginacion">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaAnterior()"
+          [disabled]="pagina() === 0 || cargando()"
+        >
+          <app-admin-icon icono="chevron-left" />
+          <span>Anterior</span>
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaSiguiente()"
+          [disabled]="!hayPaginaSiguiente() || cargando()"
+        >
+          <span>Siguiente</span>
+          <app-admin-icon icono="chevron-right" />
+        </button>
+      </div>
+    </div>
+
+    <p class="reservas__nota">
+      Cancelar: permitido a cliente CLIENTE y a personal
+      ADMINISTRADOR/ENCARGADO_SUCURSAL. Finalizar sin compra: solo personal
+      ADMINISTRADOR/ENCARGADO_SUCURSAL/CAJERO. Si tu rol no corresponde, el
+      backend responde 403.
+    </p>
+  </section>
+</section>
+
+@if (accion(); as pendiente) {
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="reserva-accion-titulo"
+    aria-describedby="reserva-accion-detalle"
+    (keydown.escape)="cerrarAccion()"
+    (keydown)="contenerFoco($event)"
+  >
+    <div class="modal__panel">
+      <h2 class="modal__titulo" id="reserva-accion-titulo">
+        {{ tituloAccion(pendiente) }}
+      </h2>
+      <p class="modal__detalle" id="reserva-accion-detalle">
+        @if (pendiente.tipo === 'cancelar') {
+          La reserva pasará a estado CANCELADA si el backend acepta la
+          transición. Se libera el stock reservado según las reglas del
+          servidor.
+        } @else {
+          La reserva pasará a estado ATENDIDA sin registrar una venta. Se
+          libera el stock reservado según las reglas del servidor.
+        }
+      </p>
+      <p class="modal__detalle">
+        Estado actual publicado por el backend:
+        <strong>{{ pendiente.reserva.estado }}</strong>. No hay detalle de
+        prendas ni de cliente disponible en este contrato.
+      </p>
+
+      @if (errorAccion(); as error) {
+        <div class="modal__error" role="alert">
+          <p class="modal__error-titulo">
+            @switch (tipoErrorAccion()) {
+              @case ('permiso') {
+                Tu rol no puede ejecutar esta acción.
+              }
+              @case ('deshabilitado') {
+                El módulo de reservas SaaS no está habilitado.
+              }
+              @case ('conflicto') {
+                La reserva cambió de estado o está en conflicto.
+              }
+              @default {
+                No se pudo completar la acción.
+              }
+            }
+          </p>
+          <p>{{ error.mensaje }}</p>
+          @switch (tipoErrorAccion()) {
+            @case ('permiso') {
+              <p class="modal__error-detalle">
+                El backend solo permite cancelar a CLIENTE o a personal
+                ADMINISTRADOR/ENCARGADO_SUCURSAL, y finalizar sin compra a
+                ADMINISTRADOR/ENCARGADO_SUCURSAL/CAJERO. No reintentes con el
+                mismo rol: solicita el permiso correspondiente.
+              </p>
+            }
+            @case ('deshabilitado') {
+              <p class="modal__error-detalle">
+                La empresa todavía no tiene reservas SaaS habilitadas en el
+                servidor. No es un problema de tus datos.
+              </p>
+            }
+            @case ('conflicto') {
+              <p class="modal__error-detalle">
+                Actualiza el listado para ver el estado vigente. Si la reserva
+                ya fue cancelada o atendida, no se puede volver a operar.
+              </p>
+            }
+          }
+        </div>
+      }
+
+      <form
+        class="modal__form"
+        [formGroup]="formObservacion"
+        (ngSubmit)="confirmarAccion()"
+        novalidate
+      >
+        <div class="campo">
+          <label class="campo__label" for="reserva-observacion">
+            Observación <span class="campo__opcional">(opcional)</span>
+          </label>
+          <textarea
+            id="reserva-observacion"
+            class="campo__input campo__input--area"
+            formControlName="observacion"
+            rows="3"
+            [attr.maxlength]="maxObservacion"
+            [attr.aria-invalid]="
+              formObservacion.controls.observacion.touched &&
+              formObservacion.controls.observacion.invalid
+            "
+            [attr.aria-describedby]="'reserva-observacion-aviso'"
+          ></textarea>
+          <p class="campo__aviso" id="reserva-observacion-aviso">
+            Hasta {{ maxObservacion }} caracteres. Si se deja vacía, la
+            solicitud se envía sin observación.
+          </p>
+          @if (
+            formObservacion.controls.observacion.touched &&
+            formObservacion.controls.observacion.invalid
+          ) {
+            <p class="campo__error" role="alert">
+              La observación admite como máximo {{ maxObservacion }}
+              caracteres.
+            </p>
+          }
+        </div>
+
+        <div class="modal__acciones">
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarAccion()"
+            [disabled]="ejecutando()"
+            autofocus
+          >
+            Volver
+          </button>
+          <button
+            type="submit"
+            class="boton"
+            [class.boton--peligro]="pendiente.tipo === 'cancelar'"
+            [class.boton--primario]="pendiente.tipo !== 'cancelar'"
+            [disabled]="ejecutando()"
+          >
+            {{
+              ejecutando()
+                ? 'Aplicando…'
+                : pendiente.tipo === 'cancelar'
+                  ? 'Sí, cancelar'
+                  : 'Sí, finalizar sin compra'
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

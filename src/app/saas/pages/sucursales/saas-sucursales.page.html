@@ -1,0 +1,421 @@
+<section
+  class="sucursales"
+  aria-labelledby="sucursales-titulo"
+  [attr.aria-busy]="cargando()"
+>
+  <header class="sucursales__cabecera">
+    <div class="sucursales__cabecera-texto">
+      <p class="sucursales__eyebrow">Red de la empresa</p>
+      <h1 class="sucursales__titulo" id="sucursales-titulo">Sucursales</h1>
+      <p class="sucursales__ayuda">
+        Sucursales registradas, su ciudad, su dirección y el estado que decide
+        si pueden operar.
+      </p>
+    </div>
+    <div class="sucursales__acciones">
+      <p class="sucursales__limite">
+        <app-admin-icon class="sucursales__limite-icono" icono="sucursales" />
+        <span>{{ textoLimite() }}</span>
+      </p>
+      @if (esAdministrador()) {
+        <button
+          type="button"
+          class="boton boton--primario"
+          (click)="abrirFormulario()"
+          [disabled]="formularioAbierto() || !puedeCrear()"
+          [attr.title]="
+            puedeCrear()
+              ? null
+              : 'El catálogo de ciudades no está disponible para esta sesión'
+          "
+        >
+          <app-admin-icon icono="mas" />
+          <span>Nueva sucursal</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  @if (ciudadesSinPermiso()) {
+    <div class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <div class="aviso__cuerpo">
+        <p>
+          Tu sesión no tiene el permiso SUCURSALES/CONSULTAR, así que el catálogo
+          de ciudades no está disponible y el alta de sucursales queda
+          deshabilitada. La consulta del listado sigue funcionando.
+        </p>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargarCiudades()"
+        >
+          Reintentar catálogo
+        </button>
+      </div>
+    </div>
+  } @else if (errorCiudades(); as errorCatalogo) {
+    <div class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <div class="aviso__cuerpo">
+        <p>
+          No se pudo cargar el catálogo de ciudades. El alta de sucursales está
+          deshabilitada hasta que el catálogo esté disponible.
+        </p>
+        <p class="aviso__detalle">{{ errorCatalogo }}</p>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargarCiudades()"
+        >
+          Reintentar catálogo
+        </button>
+      </div>
+    </div>
+  } @else if (!cargandoCiudades() && ciudades().length === 0) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>
+        El catálogo de ciudades llegó vacío: no es posible registrar sucursales
+        hasta que un administrador cargue ciudades en el sistema.
+      </span>
+    </p>
+  }
+
+  @if (mensajeError(); as mensaje) {
+    <div class="aviso aviso--error" role="alert">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <div class="aviso__cuerpo">
+        <p>{{ mensaje }}</p>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargar()"
+        >
+          Reintentar
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (formularioAbierto()) {
+    <section class="panel" aria-labelledby="form-sucursal-titulo">
+      <h2 class="panel__titulo" id="form-sucursal-titulo">Nueva sucursal</h2>
+      <p class="panel__ayuda">
+        La sucursal se crea activa. La ciudad debe existir y estar activa en el
+        sistema; el backend lo valida.
+      </p>
+
+      @if (limiteAlcanzado()) {
+        <p class="aviso aviso--atencion" role="status">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <span>
+            Ya usas el máximo de sucursales activas de tu plan. El servidor
+            rechazará el alta hasta que desactives una sucursal o se amplíe el
+            plan.
+          </span>
+        </p>
+      }
+
+      @if (errorFormulario(); as error) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p>{{ error.mensaje }}</p>
+            @if (esErrorLimite()) {
+              <p class="aviso__detalle">
+                Tu plan permite {{ maximo() }} sucursales activas y ya tienes
+                {{ activas() }}. Desactiva una sucursal o solicita al
+                superadministrador un plan con más sucursales.
+              </p>
+            }
+            @if (error.estado === 404) {
+              <p class="aviso__detalle">
+                Revisa la ciudad seleccionada: debe existir y estar activa en el
+                sistema.
+              </p>
+            }
+          </div>
+        </div>
+      }
+
+      <form
+        class="formulario"
+        [formGroup]="form"
+        (ngSubmit)="enviar()"
+        novalidate
+      >
+        <div class="campo">
+          <label class="campo__label" for="sucursal-nombre">Nombre</label>
+          <input
+            #nombreInput
+            id="sucursal-nombre"
+            class="campo__input"
+            type="text"
+            formControlName="nombre"
+            maxlength="120"
+            autocomplete="organization"
+            [attr.aria-invalid]="mensajeNombre() !== null"
+            [attr.aria-describedby]="
+              mensajeNombre() !== null ? 'sucursal-nombre-error' : null
+            "
+          />
+          @if (mensajeNombre()) {
+            <p class="campo__error" id="sucursal-nombre-error" role="alert">
+              {{ mensajeNombre() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="sucursal-direccion">
+            Dirección
+          </label>
+          <input
+            #direccionInput
+            id="sucursal-direccion"
+            class="campo__input"
+            type="text"
+            formControlName="direccion"
+            maxlength="255"
+            autocomplete="street-address"
+            [attr.aria-invalid]="mensajeDireccion() !== null"
+            [attr.aria-describedby]="
+              mensajeDireccion() !== null ? 'sucursal-direccion-error' : null
+            "
+          />
+          @if (mensajeDireccion()) {
+            <p class="campo__error" id="sucursal-direccion-error" role="alert">
+              {{ mensajeDireccion() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="sucursal-telefono">
+            Teléfono <span class="campo__opcional">(opcional)</span>
+          </label>
+          <input
+            #telefonoInput
+            id="sucursal-telefono"
+            class="campo__input"
+            type="tel"
+            formControlName="telefono"
+            maxlength="30"
+            autocomplete="tel"
+            [attr.aria-invalid]="mensajeTelefono() !== null"
+            [attr.aria-describedby]="
+              mensajeTelefono() !== null ? 'sucursal-telefono-error' : null
+            "
+          />
+          @if (mensajeTelefono()) {
+            <p class="campo__error" id="sucursal-telefono-error" role="alert">
+              {{ mensajeTelefono() }}
+            </p>
+          }
+        </div>
+
+        <div class="campo">
+          <label class="campo__label" for="sucursal-ciudad">Ciudad</label>
+          <select
+            #ciudadInput
+            id="sucursal-ciudad"
+            class="campo__input"
+            formControlName="ciudad_id"
+            [attr.aria-invalid]="mensajeCiudad() !== null"
+            [attr.aria-describedby]="
+              mensajeCiudad() !== null
+                ? 'sucursal-ciudad-aviso sucursal-ciudad-error'
+                : 'sucursal-ciudad-aviso'
+            "
+          >
+            <option [ngValue]="null">Selecciona una ciudad…</option>
+            @for (ciudad of ciudades(); track ciudad.id) {
+              <option [ngValue]="ciudad.id">{{ ciudad.nombre }}</option>
+            }
+          </select>
+          <p class="campo__aviso" id="sucursal-ciudad-aviso">
+            La ciudad debe existir y estar activa; el backend lo valida al crear
+            la sucursal.
+          </p>
+          @if (mensajeCiudad()) {
+            <p class="campo__error" id="sucursal-ciudad-error" role="alert">
+              {{ mensajeCiudad() }}
+            </p>
+          }
+        </div>
+
+        <div class="formulario__acciones">
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="guardando() || !puedeCrear()"
+          >
+            {{ guardando() ? 'Creando…' : 'Crear sucursal' }}
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarFormulario()"
+            [disabled]="guardando()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (cargando()) {
+    <p class="vm-sr-only" role="status">Cargando las sucursales…</p>
+    <div class="esqueleto" aria-hidden="true">
+      <div class="esqueleto__bloque"></div>
+      <div class="esqueleto__bloque"></div>
+      <div class="esqueleto__bloque"></div>
+    </div>
+  } @else if (!mensajeError()) {
+    @if (sucursales().length === 0) {
+      <p class="estado-vacio">
+        Aún no hay sucursales registradas en esta empresa.
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de sucursales de la empresa"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Sucursales de la empresa: {{ total() }} registradas,
+            {{ activas() }} activas.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Nombre</th>
+              <th scope="col">Ciudad</th>
+              <th scope="col">Dirección</th>
+              <th scope="col">Teléfono</th>
+              <th scope="col">Estado</th>
+              @if (esAdministrador()) {
+                <th scope="col">Acciones</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (sucursal of sucursales(); track sucursal.id) {
+              <tr>
+                <th scope="row" class="tabla__nombre">{{ sucursal.nombre }}</th>
+                <td>{{ nombreCiudad(sucursal.ciudad_id) }}</td>
+                <td>{{ sucursal.direccion }}</td>
+                <td>
+                  @if (sucursal.telefono) {
+                    {{ sucursal.telefono }}
+                  } @else {
+                    <span class="tabla__vacio">—</span>
+                  }
+                </td>
+                <td>
+                  <span
+                    class="estado"
+                    [class.estado--inactivo]="!sucursal.estado"
+                  >
+                    <app-admin-icon
+                      class="estado__icono"
+                      [icono]="sucursal.estado ? 'check' : 'cancelar'"
+                    />
+                    {{ sucursal.estado ? 'Activa' : 'Inactiva' }}
+                  </span>
+                </td>
+                @if (esAdministrador()) {
+                  <td>
+                    <button
+                      type="button"
+                      class="boton boton--fila"
+                      [attr.aria-label]="etiquetaAccion(sucursal)"
+                      (click)="pedirConfirmacion(sucursal, $event)"
+                    >
+                      {{ sucursal.estado ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  @if (!esAdministrador()) {
+    <p class="sucursales__nota">
+      Solo el rol ADMINISTRADOR puede crear sucursales o cambiar su estado. Tu
+      rol puede consultar este listado.
+    </p>
+  }
+</section>
+
+@if (confirmacion(); as sucursal) {
+  <div
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirmar-titulo"
+    aria-describedby="confirmar-detalle"
+    (keydown.escape)="cancelarConfirmacion()"
+    (keydown)="contenerFoco($event)"
+  >
+    <div class="modal__panel">
+      <h2 class="modal__titulo" id="confirmar-titulo">
+        {{ sucursal.estado ? 'Desactivar sucursal' : 'Activar sucursal' }}
+      </h2>
+      <p class="modal__detalle" id="confirmar-detalle">
+        @if (sucursal.estado) {
+          La sucursal «{{ sucursal.nombre }}» dejará de operar. El backend
+          rechazará la desactivación si tiene empleados, stock reservado o
+          reservas pendientes.
+        } @else {
+          La sucursal «{{ sucursal.nombre }}» volverá a operar. El backend
+          verificará el límite del plan y que su ciudad siga activa.
+        }
+      </p>
+
+      @if (errorConfirmacion(); as error) {
+        <p class="modal__error" role="alert">{{ error }}</p>
+      }
+
+      <div class="modal__acciones">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cancelarConfirmacion()"
+          [disabled]="cambiandoId() !== null"
+          autofocus
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="boton boton--peligro"
+          (click)="ejecutarCambio()"
+          [disabled]="cambiandoId() !== null"
+        >
+          {{
+            cambiandoId() !== null
+              ? 'Aplicando…'
+              : sucursal.estado
+                ? 'Sí, desactivar'
+                : 'Sí, activar'
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

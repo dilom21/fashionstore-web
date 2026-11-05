@@ -1,0 +1,448 @@
+:host {
+  display: block;
+}
+
+.roles {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 1180px;
+}
+
+/* =============================== Cabecera =============================== */
+.roles__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background:
+    radial-gradient(circle at 90% 0%, var(--accent-soft), transparent 62%),
+    var(--surface);
+}
+
+.roles__cabecera-texto {
+  min-width: 0;
+}
+
+.roles__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.roles__titulo {
+  margin-top: 0.2rem;
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+}
+
+.roles__ayuda {
+  margin-top: 0.4rem;
+  max-width: 68ch;
+  font-size: 0.88rem;
+  color: var(--text-2);
+}
+
+/* ================================ Botones =============================== */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.boton:hover:not(:disabled) {
+  border-color: var(--accent-strong);
+  background: var(--surface-3);
+}
+
+.boton:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.boton--primario {
+  border-color: transparent;
+  background: var(--grad-accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.boton--primario:hover:not(:disabled) {
+  filter: brightness(1.06);
+  background: var(--grad-accent);
+}
+
+.boton--primario:disabled {
+  box-shadow: none;
+}
+
+/* ================================= Avisos =============================== */
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  font-size: 0.86rem;
+  color: var(--text);
+}
+
+.aviso__icono {
+  flex: none;
+}
+
+.aviso__cuerpo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.aviso--error {
+  border-left-color: #f87171;
+  background: rgb(185 28 28 / 12%);
+}
+
+.aviso--error .aviso__icono {
+  color: #fca5a5;
+}
+
+.aviso--exito {
+  border-left-color: #34d399;
+  background: rgb(16 185 129 / 12%);
+}
+
+.aviso--exito .aviso__icono {
+  color: #6ee7b7;
+}
+
+.aviso--atencion {
+  border-left-color: #fbbf24;
+  background: rgb(245 158 11 / 12%);
+}
+
+.aviso--atencion .aviso__icono {
+  color: #fcd34d;
+}
+
+/* =============================== Disposición ============================ */
+.disposicion {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.columna--matriz {
+  min-width: 0;
+}
+
+.columna__titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.columna__rol {
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--bg-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+.columna__nota {
+  font-size: 0.76rem;
+  color: var(--text-3);
+}
+
+/* ============================== Lista de roles ========================== */
+.lista-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rol {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 42px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.rol:hover {
+  border-color: var(--accent-strong);
+  color: var(--text);
+}
+
+.rol:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.rol--activo {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.rol__nombre {
+  overflow-wrap: anywhere;
+}
+
+.rol__badge {
+  flex: none;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.rol__badge--activo {
+  border-color: var(--accent-strong);
+  color: var(--accent-text);
+}
+
+/* ================================ Matriz ================================ */
+.matriz {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.grupo {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+}
+
+.grupo__titulo {
+  padding: 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.grupo__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+}
+
+.permiso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.permiso__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.permiso__label:has(input:disabled) {
+  cursor: not-allowed;
+  color: var(--text-2);
+}
+
+.permiso__check {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--accent);
+  cursor: inherit;
+}
+
+.permiso__check:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.permiso__accion {
+  letter-spacing: 0.02em;
+}
+
+.permiso__origen {
+  padding: 0.04rem 0.38rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.permiso__origen--excepcion {
+  border-style: solid;
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* ================================= Barra ================================ */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+}
+
+.barra__estado {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.barra__acciones {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* =============================== Esqueleto ============================== */
+.esqueleto {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+}
+
+.esqueleto__columna {
+  height: 320px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: linear-gradient(
+    100deg,
+    var(--surface) 30%,
+    var(--surface-2) 50%,
+    var(--surface) 70%
+  );
+  background-size: 220% 100%;
+  animation: brillo 1.5s ease-in-out infinite;
+}
+
+.esqueleto__columna--ancha {
+  height: 420px;
+}
+
+@keyframes brillo {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -30% 0;
+  }
+}
+
+.estado-vacio {
+  padding: 1rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-m);
+  font-size: 0.86rem;
+  color: var(--text-2);
+}
+
+@media (max-width: 860px) {
+  .disposicion,
+  .esqueleto {
+    grid-template-columns: 1fr;
+  }
+
+  .esqueleto__columna {
+    height: 180px;
+  }
+
+  .esqueleto__columna--ancha {
+    height: 320px;
+  }
+
+  .barra {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto__columna {
+    animation: none;
+  }
+}

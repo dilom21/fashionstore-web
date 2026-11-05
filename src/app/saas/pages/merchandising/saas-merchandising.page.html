@@ -1,0 +1,14 @@
+<section class="merch" aria-labelledby="merch-title">
+  <header><p>Planificación comercial</p><h1 id="merch-title">Temporadas y promociones</h1><span>Administre publicaciones de la empresa; el backend valida RBAC y pertenencia tenant.</span></header>
+  @if (error(); as message) { <p class="error" role="alert">{{ message }}</p> }
+  <div class="columns">
+    <section class="panel"><h2>Temporadas</h2>
+      <form [formGroup]="seasonForm" (ngSubmit)="createSeason()"><label>Nombre<input formControlName="nombre" /></label><label>Inicio<input type="date" formControlName="fecha_inicio" /></label><label>Fin<input type="date" formControlName="fecha_fin" /></label><button [disabled]="seasonForm.invalid || saving()">Crear temporada</button></form>
+      <div class="list">@for (item of seasons(); track item.id) { <article><div><strong>{{ item.nombre }}</strong><span>{{ item.fecha_inicio }} — {{ item.fecha_fin }}</span></div><em [class.inactive]="!item.estado">{{ item.estado ? 'Activa' : 'Inactiva' }}</em></article> } @empty { <p>Sin temporadas registradas.</p> }</div>
+    </section>
+    <section class="panel"><h2>Promociones</h2>
+      <form [formGroup]="promotionForm" (ngSubmit)="createPromotion()"><label>Nombre<input formControlName="nombre" /></label><label>Tipo<select formControlName="tipo_descuento"><option value="PORCENTAJE">Porcentaje</option><option value="MONTO">Monto</option></select></label><label>Valor<input type="number" min="0.01" formControlName="valor_descuento" /></label><label>Inicio<input type="datetime-local" formControlName="fecha_inicio" /></label><label>Fin<input type="datetime-local" formControlName="fecha_fin" /></label><label class="wide">Descripción<input formControlName="descripcion" /></label><button [disabled]="promotionForm.invalid || saving()">Crear promoción</button></form>
+      <div class="list">@for (item of promotions(); track item.id) { <article><div><strong>{{ item.nombre }}</strong><span>{{ item.tipo_descuento }} · {{ item.valor_descuento }}</span></div><em [class.inactive]="!item.estado">{{ item.estado ? 'Activa' : 'Inactiva' }}</em></article> } @empty { <p>Sin promociones registradas.</p> }</div>
+    </section>
+  </div>
+</section>

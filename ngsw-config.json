@@ -1,0 +1,42 @@
+{
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app-shell",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/index.html",
+          "/manifest.webmanifest",
+          "/favicon.ico",
+          "/**/*.css",
+          "/**/*.js"
+        ]
+      }
+    },
+    {
+      "name": "imagenes",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/images/**"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "catalogo-publico",
+      "urls": [
+        "/tenant/public/**",
+        "https://fashionstore-api-qv8n.onrender.com/tenant/public/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 40,
+        "maxAge": "1h",
+        "timeout": "3s"
+      }
+    }
+  ]
+}

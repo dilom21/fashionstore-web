@@ -1,0 +1,288 @@
+:host {
+  display: block;
+}
+
+.inicio {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 1120px;
+}
+
+/* ================================= Hero ================================= */
+.inicio__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: clamp(1rem, 3vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background:
+    radial-gradient(circle at 92% 0%, var(--accent-soft), transparent 60%),
+    var(--surface);
+}
+
+.inicio__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+
+.inicio__titulo {
+  margin-top: 0.2rem;
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+}
+
+.inicio__subtitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-2);
+}
+
+.inicio__slug {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text);
+}
+
+.inicio__hero-plan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+}
+
+.inicio__hero-plan-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.inicio__hero-plan-nombre {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.inicio__hero-plan-codigo {
+  font-size: 0.74rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-2);
+}
+
+/* ================================ Estados =============================== */
+.inicio__estado {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.9rem;
+}
+
+.inicio__error {
+  padding: 0.75rem 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-m);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* ================================ Tarjetas ============================== */
+.inicio__grid {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.tarjeta {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-l);
+  background: var(--surface);
+}
+
+.tarjeta--ancha {
+  grid-column: 1 / -1;
+}
+
+.tarjeta__titulo {
+  margin-bottom: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.tarjeta__dato-grande {
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.tarjeta__nota {
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.datos {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.datos__fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+}
+
+.datos__fila dt {
+  color: var(--text-2);
+}
+
+.datos__fila dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ============================== Capacidades ============================= */
+.capacidades {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.capacidades__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--bg-2);
+  font-size: 0.85rem;
+}
+
+.capacidades__marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.capacidades__texto {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.capacidades__item--no {
+  border-style: dashed;
+}
+
+.capacidades__item--no .capacidades__marca {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text-3);
+}
+
+.capacidades__item--no .capacidades__texto {
+  color: var(--text-3);
+}
+
+/* ================================ Accesos =============================== */
+.accesos__titulo {
+  margin-bottom: 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.accesos__lista {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.accesos__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  height: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.accesos__item:hover {
+  border-color: var(--accent-strong);
+  background: var(--surface-2);
+}
+
+.accesos__item:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.accesos__item-titulo {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.accesos__item-detalle {
+  font-size: 0.8rem;
+  color: var(--text-2);
+}
+
+.accesos__vacio {
+  font-size: 0.88rem;
+  color: var(--text-2);
+}
+
+.inicio__nota {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  max-width: 70ch;
+}

@@ -1,0 +1,149 @@
+<section class="cliente" aria-labelledby="cliente-titulo" [attr.aria-busy]="cargando()">
+  <header class="hero">
+    <div>
+      <p class="hero__eyebrow">Canal cliente</p>
+      <h1 id="cliente-titulo">Mis compras</h1>
+      <p>Administra tus carritos, reservas, pagos y comprobantes dentro de esta empresa.</p>
+    </div>
+    <button type="button" class="boton boton--claro" (click)="cargar()" [disabled]="cargando()">
+      <app-admin-icon icono="actualizar" /> Actualizar
+    </button>
+  </header>
+
+  <app-saas-offline-panel
+    [tipos]="['RESERVA_CREAR']"
+    (sincronizado)="recargarTrasSincronizacion()"
+  />
+
+  @if (error(); as texto) {
+    <p class="aviso aviso--error" role="alert"><app-admin-icon icono="alerta" /> {{ texto }}</p>
+  }
+  @if (mensaje(); as texto) {
+    <p class="aviso aviso--exito" role="status"><app-admin-icon icono="check" /> {{ texto }}</p>
+  }
+  @if (avisoOffline(); as texto) {
+    <p class="aviso aviso--atencion" role="status"><app-admin-icon icono="actualizar" /> {{ texto }}</p>
+  }
+  @if (errorReserva(); as texto) {
+    <p class="aviso aviso--error" role="alert"><app-admin-icon icono="alerta" /> {{ texto }}</p>
+  }
+
+  <div class="metricas" aria-label="Resumen de compras">
+    <article><span>Carritos activos</span><strong>{{ carritos().length }}</strong></article>
+    <article><span>Total pendiente</span><strong>Bs {{ totalPendiente() | number: '1.2-2' }}</strong></article>
+    <article><span>Reservas</span><strong>{{ reservas().length }}</strong></article>
+    <article><span>Compras registradas</span><strong>{{ historial().length }}</strong></article>
+  </div>
+
+  <section class="panel" aria-labelledby="carritos-titulo">
+    <div class="panel__cabecera">
+      <div><p class="panel__eyebrow">Siguiente paso</p><h2 id="carritos-titulo">Carritos listos para comprar</h2></div>
+      <span class="contador">{{ carritos().length }}</span>
+    </div>
+    @if (cargando()) {
+      <p class="estado">Cargando carritos…</p>
+    } @else if (carritos().length === 0) {
+      <p class="estado">No tienes carritos activos en esta empresa.</p>
+    } @else {
+      <div class="tarjetas">
+        @for (carrito of carritos(); track carrito.carrito_id) {
+          <article class="tarjeta">
+            <div><span class="etiqueta">{{ carrito.sucursal_nombre }}</span><h3>Carrito #{{ carrito.carrito_id }}</h3></div>
+            <p>{{ carrito.cantidad_unidades }} unidades · {{ carrito.cantidad_lineas }} líneas</p>
+            <strong>Bs {{ carrito.subtotal | number: '1.2-2' }}</strong>
+            <button type="button" class="boton boton--primario" (click)="comprar(carrito)" [disabled]="procesando() !== null">
+              {{ procesando() === carrito.carrito_id ? 'Preparando…' : 'Comprar y continuar al pago' }}
+            </button>
+
+            <details class="reserva">
+              <summary class="enlace">Reservar para probar en tienda</summary>
+              <div class="reserva__campos">
+                <label class="reserva__label" [attr.for]="'reserva-fecha-' + carrito.carrito_id">
+                  Fecha y hora de atención
+                </label>
+                <input
+                  class="reserva__input"
+                  type="datetime-local"
+                  [id]="'reserva-fecha-' + carrito.carrito_id"
+                  [value]="fechaReserva(carrito.carrito_id)"
+                  (input)="cambiarFechaReserva(carrito.carrito_id, $any($event.target).value)"
+                  [disabled]="reservando() === carrito.carrito_id"
+                />
+                <label class="reserva__label" [attr.for]="'reserva-obs-' + carrito.carrito_id">
+                  Observación (opcional)
+                </label>
+                <input
+                  class="reserva__input"
+                  type="text"
+                  maxlength="500"
+                  [id]="'reserva-obs-' + carrito.carrito_id"
+                  [value]="observacionReserva(carrito.carrito_id)"
+                  (input)="cambiarObservacionReserva(carrito.carrito_id, $any($event.target).value)"
+                  [disabled]="reservando() === carrito.carrito_id"
+                />
+                <button
+                  type="button"
+                  class="boton boton--secundario reserva__boton"
+                  (click)="reservar(carrito)"
+                  [disabled]="reservando() === carrito.carrito_id"
+                >
+                  <app-admin-icon icono="reservas" />
+                  {{ reservando() === carrito.carrito_id ? 'Registrando…' : 'Confirmar reserva' }}
+                </button>
+                <p class="reserva__nota">
+                  Sin conexión la reserva se guarda en este dispositivo y se envía
+                  al recuperar la red; el servidor valida stock y fecha.
+                </p>
+              </div>
+            </details>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <div class="columnas">
+    <section class="panel" aria-labelledby="reservas-titulo">
+      <div class="panel__cabecera"><div><p class="panel__eyebrow">Atención</p><h2 id="reservas-titulo">Mis reservas</h2></div></div>
+      @if (reservas().length === 0) { <p class="estado">No tienes reservas.</p> }
+      @for (reserva of reservas(); track reserva.reserva_id) {
+        <article class="fila">
+          <div><strong>Reserva #{{ reserva.reserva_id }}</strong><span>{{ reserva.sucursal_nombre }}</span></div>
+          <div class="fila__derecha"><span class="estado-chip">{{ reserva.estado }}</span><time>{{ reserva.fecha_atencion | date: 'dd/MM/yyyy HH:mm' }}</time></div>
+        </article>
+      }
+    </section>
+
+    <section class="panel" aria-labelledby="historial-titulo">
+      <div class="panel__cabecera"><div><p class="panel__eyebrow">Actividad</p><h2 id="historial-titulo">Historial de compras</h2></div></div>
+      @if (historial().length === 0) { <p class="estado">Aún no tienes compras.</p> }
+      @for (venta of historial(); track venta.venta_id) {
+        <article class="fila">
+          <div><strong>Venta #{{ venta.venta_id }}</strong><span>{{ venta.fecha_hora | date: 'dd/MM/yyyy HH:mm' }} · Bs {{ venta.total | number: '1.2-2' }}</span></div>
+          <div class="acciones">
+            <span class="estado-chip">{{ venta.estado }}</span>
+            @if (venta.estado === 'PENDIENTE') { <button type="button" class="enlace" (click)="pagar(venta.venta_id)">Pagar</button> }
+            @if (venta.estado === 'COMPLETADA') { <button type="button" class="enlace" (click)="verComprobante(venta.venta_id)">Comprobante</button> }
+          </div>
+        </article>
+      }
+    </section>
+  </div>
+
+  @if (comprobante(); as documento) {
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="comprobante-titulo" (keydown.escape)="comprobante.set(null)">
+      <article class="comprobante">
+        <button type="button" class="cerrar" aria-label="Cerrar comprobante" (click)="comprobante.set(null)">×</button>
+        <p class="panel__eyebrow">Comprobante digital</p>
+        <h2 id="comprobante-titulo">Venta #{{ documento.venta_id }}</h2>
+        <dl>
+          <div><dt>Empresa / sucursal</dt><dd>{{ documento.sucursal_nombre }}</dd></div>
+          <div><dt>Fecha</dt><dd>{{ documento.fecha_hora | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+          <div><dt>Canal</dt><dd>{{ documento.canal }}</dd></div>
+          <div><dt>Pago</dt><dd>{{ documento.pago.metodo }} · {{ documento.pago.estado }}</dd></div>
+          <div class="total"><dt>Total</dt><dd>Bs {{ documento.total | number: '1.2-2' }}</dd></div>
+        </dl>
+      </article>
+    </div>
+  }
+</section>

@@ -1,0 +1,737 @@
+<section
+  class="proveedores"
+  aria-labelledby="proveedores-titulo"
+  [attr.aria-busy]="cargando() || guardandoAsociacion()"
+>
+  <header class="proveedores__cabecera">
+    <div class="proveedores__cabecera-texto">
+      <p class="proveedores__eyebrow">Abastecimiento</p>
+      <h1 class="proveedores__titulo" id="proveedores-titulo">Proveedores</h1>
+      <p class="proveedores__ayuda">
+        Consulta los proveedores de la empresa, da de alta uno nuevo y define
+        qué productos de la empresa puede abastecer.
+      </p>
+    </div>
+    <div class="proveedores__resumen" role="status">
+      <span>{{ totalFiltrado() }} proveedores</span>
+      <span class="proveedores__resumen-sep" aria-hidden="true">·</span>
+      <span>página {{ pagina() + 1 }} de {{ totalPaginas() }}</span>
+    </div>
+  </header>
+
+  <p class="aviso aviso--atencion" role="status">
+    <app-admin-icon class="aviso__icono" icono="alerta" />
+    <span>
+      El listado se obtiene de <code>GET /tenant/catalogo/proveedores</code>.
+      Ese contrato no acepta búsqueda ni paginación del servidor, así que el
+      buscador y las páginas se aplican sobre la lista completa. El listado solo
+      publica identificador, razón social y estado.
+    </span>
+  </p>
+
+  @if (!puedeGestionar()) {
+    <p class="aviso aviso--atencion" role="status">
+      <app-admin-icon class="aviso__icono" icono="alerta" />
+      <span>
+        Tu rol no tiene el permiso COMPRAS/GESTIONAR. Puedes consultar el
+        listado, pero el alta y la asociación de productos están ocultas.
+      </span>
+    </p>
+  }
+
+  @if (mensajeExito(); as exito) {
+    <p class="aviso aviso--exito" role="status">
+      <app-admin-icon class="aviso__icono" icono="check" />
+      <span>{{ exito }}</span>
+    </p>
+  }
+
+  <!-- ========================== Alta de proveedor ====================== -->
+  @if (altaAbierta()) {
+    <section class="panel panel--alta" aria-labelledby="proveedor-alta-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="proveedor-alta-titulo">
+            Nuevo proveedor
+          </h2>
+          <p class="panel__ayuda">
+            El proveedor se crea en la empresa de tu sesión. Marca los productos
+            que podrá abastecer: la orden de compra exige que el producto de la
+            variante esté asociado a su proveedor.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarAlta()"
+          [disabled]="guardandoAlta()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Cerrar</span>
+        </button>
+      </div>
+
+      @if (errorAlta(); as normalizado) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p class="aviso__titulo-error">
+              @switch (tipoErrorAlta()) {
+                @case ('permiso') {
+                  Tu rol no puede dar de alta proveedores.
+                }
+                @case ('conflicto') {
+                  Ya existe un proveedor con ese NIT en la empresa.
+                }
+                @case ('validacion') {
+                  El backend rechazó los datos enviados.
+                }
+                @case ('deshabilitado') {
+                  El módulo de compras SaaS no está habilitado.
+                }
+                @default {
+                  No se pudo crear el proveedor.
+                }
+              }
+            </p>
+            <p>{{ normalizado.mensaje }}</p>
+            @switch (tipoErrorAlta()) {
+              @case ('permiso') {
+                <p class="aviso__detalle">
+                  Se requiere personal con el permiso COMPRAS/GESTIONAR. Los
+                  datos escritos se conservan.
+                </p>
+              }
+              @case ('conflicto') {
+                <p class="aviso__detalle">
+                  Corrige el NIT o busca el proveedor existente en el listado.
+                  Los datos escritos se conservan.
+                </p>
+              }
+              @case ('validacion') {
+                <p class="aviso__detalle">
+                  Revisa la razón social, el correo y los límites de longitud de
+                  cada campo.
+                </p>
+              }
+              @case ('deshabilitado') {
+                <p class="aviso__detalle">
+                  El backend apagó el módulo de compras SaaS para esta empresa.
+                </p>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <form [formGroup]="formAlta" (ngSubmit)="guardarProveedor()" novalidate>
+        <div class="formulario">
+          <div class="campo">
+            <label class="campo__label" for="proveedor-alta-razon">
+              Razón social
+            </label>
+            <input
+              id="proveedor-alta-razon"
+              class="campo__input"
+              type="text"
+              formControlName="razon_social"
+              [attr.maxlength]="maxRazonSocial"
+              [attr.aria-invalid]="
+                mensajeCampoAlta('razon_social') !== null
+              "
+              [attr.aria-describedby]="
+                mensajeCampoAlta('razon_social') !== null
+                  ? 'proveedor-alta-razon-error'
+                  : null
+              "
+            />
+            @if (mensajeCampoAlta('razon_social'); as mensaje) {
+              <p
+                class="campo__error"
+                id="proveedor-alta-razon-error"
+                role="alert"
+              >
+                {{ mensaje }}
+              </p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="proveedor-alta-nit">
+              NIT <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="proveedor-alta-nit"
+              class="campo__input"
+              type="text"
+              formControlName="nit"
+              [attr.maxlength]="maxNit"
+              [attr.aria-invalid]="mensajeCampoAlta('nit') !== null"
+            />
+            @if (mensajeCampoAlta('nit'); as mensaje) {
+              <p class="campo__error" role="alert">{{ mensaje }}</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="proveedor-alta-correo">
+              Correo <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="proveedor-alta-correo"
+              class="campo__input"
+              type="email"
+              formControlName="correo"
+              [attr.maxlength]="maxCorreo"
+              [attr.aria-invalid]="mensajeCampoAlta('correo') !== null"
+            />
+            @if (mensajeCampoAlta('correo'); as mensaje) {
+              <p class="campo__error" role="alert">{{ mensaje }}</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label class="campo__label" for="proveedor-alta-telefono">
+              Teléfono <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="proveedor-alta-telefono"
+              class="campo__input"
+              type="tel"
+              formControlName="telefono"
+              [attr.maxlength]="maxTelefono"
+              [attr.aria-invalid]="mensajeCampoAlta('telefono') !== null"
+            />
+            @if (mensajeCampoAlta('telefono'); as mensaje) {
+              <p class="campo__error" role="alert">{{ mensaje }}</p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label class="campo__label" for="proveedor-alta-direccion">
+              Dirección <span class="campo__opcional">(opcional)</span>
+            </label>
+            <input
+              id="proveedor-alta-direccion"
+              class="campo__input"
+              type="text"
+              formControlName="direccion"
+              [attr.maxlength]="maxDireccion"
+              [attr.aria-invalid]="mensajeCampoAlta('direccion') !== null"
+            />
+            @if (mensajeCampoAlta('direccion'); as mensaje) {
+              <p class="campo__error" role="alert">{{ mensaje }}</p>
+            }
+          </div>
+        </div>
+
+        <fieldset class="proveedores__productos">
+          <legend class="campo__label">
+            Productos que abastece
+            <span class="campo__opcional">(máximo {{ maxProductos }})</span>
+          </legend>
+
+          @if (cargandoProductos()) {
+            <p class="campo__aviso" role="status">Cargando productos…</p>
+          } @else if (productosSinPermiso()) {
+            <p class="aviso aviso--atencion" role="status">
+              <app-admin-icon class="aviso__icono" icono="alerta" />
+              <span>
+                Tu sesión no puede consultar el catálogo; el proveedor se creará
+                sin productos asociados.
+              </span>
+            </p>
+          } @else if (errorProductos(); as mensaje) {
+            <div class="aviso aviso--error" role="alert">
+              <app-admin-icon class="aviso__icono" icono="alerta" />
+              <div class="aviso__cuerpo">
+                <p>{{ mensaje }}</p>
+                <button
+                  type="button"
+                  class="boton boton--secundario"
+                  (click)="cargarProductos(true)"
+                  [disabled]="cargandoProductos()"
+                >
+                  <app-admin-icon icono="actualizar" />
+                  <span>Reintentar productos</span>
+                </button>
+              </div>
+            </div>
+          } @else if (productos().length === 0) {
+            <p class="campo__aviso" role="status">
+              La empresa no tiene productos registrados. El proveedor se creará
+              sin asociaciones.
+            </p>
+          } @else {
+            <div class="proveedores__lista-productos">
+              @for (producto of productos(); track producto.id) {
+                <label class="proveedores__opcion">
+                  <input
+                    type="checkbox"
+                    [checked]="estaSeleccionadoAlta(producto.id)"
+                    (change)="alternarProductoAlta(producto.id, $event)"
+                    [disabled]="guardandoAlta()"
+                  />
+                  <span class="proveedores__opcion-nombre">
+                    {{ producto.nombre }}
+                  </span>
+                  <span class="proveedores__opcion-meta">
+                    #{{ producto.id }}
+                  </span>
+                </label>
+              }
+            </div>
+          }
+
+          <p class="campo__aviso" role="status">{{ mensajeSeleccionAlta() }}</p>
+        </fieldset>
+
+        <div class="acciones">
+          <button
+            type="submit"
+            class="boton boton--primario"
+            [disabled]="!puedeGuardarAlta()"
+          >
+            <app-admin-icon icono="mas" />
+            <span>{{ guardandoAlta() ? 'Creando…' : 'Crear proveedor' }}</span>
+          </button>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="cerrarAlta()"
+            [disabled]="guardandoAlta()"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <!-- ========================= Panel de asociación ===================== -->
+  @if (proveedorAsociando(); as proveedor) {
+    <section class="panel panel--asociacion" aria-labelledby="asociacion-titulo">
+      <div class="panel__cabecera">
+        <div>
+          <h2 class="panel__titulo" id="asociacion-titulo">
+            Productos de «{{ proveedor.razon_social }}»
+          </h2>
+          <p class="panel__ayuda">
+            La operación reemplaza la lista completa de productos asociados. El
+            contrato no expone las asociaciones actuales: marca todos los
+            productos que deben quedar asociados.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarAsociacion()"
+          [disabled]="guardandoAsociacion()"
+        >
+          <app-admin-icon icono="close" />
+          <span>Cerrar</span>
+        </button>
+      </div>
+
+      @if (errorAsociacion(); as normalizado) {
+        <div class="aviso aviso--error" role="alert">
+          <app-admin-icon class="aviso__icono" icono="alerta" />
+          <div class="aviso__cuerpo">
+            <p class="aviso__titulo-error">
+              @switch (tipoErrorAsociacion()) {
+                @case ('permiso') {
+                  Tu rol no puede reemplazar las asociaciones del proveedor.
+                }
+                @case ('conflicto') {
+                  Conflicto al reemplazar las asociaciones del proveedor.
+                }
+                @case ('validacion') {
+                  El backend rechazó los productos enviados.
+                }
+                @case ('deshabilitado') {
+                  El módulo de compras SaaS no está habilitado.
+                }
+                @default {
+                  No se pudieron actualizar las asociaciones.
+                }
+              }
+            </p>
+            <p>{{ normalizado.mensaje }}</p>
+            @switch (tipoErrorAsociacion()) {
+              @case ('permiso') {
+                <p class="aviso__detalle">
+                  Se requiere personal con el permiso COMPRAS/GESTIONAR. Los
+                  productos seleccionados se conservan.
+                </p>
+              }
+              @case ('conflicto') {
+                <p class="aviso__detalle">
+                  El proveedor o los productos cambiaron de estado. Actualiza el
+                  listado y vuelve a intentarlo.
+                </p>
+              }
+              @case ('validacion') {
+                <p class="aviso__detalle">
+                  Revisa que los productos pertenezcan a la empresa y que la
+                  selección no supere {{ maxProductos }} elementos.
+                </p>
+              }
+              @case ('deshabilitado') {
+                <p class="aviso__detalle">
+                  El backend apagó el módulo de compras SaaS para esta empresa.
+                </p>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <fieldset class="proveedores__productos">
+        <legend class="campo__label">
+          Productos que abastece
+          <span class="campo__opcional">(máximo {{ maxProductos }})</span>
+        </legend>
+
+        @if (cargandoProductos()) {
+          <p class="campo__aviso" role="status">Cargando productos…</p>
+        } @else if (productosSinPermiso()) {
+          <p class="aviso aviso--atencion" role="status">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <span>
+              Tu sesión no puede consultar el catálogo de productos, así que no
+              es posible elegir asociaciones.
+            </span>
+          </p>
+        } @else if (errorProductos(); as mensaje) {
+          <div class="aviso aviso--error" role="alert">
+            <app-admin-icon class="aviso__icono" icono="alerta" />
+            <div class="aviso__cuerpo">
+              <p>{{ mensaje }}</p>
+              <button
+                type="button"
+                class="boton boton--secundario"
+                (click)="cargarProductos()"
+                [disabled]="cargandoProductos()"
+              >
+                <app-admin-icon icono="actualizar" />
+                <span>Reintentar productos</span>
+              </button>
+            </div>
+          </div>
+        } @else if (productos().length === 0) {
+          <p class="campo__aviso" role="status">
+            La empresa no tiene productos registrados. Al guardar, el proveedor
+            quedará sin asociaciones.
+          </p>
+        } @else {
+          <div class="proveedores__lista-productos">
+            @for (producto of productos(); track producto.id) {
+              <label class="proveedores__opcion">
+                <input
+                  type="checkbox"
+                  [checked]="estaSeleccionado(producto.id)"
+                  (change)="alternarProducto(producto.id, $event)"
+                  [disabled]="guardandoAsociacion()"
+                />
+                <span class="proveedores__opcion-nombre">{{ producto.nombre }}</span>
+                <span class="proveedores__opcion-meta">#{{ producto.id }}</span>
+              </label>
+            }
+          </div>
+        }
+
+        <p class="campo__aviso" role="status">{{ mensajeSeleccion() }}</p>
+      </fieldset>
+
+      <div class="acciones">
+        <button
+          type="button"
+          class="boton boton--primario"
+          (click)="guardarAsociacion()"
+          [disabled]="
+            guardandoAsociacion() || productosSinPermiso() || cargandoProductos()
+          "
+        >
+          <app-admin-icon icono="check" />
+          <span>
+            {{ guardandoAsociacion() ? 'Guardando…' : 'Guardar asociaciones' }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="cerrarAsociacion()"
+          [disabled]="guardandoAsociacion()"
+        >
+          Cancelar
+        </button>
+      </div>
+    </section>
+  }
+
+  <!-- ============================ Listado ============================== -->
+  <section class="panel" aria-labelledby="proveedores-lista-titulo">
+    <div class="panel__cabecera">
+      <div>
+        <h2 class="panel__titulo" id="proveedores-lista-titulo">
+          Proveedores de la empresa
+        </h2>
+        <p class="panel__ayuda">
+          La creación y la asociación de productos exigen COMPRAS/GESTIONAR; la
+          consulta exige COMPRAS/CONSULTAR.
+        </p>
+      </div>
+      <div class="proveedores__acciones-cabecera">
+        @if (puedeGestionar()) {
+          <button
+            type="button"
+            class="boton boton--primario"
+            (click)="abrirAlta()"
+            [disabled]="altaAbierta()"
+          >
+            <app-admin-icon icono="mas" />
+            <span>Nuevo proveedor</span>
+          </button>
+        }
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="recargar()"
+          [disabled]="cargando()"
+        >
+          <app-admin-icon icono="actualizar" />
+          <span>Actualizar</span>
+        </button>
+      </div>
+    </div>
+
+    <form
+      class="proveedores__filtros"
+      role="search"
+      (submit)="
+        $event.preventDefault(); aplicarBusqueda(textoBusqueda.value)
+      "
+    >
+      <div class="campo campo--busqueda">
+        <label class="campo__label" for="proveedores-texto">
+          Razón social o identificador
+        </label>
+        <div class="proveedores__busqueda">
+          <input
+            #textoBusqueda
+            id="proveedores-texto"
+            class="campo__input"
+            type="search"
+            autocomplete="off"
+            [attr.maxlength]="maxTexto"
+            [attr.placeholder]="'Hasta ' + maxTexto + ' caracteres'"
+            [value]="filtroTexto()"
+          />
+          <button type="submit" class="boton boton--primario">
+            <app-admin-icon icono="buscar" />
+            <span>Buscar</span>
+          </button>
+          @if (tieneFiltros()) {
+            <button
+              type="button"
+              class="boton boton--secundario"
+              (click)="limpiarBusqueda()"
+            >
+              <app-admin-icon icono="close" />
+              <span>Quitar búsqueda</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="campo campo--limite">
+        <label class="campo__label" for="proveedores-limite">
+          Filas por página
+        </label>
+        <select
+          id="proveedores-limite"
+          class="campo__input campo__input--select"
+          [value]="limite()"
+          (change)="cambiarLimite($event)"
+        >
+          @for (opcion of tamanos; track opcion) {
+            <option [value]="opcion">{{ opcion }}</option>
+          }
+        </select>
+      </div>
+    </form>
+
+    <p class="proveedores__rango" aria-live="polite">{{ textoRango() }}</p>
+
+    @if (cargando()) {
+      <p class="vm-sr-only" role="status">Cargando los proveedores…</p>
+      <div class="esqueleto" aria-hidden="true">
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+        <div class="esqueleto__bloque"></div>
+      </div>
+    } @else if (sinPermiso()) {
+      <div class="aviso aviso--atencion" role="status">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p>
+            Tu rol no tiene el permiso COMPRAS/CONSULTAR, necesario para
+            consultar los proveedores de la empresa.
+          </p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (errorListado(); as normalizado) {
+      <div class="aviso aviso--error" role="alert">
+        <app-admin-icon class="aviso__icono" icono="alerta" />
+        <div class="aviso__cuerpo">
+          <p class="aviso__titulo-error">
+            @switch (tipoErrorListado()) {
+              @case ('permiso') {
+                Tu rol no puede consultar los proveedores.
+              }
+              @case ('deshabilitado') {
+                El módulo de compras SaaS no está habilitado.
+              }
+              @default {
+                No se pudo cargar el listado de proveedores.
+              }
+            }
+          </p>
+          <p>{{ normalizado.mensaje }}</p>
+          <button
+            type="button"
+            class="boton boton--secundario"
+            (click)="recargar()"
+          >
+            <app-admin-icon icono="actualizar" />
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    } @else if (totalFiltrado() === 0) {
+      <p class="estado-vacio">
+        @if (tieneFiltros()) {
+          No se encontraron proveedores para «{{ filtroTexto() }}». Prueba con
+          otro texto o quita la búsqueda.
+        } @else {
+          No hay proveedores registrados en esta empresa.
+          @if (puedeGestionar()) {
+            Crea el primero con «Nuevo proveedor» para poder registrar compras.
+          }
+        }
+      </p>
+    } @else {
+      <div
+        class="tabla-scroll"
+        role="region"
+        aria-label="Listado de proveedores"
+        tabindex="0"
+      >
+        <table class="tabla">
+          <caption class="vm-sr-only">
+            Proveedores: {{ totalFiltrado() }} registros; se muestran
+            {{ visibles().length }} en esta página.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Proveedor</th>
+              <th scope="col">Identificador</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="tabla__numero">Productos asociados</th>
+              @if (puedeGestionar()) {
+                <th scope="col">Acciones</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (proveedor of visibles(); track proveedor.id) {
+              <tr
+                [class.tabla__fila--activa]="
+                  proveedorAsociando()?.id === proveedor.id
+                "
+              >
+                <th scope="row" class="tabla__nombre">
+                  {{ proveedor.razon_social }}
+                </th>
+                <td class="tabla__mono">{{ proveedor.id }}</td>
+                <td>
+                  <span
+                    class="estado"
+                    [class.estado--inactivo]="!proveedor.estado"
+                  >
+                    {{ proveedor.estado ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="tabla__numero">
+                  @let totalAsociado = totalProductosDe(proveedor.id);
+                  @if (totalAsociado !== null) {
+                    {{ totalAsociado }}
+                  } @else {
+                    <span
+                      class="tabla__vacio"
+                      title="El listado del contrato no publica el total de productos"
+                    >
+                      —
+                    </span>
+                  }
+                </td>
+                @if (puedeGestionar()) {
+                  <td>
+                    <button
+                      type="button"
+                      class="boton boton--fila"
+                      [attr.aria-label]="etiquetaAsociacion(proveedor)"
+                      [attr.aria-expanded]="
+                        proveedorAsociando()?.id === proveedor.id
+                      "
+                      (click)="abrirAsociacion(proveedor)"
+                      [disabled]="guardandoAsociacion()"
+                    >
+                      Asociar productos
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="proveedores__pie">
+      <div class="proveedores__paginacion">
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaAnterior()"
+          [disabled]="!hayPaginaAnterior() || cargando()"
+        >
+          <app-admin-icon icono="chevron-left" />
+          <span>Anterior</span>
+        </button>
+        <button
+          type="button"
+          class="boton boton--secundario"
+          (click)="paginaSiguiente()"
+          [disabled]="!hayPaginaSiguiente() || cargando()"
+        >
+          <span>Siguiente</span>
+          <app-admin-icon icono="chevron-right" />
+        </button>
+      </div>
+      <p class="proveedores__nota">
+        Página {{ pagina() + 1 }} de {{ totalPaginas() }} · paginación en
+        cliente: el endpoint de proveedores del catálogo no admite
+        <code>limit</code> ni <code>offset</code>.
+      </p>
+    </div>
+  </section>
+</section>

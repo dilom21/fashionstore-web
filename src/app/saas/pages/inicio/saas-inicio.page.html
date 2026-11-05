@@ -1,0 +1,112 @@
+<section class="inicio" aria-labelledby="inicio-titulo">
+  <header class="inicio__hero">
+    <div class="inicio__hero-texto">
+      <p class="inicio__eyebrow">Panel de empresa</p>
+      <h1 class="inicio__titulo" id="inicio-titulo">{{ nombreEmpresa() }}</h1>
+      <p class="inicio__subtitulo">
+        <span class="inicio__slug">{{ slugEmpresa() }}</span>
+        <span aria-hidden="true">·</span>
+        <span>Rol {{ rol() }}</span>
+      </p>
+    </div>
+    @if (suscripcion(); as suscripcion) {
+      <div class="inicio__hero-plan">
+        <span class="inicio__hero-plan-label">Plan vigente</span>
+        <strong class="inicio__hero-plan-nombre">{{ suscripcion.nombre }}</strong>
+        <span class="inicio__hero-plan-codigo">{{ suscripcion.codigo }}</span>
+      </div>
+    }
+  </header>
+
+  @if (mensajeError()) {
+    <p class="inicio__error" role="alert">{{ mensajeError() }}</p>
+  }
+
+  @if (cargando()) {
+    <p class="inicio__estado" role="status">Cargando los datos de tu empresa…</p>
+  } @else {
+    @if (suscripcion(); as suscripcion) {
+      <div class="inicio__grid">
+        <article class="tarjeta" aria-labelledby="tarjeta-suscripcion">
+          <h2 class="tarjeta__titulo" id="tarjeta-suscripcion">Suscripción</h2>
+          <dl class="datos">
+            <div class="datos__fila">
+              <dt>Estado</dt>
+              <dd>{{ suscripcion.estado_suscripcion }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Inicio</dt>
+              <dd>{{ formatearFecha(suscripcion.fecha_inicio) }}</dd>
+            </div>
+            <div class="datos__fila">
+              <dt>Vencimiento</dt>
+              <dd>{{ formatearFecha(suscripcion.fecha_vencimiento) }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="tarjeta" aria-labelledby="tarjeta-sucursales">
+          <h2 class="tarjeta__titulo" id="tarjeta-sucursales">Sucursales</h2>
+          <p class="tarjeta__dato-grande">{{ sucursalesTexto() }}</p>
+          <p class="tarjeta__nota">
+            Sucursales activas sobre el máximo que permite tu plan.
+          </p>
+        </article>
+
+        <article class="tarjeta tarjeta--ancha" aria-labelledby="tarjeta-capacidades">
+          <h2 class="tarjeta__titulo" id="tarjeta-capacidades">
+            Capacidades del plan
+          </h2>
+          <ul class="capacidades">
+            @for (capacidad of capacidades(); track capacidad.etiqueta) {
+              <li
+                class="capacidades__item"
+                [class.capacidades__item--no]="!capacidad.incluida"
+              >
+                <span class="capacidades__marca" aria-hidden="true">
+                  {{ capacidad.incluida ? '✓' : '—' }}
+                </span>
+                <span>{{ capacidad.etiqueta }}</span>
+                <span class="capacidades__texto">
+                  {{ capacidad.incluida ? 'Incluido' : 'No incluido' }}
+                </span>
+              </li>
+            }
+          </ul>
+        </article>
+      </div>
+    } @else if (!mensajeError()) {
+      <p class="inicio__estado">
+        No pudimos obtener la suscripción de la empresa.
+      </p>
+    }
+  }
+
+  <section class="accesos" aria-labelledby="accesos-titulo">
+    <h2 class="accesos__titulo" id="accesos-titulo">Accesos directos</h2>
+    @if (accesos().length === 0) {
+      <p class="accesos__vacio">
+        Tu rol no tiene secciones habilitadas en esta versión.
+      </p>
+    } @else {
+      <ul class="accesos__lista">
+        @for (acceso of accesos(); track acceso.id) {
+          <li>
+            <a class="accesos__item" [routerLink]="acceso.route">
+              <span class="accesos__item-titulo">{{ acceso.label }}</span>
+              <span class="accesos__item-detalle">
+                {{ acceso.descripcion ?? 'Ir a la sección' }}
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <p class="inicio__nota">
+    Las secciones marcadas como pendientes se habilitarán cuando el backend
+    publique sus endpoints de empresa. Mientras tanto, esta pantalla no muestra
+    datos que no podamos verificar.
+  </p>
+</section>
