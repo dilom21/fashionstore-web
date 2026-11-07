@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-/** Pie de página de VANTER MEN. */
+/** Pie de página de FashionStore. */
 @Component({
   selector: 'app-footer',
   imports: [],

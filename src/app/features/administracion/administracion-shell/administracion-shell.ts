@@ -5,12 +5,13 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
-import { AuthService } from '../../autenticacion-seguridad/auth/services/auth.service';
+import { AdminIcon } from '../components/admin-icon/admin-icon';
 import { AdminSidebar } from '../components/admin-sidebar/admin-sidebar';
 import { AdminNavItem } from '../models/admin-nav-item';
 import { ADMIN_NAV_ITEMS, filtrarItemsNav } from '../navigation/admin-nav.config';
+import { PanelSesionService } from '../services/panel-sesion.service';
 
 /**
  * Rutas del panel reservadas para ENCARGADO_SUCURSAL (CU13 - Consultar
@@ -59,15 +60,19 @@ const RUTAS_CAJERO = new Set([
  *   atencionReservasGuard y visible también para CAJERO (con el menú filtrado);
  * - /personal/ventas/presencial (CU20), protegido por ventasPresencialesGuard
  *   y visible también para ENCARGADO_SUCURSAL y CAJERO.
+ *
+ * La identidad que muestra (nombre, rol, correo y empresa) se toma de
+ * `PanelSesionService`: sesión empresarial (SaaS) cuando existe y sesión legacy
+ * del primer parcial en caso contrario.
  */
 @Component({
   selector: 'app-administracion-shell',
-  imports: [RouterOutlet, AdminSidebar],
+  imports: [RouterOutlet, RouterLink, AdminSidebar, AdminIcon],
   styleUrl: './administracion-shell.css',
   templateUrl: './administracion-shell.html',
 })
 export class AdministracionShell {
-  private readonly authService = inject(AuthService);
+  private readonly sesion = inject(PanelSesionService);
   private readonly router = inject(Router);
 
   /**
@@ -83,13 +88,13 @@ export class AdministracionShell {
    * guard y el backend es la autoridad final (403).
    */
   readonly navItems = computed(() => {
-    if (this.authService.esAdministrador()) {
+    if (this.sesion.esAdministrador()) {
       return ADMIN_NAV_ITEMS;
     }
-    if (this.authService.esCajero()) {
+    if (this.sesion.esCajero()) {
       return this.filtrarPorRutas(RUTAS_CAJERO);
     }
-    if (this.authService.esEncargadoSucursal()) {
+    if (this.sesion.esEncargadoSucursal()) {
       return this.filtrarPorRutas(RUTAS_ENCARGADO_SUCURSAL);
     }
     return [];
@@ -103,30 +108,24 @@ export class AdministracionShell {
     );
   }
 
-  readonly correo = computed(
-    () => this.authService.usuarioActual()?.correo ?? null,
+  readonly correo = computed(() => this.sesion.correo());
+  readonly rol = computed(() => this.sesion.rol());
+  readonly nombre = computed(() => this.sesion.nombre());
+
+  /** Empresa del contexto SaaS (`empresa_nombre`), o null en sesión legacy. */
+  readonly empresaNombre = computed(() => this.sesion.empresaNombre());
+
+  /**
+   * true cuando corresponde mostrar el aviso de módulos todavía no adaptados:
+   * sesión empresarial del ADMINISTRADOR de la empresa (el aviso enlaza la
+   * opción CU4-CU5, que no está disponible para otros roles).
+   */
+  readonly avisoEmpresarial = computed(
+    () => this.sesion.esSesionEmpresarial() && this.sesion.esAdministrador(),
   );
-  readonly rol = computed(
-    () => this.authService.usuarioActual()?.rol ?? null,
-  );
-  readonly nombre = computed(() => {
-    const usuario = this.authService.usuarioActual();
-    if (usuario === null || !('nombre' in usuario) || !usuario.nombre) {
-      return null;
-    }
-    const apellido =
-      'apellido' in usuario && usuario.apellido ? ` ${usuario.apellido}` : '';
-    return `${usuario.nombre}${apellido}`;
-  });
 
   /** Etiqueta mostrada en la sesión (nombre o fallback por rol/correo). */
-  readonly etiquetaUsuario = computed(
-    () =>
-      this.nombre() ??
-      (this.authService.esAdministrador() ? 'Administrador' : null) ??
-      this.correo() ??
-      'Personal',
-  );
+  readonly etiquetaUsuario = computed(() => this.sesion.etiquetaUsuario());
 
   /** Sidebar expandida (desktop) o solo iconos. */
   readonly colapsada = signal(false);
@@ -156,7 +155,8 @@ export class AdministracionShell {
   }
 
   cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    // Limpia la sesión empresarial y la legacy antes de volver al portero.
+    this.sesion.cerrarSesion();
     void this.router.navigateByUrl('/auth/personal/login');
   }
 }

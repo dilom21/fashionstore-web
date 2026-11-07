@@ -10,11 +10,12 @@ import {
   TenantRol,
   TenantSucursal,
 } from '../services/tenant-api.service';
+import { SaasBrand } from '../components/saas-brand/saas-brand';
 
 @Component({
   selector: 'app-saas-tenant-empresa',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, SaasBrand],
   templateUrl: './tenant-empresa.page.html',
   styleUrl: './saas-pages.css',
 })

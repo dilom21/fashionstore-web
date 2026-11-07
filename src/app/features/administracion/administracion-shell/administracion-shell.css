@@ -98,3 +98,48 @@
     color: transparent;
   }
 }
+
+/* ===== Aviso de sesión empresarial =====
+   Contexto: el panel del primer parcial se abre con la sesión SaaS. Sus módulos
+   aún no están adaptados al multitenant, por lo que se informa la limitación
+   real (sin ocultar pantallas ni simular datos). */
+.adm__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: clamp(1rem, 2.4vw, 1.5rem) var(--gutter) 0;
+  padding: 0.85rem 1.05rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+}
+
+.adm__aviso-icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 0.15rem;
+  color: var(--accent-text);
+}
+
+.adm__aviso-texto {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.adm__aviso-texto strong {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.adm__aviso-texto a {
+  color: var(--accent-text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

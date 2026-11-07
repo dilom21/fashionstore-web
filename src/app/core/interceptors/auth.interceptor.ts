@@ -15,6 +15,24 @@ const RUTAS_LOGIN_SIN_TOKEN = new Set([
 ]);
 
 /**
+ * Prefijos de la API que pertenecen al contexto EMPRESARIAL (SaaS).
+ *
+ * Estas peticiones nunca reciben el JWT legacy: el JWT tenant lo añade
+ * `TenantApiService` en su propia cabecera Authorization. Si el servicio aún
+ * no tiene token, la petición debe salir sin credenciales (el backend
+ * responderá 401) en lugar de viajar con la sesión legacy de un cliente o de
+ * un usuario de personal antiguo.
+ */
+const PREFIJOS_API_SAAS = ['/auth/tenant', '/tenant'];
+
+/** true si la ruta de la API pertenece al contexto empresarial (SaaS). */
+function esRutaSaas(ruta: string): boolean {
+  return PREFIJOS_API_SAAS.some(
+    (prefijo) => ruta === prefijo || ruta.startsWith(`${prefijo}/`),
+  );
+}
+
+/**
  * Devuelve la ruta (sin query string) de una URL que pertenece a la API propia,
  * o null si la URL apunta a un dominio externo.
  */
@@ -44,6 +62,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Endpoints de login: no enviar un token viejo.
   if (RUTAS_LOGIN_SIN_TOKEN.has(ruta)) {
+    return next(req);
+  }
+
+  // Contexto empresarial (SaaS): solo el JWT tenant. Nunca el legacy.
+  if (esRutaSaas(ruta)) {
     return next(req);
   }
 

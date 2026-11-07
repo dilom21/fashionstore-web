@@ -1,0 +1,75 @@
+<main class="saas-layout">
+  <section class="saas-panel">
+    <header class="saas-brandbar">
+      <app-saas-brand etiqueta="Portal empresarial" />
+      <div class="saas-inline">
+        <a routerLink="/" class="saas-back">Ir al sitio público</a>
+        <button type="button" (click)="salir()">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <header class="saas-head">
+      <div>
+        <p class="saas-eyebrow">Sesión empresarial</p>
+        <h1>{{ api.identidad()?.empresa_nombre || 'Mi empresa' }}</h1>
+        <p class="saas-muted">
+          Empresa {{ api.identidad()?.empresa_slug }} · Plan
+          {{ api.identidad()?.plan_codigo }} ·
+          {{ api.identidad()?.rol }}
+        </p>
+      </div>
+    </header>
+
+    <h2>Tu identidad empresarial</h2>
+    <p>
+      Verificada en el servidor con la sesión de tu empresa. El rol que ves aquí
+      es el que aplica FastAPI; el frontend no puede cambiarlo.
+    </p>
+
+    <section class="saas-block">
+      <table aria-label="Datos de la sesión empresarial">
+        <tbody>
+          <tr>
+            <th>Plataforma</th>
+            <td>FashionStore</td>
+          </tr>
+          <tr>
+            <th>Empresa</th>
+            <td>
+              {{ api.identidad()?.empresa_nombre || '—' }}
+              <span class="saas-muted">({{ api.identidad()?.empresa_slug || '—' }})</span>
+            </td>
+          </tr>
+          <tr>
+            <th>Personal</th>
+            <td>{{ api.nombreCompleto() || api.identidad()?.correo || '—' }}</td>
+          </tr>
+          <tr>
+            <th>Correo</th>
+            <td>{{ api.identidad()?.correo || '—' }}</td>
+          </tr>
+          <tr>
+            <th>Rol en la empresa</th>
+            <td>{{ api.identidad()?.rol || '—' }}</td>
+          </tr>
+          <tr>
+            <th>Empleado</th>
+            <td>{{ empleadoId() ?? '—' }}</td>
+          </tr>
+          <tr>
+            <th>Sucursal</th>
+            <td>{{ sucursalId() ?? 'Sin sucursal asignada' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p role="status">{{ aviso() }}</p>
+
+    @if (esAdministrador()) {
+      <p>
+        <a class="saas-primary" routerLink="/saas/empresa">Ir al panel empresarial</a>
+      </p>
+    }
+  </section>
+</main>

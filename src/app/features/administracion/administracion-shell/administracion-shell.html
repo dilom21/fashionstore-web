@@ -27,7 +27,7 @@
           <path d="M4 6h16M4 12h16M4 18h16"></path>
         </svg>
       </button>
-      <span class="adm__topbar-brand">VANTER&nbsp;<em>MEN</em></span>
+      <span class="adm__topbar-brand">FASHION<em>STORE</em></span>
       <button
         type="button"
         class="adm__topbar-btn"
@@ -44,6 +44,22 @@
     </header>
 
     <div class="adm__pagina">
+      @if (avisoEmpresarial()) {
+        <div class="adm__aviso" role="status">
+          <app-admin-icon class="adm__aviso-icon" icono="alerta" />
+          <p class="adm__aviso-texto">
+            <strong>
+              Sesión empresarial{{ empresaNombre() ? ' · ' + empresaNombre() : '' }}
+            </strong>
+            Este panel conserva sus módulos originales como base de la adaptación
+            multitenant. Las pantallas que todavía consultan los servicios del
+            sistema anterior no están adaptadas: el servidor rechazará esas
+            consultas (401/403) y no se mostrarán datos ni se realizarán cambios.
+            El avance disponible de CU4-CU5 está en
+            <a routerLink="/saas/empresa">CU4-CU5</a>.
+          </p>
+        </div>
+      }
       <router-outlet />
     </div>
   </main>

@@ -1,17 +1,25 @@
 <main class="saas-layout">
   <section class="saas-panel">
+    <header class="saas-brandbar">
+      <app-saas-brand etiqueta="Panel empresarial" />
+      <div class="saas-inline">
+        <a routerLink="/admin/inicio" class="saas-back">Volver al panel</a>
+        <a routerLink="/" class="saas-back">Ir al sitio público</a>
+        <button type="button" (click)="salir()">Cerrar sesión</button>
+      </div>
+    </header>
     <header class="saas-head">
       <div>
-        <p class="saas-eyebrow">FashionStore · CU04 y CU05</p>
+        <p class="saas-eyebrow">CU04 y CU05 · Administración de la empresa</p>
         <h1>{{ api.identidad()?.empresa_nombre || 'Mi empresa' }}</h1>
         <p class="saas-muted">
-          {{ api.identidad()?.empresa_slug }} · Plan {{ api.identidad()?.plan_codigo }} ·
+          Empresa {{ api.identidad()?.empresa_slug }} · Plan {{ api.identidad()?.plan_codigo }} ·
           Administrador
         </p>
-      </div>
-      <div class="saas-inline">
-        <a routerLink="/">Volver a la tienda</a>
-        <button type="button" (click)="salir()">Cerrar sesión</button>
+        <p class="saas-muted">
+          Opción temporal <strong>CU4-CU5</strong> del panel administrativo: usa los
+          endpoints SaaS de tu empresa. Vuelve al panel con «Volver al panel».
+        </p>
       </div>
     </header>
     @if (cargando()) { <p>Consultando datos empresariales en el servidor...</p> }

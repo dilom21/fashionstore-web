@@ -29,7 +29,7 @@ const LOOKS: LookSlide[] = [
   {
     id: 'look-2',
     num: '02',
-    title: 'Noche VANTER',
+    title: 'Noche FashionStore',
     caption: 'Chaquetas y abrigos para después de las seis.',
     image: IMAGES.lookbook.look2,
     style: 'b',

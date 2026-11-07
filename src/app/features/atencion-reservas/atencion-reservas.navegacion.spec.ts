@@ -3,6 +3,7 @@ import {
   ActivatedRouteSnapshot,
   RouterStateSnapshot,
   UrlTree,
+  provideRouter,
 } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -10,6 +11,7 @@ import { routes as appRoutes } from '../../app.routes';
 import { atencionReservasGuard } from '../../core/guards/atencion-reservas.guard';
 import { AdministracionShell } from '../administracion/administracion-shell/administracion-shell';
 import { AuthService } from '../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../saas/services/tenant-api.service';
 import { atencionReservasRoutes } from './atencion-reservas.routes';
 
 function authMock(overrides: Record<string, unknown> = {}): any {
@@ -29,7 +31,15 @@ function authMock(overrides: Record<string, unknown> = {}): any {
 function ejecutarGuard(auth: any): boolean | UrlTree {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [{ provide: AuthService, useValue: auth }],
+    providers: [
+      provideRouter([]),
+      { provide: AuthService, useValue: auth },
+      // Sin sesión empresarial: se ejercita la rama legacy del guard.
+      {
+        provide: TenantApiService,
+        useValue: { identidad: () => null, tieneToken: () => false },
+      },
+    ],
   });
   return TestBed.runInInjectionContext(() =>
     atencionReservasGuard(

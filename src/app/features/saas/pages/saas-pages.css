@@ -24,3 +24,35 @@
 .saas-panel .saas-inline select { width: auto; }
 .saas-panel .saas-inline button { white-space: nowrap; }
 .saas-muted { font-size: .86rem; opacity: .75; }
+
+/* ===== Identidad de la plataforma (FashionStore) =====
+   Cabecera común de las pantallas compartidas del portal empresarial. El
+   nombre de la EMPRESA autenticada se muestra aparte, con el contexto tenant
+   (`api.identidad()`), nunca con la marca de la plataforma. */
+.saas-brandbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.saas-brandbar app-saas-brand { font-size: 1.2rem; }
+
+.saas-panel .saas-back {
+  color: var(--text-2);
+  font-size: .88rem;
+  font-weight: 600;
+  transition: color .2s ease;
+}
+
+.saas-panel .saas-back:hover { color: var(--accent-text); }
+
+@media (max-width: 560px) {
+  .saas-brandbar { align-items: flex-start; }
+  .saas-brandbar app-saas-brand { font-size: 1.05rem; }
+}
+

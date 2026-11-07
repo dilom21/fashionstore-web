@@ -11,6 +11,7 @@ import {
 import { routes as appRoutes } from '../../../app.routes';
 import { adminAuthGuard } from '../../../core/guards/admin-auth.guard';
 import { AuthService } from '../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../saas/services/tenant-api.service';
 import { AdministracionShell } from '../administracion-shell/administracion-shell';
 import { administracionRoutes } from '../administracion.routes';
 import { ADMIN_NAV_ITEMS } from '../navigation/admin-nav.config';
@@ -32,7 +33,16 @@ function rutasDeMenu(items: any[]): string[] {
 function ejecutarGuard(auth: any): boolean | UrlTree {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [{ provide: AuthService, useValue: auth }],
+    providers: [
+      provideRouter([]),
+      { provide: AuthService, useValue: auth },
+      // El guard también reconoce la sesión empresarial (SaaS); aquí no hay
+      // ninguna, así que se ejercita la rama legacy del primer parcial.
+      {
+        provide: TenantApiService,
+        useValue: { identidad: () => null, tieneToken: () => false },
+      },
+    ],
   });
   return TestBed.runInInjectionContext(() =>
     adminAuthGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),

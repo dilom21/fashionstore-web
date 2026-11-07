@@ -1,6 +1,10 @@
 <main class="saas-layout">
   <section class="saas-panel saas-login">
-    <p class="saas-eyebrow">FashionStore · CU03</p>
+    <header class="saas-brandbar">
+      <app-saas-brand etiqueta="Portal empresarial" />
+      <a routerLink="/" class="saas-back">Ir al sitio público</a>
+    </header>
+    <p class="saas-eyebrow">CU03 · Autenticación empresarial</p>
     <h1>Acceso por empresa</h1>
     <p>Inicia sesión como administrador de tu propia empresa. Tus datos y permisos se verifican en el servidor.</p>
     <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
@@ -18,6 +22,5 @@
         {{ enviando() ? 'Verificando...' : 'Entrar a mi empresa' }}
       </button>
     </form>
-    <a routerLink="/">Volver a la tienda</a>
   </section>
 </main>

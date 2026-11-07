@@ -4,11 +4,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 
 import { TenantApiService } from '../services/tenant-api.service';
+import { SaasBrand } from '../components/saas-brand/saas-brand';
 
 @Component({
   selector: 'app-saas-tenant-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, SaasBrand],
   templateUrl: './tenant-login.page.html',
   styleUrl: './saas-pages.css',
 })

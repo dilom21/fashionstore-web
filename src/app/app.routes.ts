@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 
 import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 import { personalAuthGuard } from './core/guards/personal-auth.guard';
+import { personalSaasAuthGuard } from './core/guards/personal-saas-auth.guard';
+import { tenantAdminAuthGuard } from './core/guards/tenant-admin-auth.guard';
 
 /**
  * Rutas públicas y de autenticación:
@@ -18,21 +20,38 @@ export const routes: Routes = [
   // La seguridad de permisos está en el backend; estas rutas no abren SaaS.
   {
     path: 'saas/ingresar',
+    title: 'Portal empresarial · FashionStore',
     loadComponent: () =>
       import('./features/saas/pages/tenant-login.page').then(
         (m) => m.TenantLoginPage,
       ),
   },
   {
+    // Panel empresarial (CU04/CU05): solo ADMINISTRADOR de la empresa. El rol
+    // se toma de GET /auth/tenant/me, nunca del rol legacy ni del formulario.
     path: 'saas/empresa',
+    title: 'Panel empresarial · FashionStore',
+    canActivate: [tenantAdminAuthGuard],
     loadComponent: () =>
       import('./features/saas/pages/tenant-empresa.page').then(
         (m) => m.TenantEmpresaPage,
       ),
   },
   {
+    // Pantalla neutral de sesión empresarial autenticada: da destino a
+    // ENCARGADO_SUCURSAL y CAJERO mientras sus módulos no estén adaptados.
+    path: 'saas/sesion',
+    title: 'Sesión empresarial · FashionStore',
+    canActivate: [personalSaasAuthGuard],
+    loadComponent: () =>
+      import('./features/saas/pages/tenant-sesion.page').then(
+        (m) => m.TenantSesionPage,
+      ),
+  },
+  {
     path: '',
     pathMatch: 'full',
+    title: 'FashionStore | Moda online y portal empresarial',
     loadComponent: () =>
       import('./features/home/pages/home/home').then((m) => m.Home),
   },

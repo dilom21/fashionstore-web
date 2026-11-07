@@ -77,4 +77,21 @@ describe('Navbar', () => {
       queryParams: { buscar: 'polo' },
     });
   });
+
+  it('la marca visible es FashionStore y no la tienda heredada', () => {
+    const marca = fixture.nativeElement.querySelector(
+      '.nav__brand-name',
+    ) as HTMLElement;
+
+    expect(marca).toBeTruthy();
+    expect((marca.textContent ?? '').replace(/\s+/g, '')).toBe('FASHIONSTORE');
+
+    const enlace = fixture.nativeElement.querySelector(
+      'a.nav__brand',
+    ) as HTMLAnchorElement;
+    expect(enlace.getAttribute('aria-label')).toBe('FashionStore — ir al inicio');
+    expect(enlace.getAttribute('href')).toBe('/');
+
+    expect(fixture.nativeElement.textContent).not.toContain('VANTER');
+  });
 });

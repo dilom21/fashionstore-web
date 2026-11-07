@@ -1,11 +1,38 @@
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpHeaders,
+  HttpStatusCode,
+} from '@angular/common/http';
+import {
+  computed,
+  inject,
+  Injectable,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
+import { Observable, catchError, of, tap, throwError } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { marcarSesionEmpresarial } from '../../../core/sesion/sesion-panel';
+import {
+  ROL_ADMINISTRADOR,
+  ROL_CAJERO,
+  ROL_ENCARGADO_SUCURSAL,
+} from '../../autenticacion-seguridad/auth/services/auth.service';
 
 export type ContextoTenant = 'personal' | 'cliente';
+
+/**
+ * Clave de sessionStorage del JWT EMPRESARIAL (SaaS).
+ *
+ * Es deliberadamente distinta de la clave legacy (`vanter_access_token`):
+ * un token de cliente/personal legacy nunca puede leerse como sesión tenant
+ * ni al revés.
+ */
+export const TENANT_TOKEN_STORAGE_KEY =
+  'fashionstore_saas_tenant_access_token';
 
 export interface TenantLogin {
   correo: string;
@@ -33,6 +60,16 @@ export interface TenantIdentidad {
   contexto: ContextoTenant;
   plan_codigo: string;
   permite_reportes_ia: boolean;
+  /**
+   * Perfil del empleado. El backend (`GET /auth/tenant/me`) solo lo envía
+   * cuando `contexto === 'personal'`; por eso los campos son opcionales: el
+   * frontend no asume datos que el servidor podría omitir.
+   */
+  correo?: string | null;
+  empleado_id?: number | null;
+  nombre?: string | null;
+  apellido?: string | null;
+  sucursal_id?: number | null;
 }
 
 export interface TenantSucursal {
@@ -77,10 +114,40 @@ export class TenantApiService {
   private readonly http = inject(HttpClient);
   private readonly platform = inject(PLATFORM_ID);
   private readonly base = environment.apiUrl.replace(/\/+$/, '');
-  private readonly storageKey = 'fashionstore_saas_tenant_access_token';
+  private readonly storageKey = TENANT_TOKEN_STORAGE_KEY;
   private readonly _identidad = signal<TenantIdentidad | null>(null);
 
   readonly identidad = this._identidad.asReadonly();
+
+  /** true si ya se consultó la identidad empresarial en esta pestaña. */
+  readonly autenticado = computed(() => this._identidad() !== null);
+
+  /** Contexto empresarial autenticado (`personal` | `cliente`), o null. */
+  readonly contexto = computed<ContextoTenant | null>(
+    () => this._identidad()?.contexto ?? null,
+  );
+
+  /** Rol empresarial normalizado que devolvió el backend, o null. */
+  readonly rol = computed(
+    () => this._identidad()?.rol?.trim().toUpperCase() ?? null,
+  );
+
+  readonly esAdministrador = computed(() => this.rol() === ROL_ADMINISTRADOR);
+
+  readonly esEncargadoSucursal = computed(
+    () => this.rol() === ROL_ENCARGADO_SUCURSAL,
+  );
+
+  readonly esCajero = computed(() => this.rol() === ROL_CAJERO);
+
+  /** Nombre del empleado (`nombre apellido`) según el perfil empresarial. */
+  readonly nombreCompleto = computed(() => {
+    const identidad = this._identidad();
+    const nombre = identidad?.nombre?.trim() ?? '';
+    const apellido = identidad?.apellido?.trim() ?? '';
+    const completo = `${nombre} ${apellido}`.trim();
+    return completo.length > 0 ? completo : null;
+  });
 
   private get storage(): Storage | null {
     if (!isPlatformBrowser(this.platform)) return null;
@@ -89,6 +156,11 @@ export class TenantApiService {
 
   private token(): string | null {
     return this.storage?.getItem(this.storageKey) ?? null;
+  }
+
+  /** true si existe un JWT empresarial persistido en la pestaña. */
+  tieneToken(): boolean {
+    return this.token() !== null;
   }
 
   private headers(): HttpHeaders {
@@ -104,7 +176,8 @@ export class TenantApiService {
       .pipe(
         tap((response) => {
           this.storage?.setItem(this.storageKey, response.access_token);
-          this._identidad.set(null);
+          // El JWT por sí solo no autentica: la identidad se confirma con /me.
+          this.actualizarIdentidad(null);
         }),
       );
   }
@@ -114,7 +187,40 @@ export class TenantApiService {
       .get<TenantIdentidad>(`${this.base}/auth/tenant/me`, {
         headers: this.headers(),
       })
-      .pipe(tap((identidad) => this._identidad.set(identidad)));
+      .pipe(tap((identidad) => this.actualizarIdentidad(identidad)));
+  }
+
+  /**
+   * Restaura la sesión empresarial tras recargar la aplicación.
+   *
+   * - Sin JWT empresarial: identidad = null y ninguna petición.
+   * - Con JWT: consulta GET /auth/tenant/me.
+   * - 401/403 (token expirado o membresía revocada): limpia token e identidad.
+   * - Otros errores (red/5xx) se propagan: el token se conserva para poder
+   *   reintentar, pero NO se declara una sesión autenticada.
+   */
+  restaurarSesion(): Observable<TenantIdentidad | null> {
+    const identidad = this._identidad();
+    if (identidad !== null) {
+      return of(identidad);
+    }
+    if (this.token() === null) {
+      this.actualizarIdentidad(null);
+      return of(null);
+    }
+    return this.me().pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (
+          error.status === HttpStatusCode.Unauthorized ||
+          error.status === HttpStatusCode.Forbidden
+        ) {
+          this.cerrarSesion();
+          return of(null);
+        }
+        this.actualizarIdentidad(null);
+        return throwError(() => error);
+      }),
+    );
   }
 
   sucursales(): Observable<TenantSucursal[]> {
@@ -177,6 +283,19 @@ export class TenantApiService {
 
   cerrarSesion(): void {
     this.storage?.removeItem(this.storageKey);
-    this._identidad.set(null);
+    this.actualizarIdentidad(null);
+  }
+
+  /**
+   * Único punto donde cambia la identidad empresarial en memoria.
+   *
+   * Además del signal (consumido por guards y pantallas SaaS) mantiene el
+   * indicador del módulo `core/sesion/sesion-panel`, que permite a las
+   * pantallas del panel del primer parcial interpretar correctamente un 401
+   * (endpoint legacy todavía no adaptado) sin tratarlo como sesión expirada.
+   */
+  private actualizarIdentidad(identidad: TenantIdentidad | null): void {
+    this._identidad.set(identidad);
+    marcarSesionEmpresarial(identidad !== null && identidad.contexto === 'personal');
   }
 }
