@@ -9,6 +9,7 @@ import { environment } from '../../../../environments/environment';
 import {
   TENANT_TOKEN_STORAGE_KEY,
   TenantApiService,
+  TenantClienteRegistroRespuesta,
   TenantIdentidad,
 } from './tenant-api.service';
 
@@ -76,6 +77,56 @@ describe('TenantApiService (CU03 SaaS del personal)', () => {
       })
       .subscribe();
   }
+
+  it('empresasPublicas consulta GET /auth/tenant/empresas sin JWT', () => {
+    sessionStorage.setItem(TENANT_TOKEN_STORAGE_KEY, 'tenant-jwt');
+
+    service.empresasPublicas().subscribe();
+
+    const peticion = http.expectOne(`${API}/auth/tenant/empresas`);
+    expect(peticion.request.method).toBe('GET');
+    // Endpoint público: no se mezcla la sesión de la pestaña con el selector.
+    expect(peticion.request.headers.has('Authorization')).toBe(false);
+    peticion.flush([{ slug: 'vanter-men', nombre_comercial: 'Vanter Men' }]);
+  });
+
+  it('registrarClienteTenant envía la empresa y NO crea sesión', () => {
+    let respuesta: TenantClienteRegistroRespuesta | undefined;
+    service
+      .registrarClienteTenant({
+        empresa_slug: 'vanter-men',
+        correo: 'nuevo@vanter.test',
+        password: 'Segura123!',
+        password_confirmacion: 'Segura123!',
+        nombre: 'Ana',
+        apellido: 'Pérez',
+        ci: '12345678',
+        telefono: '70000000',
+        sexo: 'MASCULINO',
+        fecha_nacimiento: '2000-01-01',
+      })
+      .subscribe((valor) => (respuesta = valor));
+
+    const peticion = http.expectOne(`${API}/auth/tenant/clientes/registro`);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body.empresa_slug).toBe('vanter-men');
+    expect(peticion.request.body.correo).toBe('nuevo@vanter.test');
+    expect(peticion.request.headers.has('Authorization')).toBe(false);
+    peticion.flush({
+      mensaje: 'Cuenta creada correctamente. Inicie sesion para continuar.',
+      usuario_id: 41,
+      cliente_id: 22,
+      empresa_slug: 'vanter-men',
+      correo: 'nuevo@vanter.test',
+      nombre: 'Ana',
+      apellido: 'Pérez',
+    });
+
+    expect(respuesta?.cliente_id).toBe(22);
+    // Sin auto-login: el JWT empresarial no se escribe.
+    expect(sessionStorage.getItem(TENANT_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(service.tieneToken()).toBe(false);
+  });
 
   it('login usa POST /auth/tenant/login con el contrato del backend', () => {
     login();

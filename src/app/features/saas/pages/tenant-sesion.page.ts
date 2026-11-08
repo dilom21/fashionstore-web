@@ -36,13 +36,22 @@ export class TenantSesionPage {
     () => this.api.identidad()?.empleado_id ?? null,
   );
 
+  /**
+   * CU08 (CU13 Consultar inventario y CU14 Movimientos) ya está adaptado al
+   * modo empresarial, por lo que se ofrecen como accesos autorizados dentro del
+   * panel original. El resto de módulos siguen sin adaptarse.
+   */
+  readonly puedeConsultarInventario = computed(
+    () => this.api.esAdministrador() || this.api.esEncargadoSucursal(),
+  );
+
   /** Mensaje por rol: qué está disponible y qué sigue pendiente. */
   readonly aviso = computed(() => {
     if (this.api.esAdministrador()) {
       return 'Puedes gestionar sucursales, personal y roles de tu empresa en el panel empresarial.';
     }
     if (this.api.esEncargadoSucursal()) {
-      return 'Tu acceso como encargado de sucursal está verificado. Los módulos operativos de la tienda todavía no están adaptados al modo empresarial.';
+      return 'Tu acceso como encargado de sucursal está verificado. Puedes consultar el inventario y los movimientos de tu sucursal; el resto de módulos todavía no están adaptados al modo empresarial.';
     }
     return 'Tu acceso como cajero está verificado. Los módulos operativos de la tienda todavía no están adaptados al modo empresarial.';
   });

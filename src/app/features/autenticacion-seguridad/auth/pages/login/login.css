@@ -217,6 +217,42 @@ html[data-theme='light'] .login__alert svg {
   box-shadow: 0 0 0 3px rgb(248 113 113 / 14%);
 }
 
+/* Selector de empresa: mismo aspecto que los inputs, con flecha propia para
+   que se lea igual en tema claro y oscuro. */
+.login__select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.8rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a3a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  cursor: pointer;
+}
+
+.login__field-hint {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.login__retry {
+  align-self: flex-start;
+  margin-top: 0.45rem;
+  padding: 0;
+  color: var(--accent-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login__retry:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 3px;
+}
+
 /* Campo con botón de mostrar contraseña */
 .login__password {
   position: relative;
@@ -388,6 +424,13 @@ html[data-theme='light'] .login__field-error {
 .login__text-link--strong:focus-visible {
   outline: 2px solid var(--accent-3);
   outline-offset: 3px;
+}
+
+/* "Crear cuenta" es un botón (valida la empresa elegida antes de navegar),
+   pero conserva el aspecto del enlace del primer parcial. */
+.login__text-link--button {
+  font-family: inherit;
+  font-size: 0.95rem;
 }
 
 /* Animaciones */

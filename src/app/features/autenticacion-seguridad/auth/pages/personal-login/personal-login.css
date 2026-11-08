@@ -199,6 +199,41 @@ html[data-theme='light'] .p-login__alert svg {
   border-color: rgb(248 113 113 / 65%);
 }
 
+/* Selector de empresa: mismo aspecto que los inputs del formulario. */
+.p-login__select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.8rem;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a3a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  cursor: pointer;
+}
+
+.p-login__field-hint {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.p-login__retry {
+  align-self: flex-start;
+  margin-top: 0.45rem;
+  padding: 0;
+  color: var(--accent-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.p-login__retry:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 3px;
+}
+
 .p-login__password {
   position: relative;
 }

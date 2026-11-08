@@ -15,6 +15,7 @@ import { ThemeService } from '../../../../core/services/theme.service';
 import { ToastHost } from '../../../../shared/components/toast-host/toast-host';
 import { CarritoService } from '../../../carrito/services/carrito.service';
 import { AuthService } from '../../../../features/autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 
 interface NavLink {
   label: string;
@@ -49,6 +50,7 @@ const NAV_LINKS: NavLink[] = [
 export class Navbar implements OnDestroy {
   readonly themeService = inject(ThemeService);
   readonly authService = inject(AuthService);
+  readonly tenantApi = inject(TenantApiService);
   readonly carritoService = inject(CarritoService);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
@@ -63,23 +65,62 @@ export class Navbar implements OnDestroy {
   readonly accountWrap = viewChild<ElementRef<HTMLElement>>('accountWrap');
 
   /**
+   * Sesión de CLIENTE confirmada por el mecanismo SaaS
+   * (`GET /auth/tenant/me` con contexto "cliente").
+   *
+   * La sesión empresarial del PERSONAL no se muestra aquí: su lugar es el panel
+   * administrativo/empresarial, no la tienda pública.
+   */
+  readonly clienteSaas = computed(() => this.tenantApi.contexto() === 'cliente');
+
+  /**
+   * Nombre comercial de la empresa cuya sesión de CLIENTE está activa
+   * (`GET /auth/tenant/me` → `empresa_nombre`), o `null`.
+   *
+   * Se muestra solo el de una empresa REALMENTE autenticada: nunca se inventa
+   * ni se reutiliza el nombre de otra empresa.
+   */
+  readonly empresaSaas = computed(() => {
+    if (!this.clienteSaas()) {
+      return null;
+    }
+    const nombre = this.tenantApi.identidad()?.empresa_nombre?.trim() ?? '';
+    return nombre.length > 0 ? nombre : null;
+  });
+
+  /**
+   * true si el navbar debe mostrar la zona de cuenta como "sesión iniciada".
+   * Cubre la sesión legacy (clientes/personal del primer parcial) y la sesión
+   * empresarial del cliente.
+   */
+  readonly sesionVisible = computed(
+    () => this.authService.autenticado() || this.clienteSaas(),
+  );
+
+  /**
    * Texto de la zona de cuenta cuando hay sesión iniciada.
-   * Tras un login reciente se dispone del nombre (ClienteAuth) -> "Hola, Juan".
+   * Tras un login legacy reciente se dispone del nombre (ClienteAuth) -> "Hola, Juan".
    * Tras restaurar con /auth/me solo hay UsuarioAuth -> "Mi cuenta".
+   * Con una sesión empresarial de CLIENTE, `GET /auth/tenant/me` NO devuelve
+   * nombre ni apellido (el backend solo envía perfil para "personal"), así que
+   * se muestra "Mi cuenta": nunca se inventa un nombre de cliente.
    */
   readonly cuentaTexto = computed(() => {
     const usuario = this.authService.usuarioActual();
-    if (usuario === null) {
+    if (usuario !== null) {
+      if (
+        usuario.contexto === 'cliente' &&
+        'nombre' in usuario &&
+        usuario.nombre
+      ) {
+        return `Hola, ${usuario.nombre}`;
+      }
       return 'Mi cuenta';
     }
-    if (
-      usuario.contexto === 'cliente' &&
-      'nombre' in usuario &&
-      usuario.nombre
-    ) {
-      return `Hola, ${usuario.nombre}`;
-    }
-    return 'Mi cuenta';
+    const nombreEmpresarial = this.tenantApi.identidad()?.nombre?.trim() ?? '';
+    return nombreEmpresarial.length > 0
+      ? `Hola, ${nombreEmpresarial}`
+      : 'Mi cuenta';
   });
 
   private keyHandler: ((event: KeyboardEvent) => void) | null = null;
@@ -115,6 +156,9 @@ export class Navbar implements OnDestroy {
       document.addEventListener('pointerdown', this.outsideHandler);
 
       // El badge de la bolsa refleja el nº de carritos activos del cliente.
+      // Solo se consulta con la sesión legacy de cliente: el login SaaS no
+      // dispara consultas de carrito ni actualiza el contador (CU15 sigue sin
+      // adaptarse al modo empresarial).
       if (this.authService.esCliente()) {
         this.carritoService.refrescarContador();
       }
@@ -164,11 +208,26 @@ export class Navbar implements OnDestroy {
     this.accountOpen.set(false);
   }
 
-  /** Cierra la sesión local, limpia el carrito en memoria y vuelve al inicio. */
+  /**
+   * Cierra la sesión que el navbar representa.
+   *
+   * - Sesión empresarial del CLIENTE: se cierra únicamente esa sesión
+   *   (`TenantApiService.cerrarSesion()`), sin tocar el JWT legacy.
+   * - Sesión legacy: se conserva el comportamiento del primer parcial (limpiar
+   *   el JWT legacy y el carrito en memoria).
+   * - Nunca se cierra una sesión de PERSONAL (legacy) como efecto de cerrar la
+   *   sesión empresarial de un cliente: serían sesiones de ámbitos distintos.
+   */
   cerrarSesion(): void {
     this.accountOpen.set(false);
-    this.authService.cerrarSesion();
-    this.carritoService.limpiar();
+    const clienteSaas = this.clienteSaas();
+    if (clienteSaas) {
+      this.tenantApi.cerrarSesion();
+    }
+    if (!clienteSaas || this.authService.esCliente()) {
+      this.authService.cerrarSesion();
+      this.carritoService.limpiar();
+    }
     void this.router.navigateByUrl('/');
   }
 

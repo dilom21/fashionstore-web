@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../../saas/services/tenant-api.service';
 import { BitacoraDetalleDialog } from '../../components/bitacora-detalle-dialog/bitacora-detalle-dialog';
 import {
   BitacoraEvento,
@@ -48,8 +49,8 @@ function instanteISO(fecha: string, finDeDia: boolean): string | undefined {
  *
  * Pantalla de auditoría SOLO LECTURA: listado paginado con búsqueda y filtros
  * reales (usuario, acción, entidad, rango de fechas). Nunca carga toda la
- * bitácora en memoria: usa total/limit/offset devueltos por GET /bitacora.
- * Los catálogos de los selects vienen de GET /bitacora/catalogos (jamás se
+ * bitácora en memoria: usa total/limit/offset devueltos por GET /tenant/bitacora.
+ * Los catálogos de los selects vienen de GET /tenant/bitacora/catalogos (jamás se
  * hardcodean acciones ni entidades).
  */
 @Component({
@@ -61,6 +62,7 @@ function instanteISO(fecha: string, finDeDia: boolean): string | undefined {
 export class BitacoraPage {
   private readonly bitacoraService = inject(BitacoraService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
@@ -80,6 +82,20 @@ export class BitacoraPage {
   readonly usuariosCatalogo = signal<BitacoraUsuarioFiltro[]>([]);
 
   readonly detalleId = signal<number | null>(null);
+
+  /**
+   * Nombre comercial de la empresa autenticada, cuando la sesión empresarial
+   * del PERSONAL lo informa (`GET /auth/tenant/me`). En una sesión legacy no
+   * hay empresa que mostrar y la cabecera conserva su texto original.
+   */
+  readonly empresaNombre = computed(() => {
+    const identidad = this.tenantApi.identidad();
+    if (identidad === null || identidad.contexto !== 'personal') {
+      return null;
+    }
+    const nombre = identidad.empresa_nombre.trim();
+    return nombre.length > 0 ? nombre : null;
+  });
 
   readonly opcionesLimite = OPCIONES_LIMITE;
 
@@ -327,8 +343,7 @@ export class BitacoraPage {
   private manejarError(error: unknown, destino: 'lista' | 'catalogos'): void {
     const traducido = traducirErrorBitacora(error);
     if (traducido.sesionExpirada) {
-      this.authService.cerrarSesion();
-      void this.router.navigateByUrl('/auth/personal/login');
+      this.cerrarSesionYVolverAlLogin();
       return;
     }
     if (destino === 'catalogos') {
@@ -336,5 +351,21 @@ export class BitacoraPage {
       return;
     }
     this.error.set(traducido.mensaje);
+  }
+
+  /**
+   * Cierra la sesión que realmente respaldó la petición y vuelve al login.
+   *
+   * CU05 usa el JWT EMPRESARIAL: si la pestaña tiene sesión empresarial se
+   * cierra ESA sesión (la legacy, si existe, no se toca). Solo cuando no hay
+   * sesión empresarial se limpia la legacy del primer parcial.
+   */
+  private cerrarSesionYVolverAlLogin(): void {
+    if (this.tenantApi.identidad() !== null || this.tenantApi.tieneToken()) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
+    void this.router.navigateByUrl('/auth/personal/login');
   }
 }

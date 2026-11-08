@@ -1,6 +1,7 @@
 <!--
-  Login de clientes VANTER MEN.
-  Formulario real conectado a POST /auth/clientes/login vía AuthService.
+  Login de CLIENTES de la tienda multitenant.
+  Formulario conectado al mecanismo SaaS: POST /auth/tenant/login con la empresa
+  elegida en el selector real (GET /auth/tenant/empresas) y contexto "cliente".
 -->
 <main class="login">
   <a routerLink="/" class="login__back" aria-label="Volver a la tienda">
@@ -14,7 +15,7 @@
   <div class="login__glow login__glow--b" aria-hidden="true"></div>
 
   <div class="login__card">
-    <a routerLink="/" class="login__brand" aria-label="VANTER MEN — ir al inicio">
+    <a routerLink="/" class="login__brand" aria-label="FashionStore — ir al inicio">
       <svg class="login__logo" width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
         <path d="M4 6h24L17 27h-2L4 6z" fill="url(#vm-login-grad)" />
         <path d="M11 6l5 9 5-9" stroke="rgba(255,255,255,.85)" stroke-width="1.6" />
@@ -25,13 +26,13 @@
           </linearGradient>
         </defs>
       </svg>
-      <span class="login__brand-name">VANTER&nbsp;<em>MEN</em></span>
+      <span class="login__brand-name">FASHION<em>STORE</em></span>
     </a>
 
     <span class="login__eyebrow">Cuenta de cliente</span>
     <h1 class="login__title">Bienvenido de nuevo</h1>
     <p class="login__subtitle">
-      Accede a tu cuenta para continuar tu experiencia VANTER MEN.
+      Accede a tu cuenta para continuar tu experiencia de compra.
     </p>
 
     @if (mensajeError(); as error) {
@@ -45,6 +46,38 @@
     }
 
     <form class="login__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+      <div class="login__field">
+        <label class="login__label" for="login-empresa">Empresa</label>
+        @if (cargandoEmpresas()) {
+          <p class="login__field-hint" role="status">Cargando empresas…</p>
+        } @else if (empresas().length === 0) {
+          <p class="login__field-error" role="alert">
+            {{ errorEmpresas() ?? 'No hay empresas disponibles para iniciar sesión.' }}
+          </p>
+          <button type="button" class="login__retry" (click)="cargarEmpresas()">
+            Reintentar
+          </button>
+        } @else {
+          <select
+            class="login__input login__select"
+            [class.login__input--error]="mensajeEmpresa() !== null"
+            id="login-empresa"
+            formControlName="empresa_slug"
+            required
+            [attr.aria-invalid]="mensajeEmpresa() !== null"
+            aria-describedby="login-empresa-error"
+          >
+            <option value="">Selecciona tu empresa</option>
+            @for (empresa of empresas(); track empresa.slug) {
+              <option [value]="empresa.slug">{{ empresa.nombre_comercial }}</option>
+            }
+          </select>
+          @if (mensajeEmpresa(); as msg) {
+            <p class="login__field-error" id="login-empresa-error">{{ msg }}</p>
+          }
+        }
+      </div>
+
       <div class="login__field">
         <label class="login__label" for="login-correo">Correo electrónico</label>
         <input
@@ -104,7 +137,12 @@
         }
       </div>
 
-      <button type="submit" class="login__submit" [disabled]="enviando()" [attr.aria-busy]="enviando()">
+      <button
+        type="submit"
+        class="login__submit"
+        [disabled]="enviando() || cargandoEmpresas() || empresas().length === 0"
+        [attr.aria-busy]="enviando()"
+      >
         @if (enviando()) {
           <span class="login__spinner" aria-hidden="true"></span>
           <span>Iniciando sesión…</span>
@@ -125,12 +163,13 @@
 
     <p class="login__register">
       ¿Aún no tienes una cuenta?
-      <a
-        routerLink="/registro"
-        class="login__text-link login__text-link--strong"
+      <button
+        type="button"
+        class="login__text-link login__text-link--strong login__text-link--button"
+        (click)="irARegistro()"
       >
         Crear cuenta
-      </a>
+      </button>
     </p>
   </div>
 </main>

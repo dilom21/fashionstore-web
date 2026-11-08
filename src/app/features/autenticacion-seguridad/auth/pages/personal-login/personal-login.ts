@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  afterNextRender,
   Component,
   DestroyRef,
   OnInit,
@@ -17,6 +18,11 @@ import { Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 
 import {
+  EmpresaPublicaOpcion,
+  PATRON_EMPRESA_SLUG,
+  buscarEmpresaPorSlug,
+} from '../../../../../core/config/empresa-publica';
+import {
   TenantApiService,
   TenantIdentidad,
 } from '../../../../saas/services/tenant-api.service';
@@ -30,9 +36,14 @@ const MENSAJE_SERVICIO_SAAS =
   'El acceso empresarial todavía no está habilitado en el servidor.';
 const MENSAJE_SIN_PERFIL =
   'Esta cuenta no tiene un perfil de personal activo en la empresa indicada.';
-
-/** Identificador de empresa (slug): minúsculas, números y guiones simples. */
-const PATRON_EMPRESA_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const MENSAJE_EMPRESA_REQUERIDA =
+  'Selecciona la empresa a la que perteneces para continuar.';
+const MENSAJE_EMPRESA_NO_DISPONIBLE =
+  'La empresa seleccionada ya no está disponible. Vuelve a seleccionarla de la lista.';
+const MENSAJE_EMPRESAS_CARGA =
+  'No pudimos cargar las empresas disponibles. Reinténtalo en unos momentos.';
+const MENSAJE_SIN_EMPRESAS =
+  'No hay empresas disponibles para iniciar sesión en este momento.';
 
 /**
  * Destino del personal ADMINISTRADOR: el panel administrativo original
@@ -50,6 +61,9 @@ const DESTINO_NEUTRAL = '/saas/sesion';
  * mecanismo SaaS.
  *
  * Ruta interna: /auth/personal/login (se conserva la del primer parcial).
+ * - La empresa se elige en un SELECTOR alimentado por
+ *   `GET /auth/tenant/empresas` (`TenantApiService.empresasPublicas()`): no hay
+ *   lista fija, no se preselecciona nada y sin empresa válida no se autentica.
  * - Autentica con `TenantApiService.login()` (POST /auth/tenant/login) usando
  *   el contexto `personal`, que fija el formulario y el usuario no elige.
  * - Tras el JWT consulta GET /auth/tenant/me: si la identidad empresarial no
@@ -90,6 +104,11 @@ export class PersonalLogin implements OnInit {
     }),
   });
 
+  /** Empresas del selector (`GET /auth/tenant/empresas`). */
+  readonly empresas = signal<EmpresaPublicaOpcion[]>([]);
+  readonly cargandoEmpresas = signal(false);
+  readonly errorEmpresas = signal<string | null>(null);
+
   readonly enviando = signal(false);
   readonly mensajeError = signal<string | null>(null);
   readonly mostrarPassword = signal(false);
@@ -100,6 +119,10 @@ export class PersonalLogin implements OnInit {
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.mensajeError.set(null));
+
+    // El selector se carga en el navegador (SSR-safe): no bloquea el primer
+    // render ni lanza peticiones durante el prerenderizado.
+    afterNextRender(() => this.cargarEmpresas());
   }
 
   /**
@@ -135,16 +158,24 @@ export class PersonalLogin implements OnInit {
     this.form.markAllAsTouched();
     this.mensajeError.set(null);
 
+    // La empresa se elige en el selector: sin una empresa REAL de la lista no
+    // se autentica (nunca se envía un slug inventado).
+    const empresa = this.empresaSeleccionada();
+    if (empresa === null) {
+      this.mensajeError.set(this.mensajeEmpresaNoSeleccionada());
+      return;
+    }
+
     if (this.form.invalid) {
       return;
     }
 
     this.enviando.set(true);
-    const { empresa_slug, correo, password } = this.form.getRawValue();
+    const { correo, password } = this.form.getRawValue();
 
     this.tenantApi
       .login({
-        empresa_slug: empresa_slug.trim().toLowerCase(),
+        empresa_slug: empresa.slug,
         correo: correo.trim(),
         password,
         // Contexto fijado por el frontend: esta pantalla es solo de personal.
@@ -185,19 +216,71 @@ export class PersonalLogin implements OnInit {
     window.setTimeout(() => this.avisoRecuperacion.set(false), 4000);
   }
 
-  /** Mensaje de validación del identificador de empresa, o null. */
+  /**
+   * Carga el selector con las empresas REALES del backend
+   * (`GET /auth/tenant/empresas`). Nunca se usa una lista fija y no se
+   * preselecciona ninguna empresa.
+   */
+  cargarEmpresas(): void {
+    if (this.cargandoEmpresas()) {
+      return;
+    }
+    this.cargandoEmpresas.set(true);
+    this.errorEmpresas.set(null);
+
+    this.tenantApi
+      .empresasPublicas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (empresas) => {
+          this.cargandoEmpresas.set(false);
+          this.empresas.set(empresas);
+          if (empresas.length === 0) {
+            this.errorEmpresas.set(MENSAJE_SIN_EMPRESAS);
+          }
+        },
+        error: () => {
+          this.cargandoEmpresas.set(false);
+          this.empresas.set([]);
+          this.errorEmpresas.set(MENSAJE_EMPRESAS_CARGA);
+        },
+      });
+  }
+
+  /**
+   * Empresa del selector validada contra la lista disponible, o `null` si no
+   * hay ninguna elegida o si la elegida ya no aparece en el backend.
+   */
+  empresaSeleccionada(): EmpresaPublicaOpcion | null {
+    return buscarEmpresaPorSlug(
+      this.empresas(),
+      this.form.controls.empresa_slug.value,
+    );
+  }
+
+  /** Mensaje del campo empresa, o null si no corresponde mostrarlo. */
   mensajeEmpresa(): string | null {
     const control = this.form.controls.empresa_slug;
     if (control.untouched || !control.invalid) {
       return null;
     }
     if (control.hasError('required')) {
-      return 'Ingresa el identificador de tu empresa.';
+      return 'Selecciona la empresa a la que perteneces.';
     }
     if (control.hasError('pattern')) {
-      return 'Usa solo minúsculas, números y guiones (por ejemplo: mi-empresa).';
+      return 'Selecciona una empresa de la lista.';
     }
     return null;
+  }
+
+  /** Mensaje para una empresa ausente o que ya no está disponible. */
+  private mensajeEmpresaNoSeleccionada(): string {
+    if (this.empresas().length === 0) {
+      return this.errorEmpresas() ?? MENSAJE_SIN_EMPRESAS;
+    }
+    return this.form.controls.empresa_slug.value.trim().length === 0
+      ? MENSAJE_EMPRESA_REQUERIDA
+      : MENSAJE_EMPRESA_NO_DISPONIBLE;
   }
 
   /** Mensaje de validación del correo, o null si no corresponde mostrarlo. */

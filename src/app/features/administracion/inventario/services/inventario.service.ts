@@ -1,32 +1,35 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../../../environments/environment';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import {
   InventarioConsultaFiltros,
   InventarioConsultaResponse,
 } from '../models/inventario.model';
 
 /**
- * Servicio de consulta de inventario por sucursal (CU13). SOLO LECTURA.
+ * Servicio de consulta de inventario por sucursal (CU13) en modo EMPRESARIAL.
+ * SOLO LECTURA.
  *
- * Consume el endpoint real GET /inventario con filtros y paginación
- * (limit/offset). Construye HttpParams solo con los filtros que tienen valor,
- * de modo que el backend aplique sus propios valores por defecto.
+ * Consume `GET /tenant/inventario` (tag Swagger `Inventario SaaS`) con filtros y
+ * paginación (limit/offset). Construye HttpParams solo con los filtros que
+ * tienen valor, de modo que el backend aplique sus propios valores por defecto
+ * (incluido el cálculo de `stock_disponible` y la presentación de stock bajo).
  *
- * Para el ENCARGADO_SUCURSAL no se envía `sucursal_id`: el backend obtiene
- * `empleado.sucursal_id` y restringe los resultados. La seguridad real vive en
- * el backend; aquí no se reproduce.
+ * Autorización: exclusivamente el JWT EMPRESARIAL que añade
+ * `TenantApiService.consultar()`. Nunca se envía el JWT legacy ni `empresa_id`:
+ * el backend obtiene empresa y usuario del token y aplica RLS.
  *
- * El JWT se adjunta automáticamente mediante el interceptor global.
+ * Para el ENCARGADO_SUCURSAL no se envía `sucursal_id`: el backend restringe los
+ * resultados a su sucursal desde el perfil autenticado. Aquí no se reproduce esa
+ * regla (es autorización, no presentación).
  */
 @Injectable({ providedIn: 'root' })
 export class InventarioService {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly tenantApi = inject(TenantApiService);
 
-  /** GET /inventario (filtros + paginación; solo se envían los que tienen valor). */
+  /** GET /tenant/inventario (filtros + paginación; solo los que tienen valor). */
   obtenerInventario(
     filtros: InventarioConsultaFiltros = {},
   ): Observable<InventarioConsultaResponse> {
@@ -64,9 +67,9 @@ export class InventarioService {
       params = params.set('offset', filtros.offset.toString());
     }
 
-    return this.http.get<InventarioConsultaResponse>(
-      `${this.apiUrl}/inventario`,
-      { params },
+    return this.tenantApi.consultar<InventarioConsultaResponse>(
+      '/tenant/inventario',
+      params,
     );
   }
 }

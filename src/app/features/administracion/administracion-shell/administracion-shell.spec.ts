@@ -197,4 +197,20 @@ describe('AdministracionShell con sesión empresarial', () => {
     // Sin sesión empresarial no se muestra el aviso de módulos no adaptados.
     expect(texto()).not.toContain('Sesión empresarial');
   });
+
+  it('el ENCARGADO_SUCURSAL empresarial solo ve las pantallas de CU08', async () => {
+    await setup('ENCARGADO_SUCURSAL');
+
+    const items = fixture.componentInstance.navItems();
+
+    expect(items.map((item) => item.id)).toEqual(['inventario']);
+    expect(items[0].children?.map((hijo) => hijo.route)).toEqual([
+      '/admin/inventario/consultar',
+      '/admin/inventario/movimientos',
+    ]);
+    expect(texto()).toContain('Inventario');
+    expect(enlaces()).not.toContain('/admin/usuarios');
+    expect(enlaces()).not.toContain('/admin/reportes');
+    expect(enlaces()).not.toContain('/saas/empresa');
+  });
 });

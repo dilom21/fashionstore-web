@@ -89,6 +89,20 @@ export class PanelSesionService {
       : this.authService.esCajero(),
   );
 
+  /**
+   * Sucursal asignada al personal, cuando el backend la informa.
+   *
+   * Con sesión empresarial proviene del perfil de `GET /auth/tenant/me`
+   * (`sucursal_id`); con sesión legacy, de la sesión del primer parcial. Es un
+   * dato INFORMATIVO: el alcance real lo impone el backend (RLS/403), por lo que
+   * las pantallas no lo usan para decidir a qué sucursales se puede consultar.
+   */
+  readonly sucursalId = computed(() =>
+    this.esSesionEmpresarial()
+      ? (this.tenantApi.identidad()?.sucursal_id ?? null)
+      : this.authService.sucursalId(),
+  );
+
   /** Etiqueta de la sesión mostrada en la barra lateral. */
   readonly etiquetaUsuario = computed(
     () =>

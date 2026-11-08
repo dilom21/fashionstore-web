@@ -29,6 +29,16 @@ function detalleBackend(error: unknown): string | null {
  * conservan el mensaje de CU03.
  */
 export function traducirErrorBitacora(error: unknown): ErrorBitacora {
+  // CU05 consulta SOLO endpoints empresariales (`/tenant/bitacora`): aquí un
+  // 401 significa que el JWT empresarial ya no es válido (sesión expirada o
+  // membresía revocada), aunque la utilidad de CU03 lo interprete de otro modo
+  // para los endpoints legacy.
+  if (error instanceof HttpErrorResponse && error.status === 401) {
+    return {
+      mensaje: 'Tu sesión expiró. Vuelve a iniciar sesión.',
+      sesionExpirada: true,
+    };
+  }
   const base = traducirErrorHttp(error);
   if (base.sesionExpirada) {
     return { mensaje: base.mensaje, sesionExpirada: true };

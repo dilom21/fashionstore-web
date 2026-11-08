@@ -3,6 +3,7 @@ import {
   HttpClient,
   HttpErrorResponse,
   HttpHeaders,
+  HttpParams,
   HttpStatusCode,
 } from '@angular/common/http';
 import {
@@ -15,7 +16,9 @@ import {
 import { Observable, catchError, of, tap, throwError } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { EmpresaPublicaOpcion } from '../../../core/config/empresa-publica';
 import { marcarSesionEmpresarial } from '../../../core/sesion/sesion-panel';
+import { ClienteRegistroRequest } from '../../autenticacion-seguridad/auth/models/auth.models';
 import {
   ROL_ADMINISTRADOR,
   ROL_CAJERO,
@@ -79,6 +82,35 @@ export interface TenantSucursal {
   direccion: string;
   telefono: string | null;
   estado: boolean;
+}
+
+/**
+ * Empresa que puede elegirse en los formularios de acceso
+ * (`GET /auth/tenant/empresas`): se muestra `nombre_comercial` y se conserva
+ * `slug` como identificador interno.
+ */
+export type TenantEmpresaPublica = EmpresaPublicaOpcion;
+
+/**
+ * Alta pública de CLIENTE dentro de una empresa
+ * (`POST /auth/tenant/clientes/registro`).
+ *
+ * Son los mismos campos del registro del primer parcial más `empresa_slug`:
+ * el frontend nunca envía rol, estado, ids ni contexto.
+ */
+export interface TenantClienteRegistro extends ClienteRegistroRequest {
+  empresa_slug: string;
+}
+
+/** Respuesta 201 del registro empresarial: NO incluye JWT (sin auto-login). */
+export interface TenantClienteRegistroRespuesta {
+  mensaje: string;
+  usuario_id: number;
+  cliente_id: number;
+  empresa_slug: string;
+  correo: string;
+  nombre: string;
+  apellido: string;
 }
 
 export interface TenantMiembro {
@@ -223,6 +255,37 @@ export class TenantApiService {
     );
   }
 
+  /**
+   * GET /auth/tenant/empresas — empresas que pueden elegirse en los formularios
+   * de acceso (login del cliente, login del personal y registro).
+   *
+   * Es un endpoint PÚBLICO: se consulta sin cabecera `Authorization` para no
+   * mezclar la sesión de la pestaña con el selector. La lista nunca se
+   * hardcodea ni se cachea entre pantallas: si una empresa ya no aparece, no
+   * puede usarse para autenticar ni para registrar.
+   */
+  empresasPublicas(): Observable<TenantEmpresaPublica[]> {
+    return this.http.get<TenantEmpresaPublica[]>(
+      `${this.base}/auth/tenant/empresas`,
+    );
+  }
+
+  /**
+   * POST /auth/tenant/clientes/registro — alta pública de CLIENTE en la empresa
+   * indicada por `empresa_slug`.
+   *
+   * La respuesta 201 NO trae JWT: no hay auto-login ni vinculación con cuentas
+   * existentes, así que aquí no se escribe ni se toca ninguna sesión.
+   */
+  registrarClienteTenant(
+    datos: TenantClienteRegistro,
+  ): Observable<TenantClienteRegistroRespuesta> {
+    return this.http.post<TenantClienteRegistroRespuesta>(
+      `${this.base}/auth/tenant/clientes/registro`,
+      datos,
+    );
+  }
+
   sucursales(): Observable<TenantSucursal[]> {
     return this.http.get<TenantSucursal[]>(
       `${this.base}/tenant/empresa/sucursales`,
@@ -242,6 +305,26 @@ export class TenantApiService {
       `${this.base}/tenant/empresa/roles`,
       { headers: this.headers() },
     );
+  }
+
+  /**
+   * GET autenticado con el JWT EMPRESARIAL dentro del contexto `/tenant/**`.
+   *
+   * Lo usan los servicios que adaptan casos de uso del sistema anterior al
+   * modo multitenant (p. ej. CU08 - inventario y movimientos) para no
+   * duplicar la lógica de autorización:
+   * - el token se lee de la clave EXCLUSIVA del SaaS y no se expone al
+   *   llamador (solo viaja en la cabecera Authorization);
+   * - nunca se copia a `vanter_access_token` ni se acepta un JWT legacy;
+   * - no se envía `empresa_id`: el backend lo obtiene del propio token.
+   *
+   * `ruta` es relativa a `environment.apiUrl` (p. ej. '/tenant/inventario').
+   */
+  consultar<T>(ruta: string, params?: HttpParams): Observable<T> {
+    return this.http.get<T>(`${this.base}${ruta}`, {
+      headers: this.headers(),
+      params,
+    });
   }
 
   crearSucursal(datos: {

@@ -1,6 +1,6 @@
 <!--
-  Registro público de CLIENTES — VANTER MEN.
-  Formulario real conectado a POST /auth/clientes/registro vía AuthService.
+  Registro público de CLIENTES (multitenant): la empresa se fija en el login.
+  Formulario real conectado a POST /auth/tenant/clientes/registro (TenantApiService).
   Sin auto-login: al crear la cuenta se muestra un modal y se ofrece ir al login.
 -->
 <main class="reg">
@@ -15,7 +15,7 @@
   <div class="reg__glow reg__glow--b" aria-hidden="true"></div>
 
   <section class="reg__card">
-    <a routerLink="/" class="reg__brand" aria-label="VANTER MEN — ir al inicio">
+    <a routerLink="/" class="reg__brand" aria-label="FashionStore — ir al inicio">
       <svg class="reg__logo" width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
         <path d="M4 6h24L17 27h-2L4 6z" fill="url(#vm-reg-grad)" />
         <path d="M11 6l5 9 5-9" stroke="rgba(255,255,255,.85)" stroke-width="1.6" />
@@ -26,7 +26,7 @@
           </linearGradient>
         </defs>
       </svg>
-      <span class="reg__brand-name">VANTER&nbsp;<em>MEN</em></span>
+      <span class="reg__brand-name">FASHION<em>STORE</em></span>
     </a>
 
     <span class="reg__eyebrow">Cuenta de cliente</span>
@@ -44,6 +44,31 @@
         <span>{{ error }}</span>
       </p>
     }
+
+    <!--
+      Empresa fijada desde el login: SOLO LECTURA. El usuario no puede
+      cambiarla aquí; sin una empresa válida no se puede enviar el formulario.
+    -->
+    <div class="reg__empresa" [class.reg__empresa--pendiente]="!empresaValida()">
+      <span class="reg__empresa-label">Empresa</span>
+      @if (cargandoEmpresas()) {
+        <p class="reg__empresa-valor" role="status">Cargando empresa…</p>
+      } @else if (empresa(); as empresaFijada) {
+        <p class="reg__empresa-valor">{{ empresaFijada.nombre_comercial }}</p>
+        <p class="reg__empresa-hint">Tu cuenta se creará en esta empresa.</p>
+      } @else {
+        <p class="reg__empresa-valor">Sin empresa seleccionada</p>
+        <p class="reg__empresa-hint" role="alert">{{ mensajeEmpresaNoDisponible() }}</p>
+        <a
+          routerLink="/login"
+          class="reg__empresa-link"
+          [queryParams]="parametrosVolverAlLogin()"
+        >
+          Ir al inicio de sesión y elegir empresa
+        </a>
+      }
+    </div>
+
 
     <form class="reg__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
       <div class="reg__grid">
@@ -319,8 +344,8 @@
           </button>
           @if (!puedeEnviar() && !enviando()) {
             <p class="reg__hint">
-              Completa tus datos y usa una contraseña SEGURA (barra en verde) para
-              habilitar el botón.
+              Completa tus datos, confirma la empresa y usa una
+              contraseña SEGURA (barra en verde) para habilitar el botón.
             </p>
           }
         </div>
@@ -329,7 +354,11 @@
 
     <p class="reg__login">
       ¿Ya tienes una cuenta?
-      <a routerLink="/login" class="reg__login-link">Iniciar sesión</a>
+      <a
+        routerLink="/login"
+        class="reg__login-link"
+        [queryParams]="parametrosVolverAlLogin()"
+      >Iniciar sesión</a>
     </p>
   </section>
 
@@ -342,7 +371,7 @@
       aria-describedby="reg-exito-texto"
     >
       <div class="reg__modal">
-        <span class="reg__modal-brand">VANTER&nbsp;<em>MEN</em></span>
+        <span class="reg__modal-brand">FASHION<em>STORE</em></span>
 
         <span class="reg__modal-check" aria-hidden="true">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">

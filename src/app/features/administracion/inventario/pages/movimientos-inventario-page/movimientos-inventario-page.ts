@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import {
   Component,
@@ -17,23 +16,19 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin, of } from 'rxjs';
 
-import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
-import {
-  FiltroOpcion,
-  SucursalFiltro,
-} from '../../../../catalogo/models/catalogo-filtros.model';
-import { CatalogoService } from '../../../../catalogo/services/catalogo.service';
+import { FiltroOpcion } from '../../../../catalogo/models/catalogo-filtros.model';
+import { PanelSesionService } from '../../../services/panel-sesion.service';
 import { MovimientoDetalleDialog } from '../../components/movimiento-detalle-dialog/movimiento-detalle-dialog';
 import { MovimientoBadge } from '../../components/movimiento-badge/movimiento-badge';
 import {
   MovimientoInventarioItem,
   TipoMovimientoInventario,
 } from '../../models/movimiento-inventario.model';
+import { InventarioFiltrosService } from '../../services/inventario-filtros.service';
 import { MovimientoInventarioService } from '../../services/movimiento-inventario.service';
-import { SucursalesService } from '../../services/sucursales.service';
-import { traducirErrorInventario } from '../../utils/http-error.util';
+import { traducirErrorInventarioSaas } from '../../utils/inventario-saas-error.util';
 
 /** Registros por página del kardex (CU14: 10 registros). */
 const LIMITE_MOVIMIENTOS = 10;
@@ -57,13 +52,19 @@ const TIPOS_MOVIMIENTO: ReadonlyArray<{
  * Consultar movimientos de inventario (CU14) - /admin/inventario/movimientos.
  *
  * KARDEX de SOLO LECTURA (nunca registra/edita/elimina movimientos).
- * - ADMINISTRADOR: elige cualquier sucursal (o "Todas las sucursales").
+ * - ADMINISTRADOR: elige cualquier sucursal de su empresa (o "Todas las
+ *   sucursales").
  * - ENCARGADO_SUCURSAL: sucursal informativa; NO se envía `sucursal_id` y el
  *   backend limita los resultados a su sucursal.
  *
- * Catálogos desde GET /catalogo/filtros (público, sin hardcodear). El filtro
- * "Origen" usa `referencia_tipo` (texto libre en la API): sus opciones salen
- * de los valores reales observados en las respuestas.
+ * CU08: los datos vienen de `GET /tenant/inventario/movimientos` con el JWT
+ * EMPRESARIAL (TenantApiService). Las temporadas se cargan de
+ * `/tenant/inventario/filtros` y las sucursales de `/tenant/empresa/sucursales`
+ * (solo activas). El filtro "Origen" sigue usando `referencia_tipo` (texto
+ * libre en la API): sus opciones salen de los valores reales observados.
+ *
+ * `usuario_correo` puede ser `null` (RLS puede ocultar el autor): el movimiento
+ * es válido y se muestra igual.
  */
 @Component({
   selector: 'app-movimientos-inventario-page',
@@ -81,17 +82,16 @@ const TIPOS_MOVIMIENTO: ReadonlyArray<{
 })
 export class MovimientosInventarioPage implements OnInit {
   private readonly movimientosService = inject(MovimientoInventarioService);
-  private readonly catalogoService = inject(CatalogoService);
-  private readonly sucursalesService = inject(SucursalesService);
-  private readonly authService = inject(AuthService);
+  private readonly filtrosService = inject(InventarioFiltrosService);
+  private readonly sesion = inject(PanelSesionService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   // ===== Sesión / rol =====
-  readonly esAdministrador = computed(() => this.authService.esAdministrador());
+  readonly esAdministrador = computed(() => this.sesion.esAdministrador());
 
-  // ===== Catálogos de filtros (GET /catalogo/filtros) =====
-  readonly sucursales = signal<SucursalFiltro[]>([]);
+  // ===== Catálogos de filtros (endpoints empresariales de CU08) =====
+  readonly sucursales = signal<FiltroOpcion[]>([]);
   readonly temporadas = signal<FiltroOpcion[]>([]);
   readonly cargandoCatalogos = signal(false);
   readonly errorCatalogos = signal<string | null>(null);
@@ -178,7 +178,6 @@ export class MovimientosInventarioPage implements OnInit {
 
   ngOnInit(): void {
     this.cargarCatalogos();
-    this.resolverSucursalAsignada();
     this.cargarMovimientos(0);
   }
 
@@ -328,28 +327,42 @@ export class MovimientosInventarioPage implements OnInit {
 
   // ===== Carga de datos =====
 
+  /**
+   * Carga las opciones de los filtros con los endpoints EMPRESARIALES de CU08:
+   * temporadas (`/tenant/inventario/filtros`) y, solo para el ADMINISTRADOR, las
+   * sucursales activas autorizadas de la empresa.
+   *
+   * El ENCARGADO_SUCURSAL no consulta `/tenant/empresa/sucursales`: no puede
+   * elegir sucursal y su sucursal (informativa) se completa con la propia
+   * respuesta de los movimientos.
+   */
   cargarCatalogos(): void {
     this.cargandoCatalogos.set(true);
     this.errorCatalogos.set(null);
 
-    this.catalogoService
-      .obtenerFiltros()
+    forkJoin({
+      sucursales: this.esAdministrador()
+        ? this.filtrosService.obtenerSucursales()
+        : of<FiltroOpcion[]>([]),
+      opciones: this.filtrosService.obtenerOpciones(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (catalogos) => {
+        next: ({ sucursales, opciones }) => {
           this.cargandoCatalogos.set(false);
-          this.sucursales.set(catalogos.sucursales);
-          this.temporadas.set(catalogos.temporadas);
+          this.sucursales.set(sucursales);
+          this.temporadas.set(opciones.temporadas);
         },
         error: (error: unknown) => {
           this.cargandoCatalogos.set(false);
-          this.errorCatalogos.set(
-            'No se pudieron cargar las opciones de los filtros. Intenta nuevamente.',
-          );
-          const traducido = traducirErrorInventario(error);
+          const traducido = traducirErrorInventarioSaas(error, 'filtros');
           if (traducido.sesionExpirada) {
             this.cerrarSesion();
+            return;
           }
+          this.errorCatalogos.set(
+            `${traducido.mensaje} Puedes seguir consultando los movimientos sin filtros.`,
+          );
         },
       });
   }
@@ -415,30 +428,13 @@ export class MovimientosInventarioPage implements OnInit {
   }
 
   /**
-   * Resuelve el nombre de la sucursal del encargado reutilizando la sesión
-   * (sucursal_id) y el endpoint existente GET /sucursales/{id}. Si no hay
-   * sesión disponible (p. ej. tras refrescar), se completará con la respuesta
-   * de GET /movimientos-inventario.
+   * Completa la sucursal informativa del encargado con el primer resultado.
+   *
+   * No se consulta ningún endpoint adicional: el nombre llega en la propia
+   * respuesta de `/tenant/inventario/movimientos` (el backend ya limitó el
+   * alcance a su sucursal). Si aún no hay filas, la etiqueta queda como
+   * "Tu sucursal".
    */
-  private resolverSucursalAsignada(): void {
-    if (this.esAdministrador() || this.sucursalAsignada() !== null) {
-      return;
-    }
-    const sucursalId = this.authService.sucursalId();
-    if (sucursalId === null) {
-      return;
-    }
-    this.sucursalesService
-      .obtenerSucursal(sucursalId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (sucursal) => this.sucursalAsignada.set(sucursal.nombre),
-        error: () => {
-          // Sin dato: se completará con la respuesta de movimientos.
-        },
-      });
-  }
-
   private completarSucursalAsignada(
     items: readonly MovimientoInventarioItem[],
   ): void {
@@ -454,25 +450,18 @@ export class MovimientosInventarioPage implements OnInit {
   // ===== Errores =====
 
   private manejarError(error: unknown): void {
-    const traducido = traducirErrorInventario(error);
+    const traducido = traducirErrorInventarioSaas(error, 'movimientos');
     if (traducido.sesionExpirada) {
       this.cerrarSesion();
       return;
     }
-    if (error instanceof HttpErrorResponse && error.status === 403) {
-      this.error.set(
-        'No tienes permisos para consultar los movimientos de inventario.',
-      );
-      return;
-    }
-    // Nunca se muestran detalles técnicos de FastAPI (422 incluido).
-    this.error.set(
-      'No se pudieron cargar los movimientos de inventario. Intenta nuevamente.',
-    );
+    // 403/404/422/503/red se muestran tal cual: nunca como una lista válida.
+    this.error.set(traducido.mensaje);
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    // Limpia la sesión empresarial y la legacy antes de volver al portero.
+    this.sesion.cerrarSesion();
     void this.router.navigateByUrl('/auth/personal/login');
   }
 }

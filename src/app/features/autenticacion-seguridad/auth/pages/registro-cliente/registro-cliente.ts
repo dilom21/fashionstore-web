@@ -1,5 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -10,15 +17,21 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import {
+  EmpresaPublicaOpcion,
+  buscarEmpresaPorSlug,
+} from '../../../../../core/config/empresa-publica';
+import {
+  TenantApiService,
+  TenantClienteRegistroRespuesta,
+} from '../../../../saas/services/tenant-api.service';
+import {
   ClienteRegistroRequest,
-  ClienteRegistroResponse,
   OPCIONES_SEXO,
   SexoCliente,
 } from '../../models/auth.models';
-import { AuthService } from '../../services/auth.service';
 import {
   PasswordStrength,
   etiquetaNivel,
@@ -32,6 +45,14 @@ const MENSAJE_CONEXION =
 const MENSAJE_SERVIDOR = 'No pudimos crear tu cuenta. Inténtalo nuevamente.';
 const MENSAJE_CONFLICTO = 'Ya existe una cuenta con los datos proporcionados.';
 const MENSAJE_422 = 'Revisa los datos ingresados.';
+const MENSAJE_EMPRESA_REQUERIDA =
+  'Selecciona una empresa en el inicio de sesión antes de crear tu cuenta.';
+const MENSAJE_EMPRESA_NO_DISPONIBLE =
+  'La empresa seleccionada ya no está disponible para registro. Vuelve al inicio de sesión y elige una empresa.';
+const MENSAJE_EMPRESAS_CARGA =
+  'No pudimos cargar las empresas disponibles. Reinténtalo en unos momentos.';
+const MENSAJE_SIN_EMPRESAS =
+  'No hay empresas disponibles para crear una cuenta en este momento.';
 
 /** Validador de grupo: `password` debe coincidir con `password_confirmacion`. */
 const passwordsIguales: ValidatorFn = (
@@ -48,13 +69,19 @@ const passwordsIguales: ValidatorFn = (
 };
 
 /**
- * Registro público de CLIENTE (POST /auth/clientes/registro).
+ * Registro público de CLIENTE dentro de UNA empresa
+ * (POST /auth/tenant/clientes/registro).
  *
- * - Solo crea la cuenta: NO hay auto-login ni se guarda JWT.
+ * - La empresa NO se elige aquí: llega fijada desde el login (`?empresa=<slug>`)
+ *   y se muestra como información de solo lectura. Si falta o ya no aparece en
+ *   `GET /auth/tenant/empresas`, el formulario no se envía y se dirige al login
+ *   para elegir una empresa.
+ * - Solo crea la cuenta: NO hay auto-login, no se guarda JWT y no se vincula una
+ *   cuenta existente de otra empresa.
  * - La fortaleza de contraseña se calcula en el navegador con las MISMAS
  *   reglas del backend (sin consultar a la API).
  * - Estas validaciones son UX: el backend sigue siendo la autoridad
- *   (409 correo/CI, 422 datos).
+ *   (400 política de contraseña, 409 correo/CI, 422 datos, 404 empresa).
  */
 @Component({
   selector: 'app-registro-cliente',
@@ -63,14 +90,34 @@ const passwordsIguales: ValidatorFn = (
   templateUrl: './registro-cliente.html',
 })
 export class RegistroCliente {
-  private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly opcionesSexo = OPCIONES_SEXO;
 
   /** Fecha máxima seleccionable: hoy (el backend sigue validando). */
   readonly hoy = new Date().toISOString().slice(0, 10);
+
+  /** Empresas reales del backend (`GET /auth/tenant/empresas`). */
+  readonly empresas = signal<EmpresaPublicaOpcion[]>([]);
+  readonly cargandoEmpresas = signal(false);
+  readonly errorEmpresas = signal<string | null>(null);
+
+  /**
+   * Empresa fijada desde el login, validada contra la lista real del backend.
+   * El usuario no puede cambiarla dentro del registro.
+   */
+  readonly empresa = signal<EmpresaPublicaOpcion | null>(null);
+
+  /** Slug recibido en la URL (solo se acepta si está en la lista real). */
+  private readonly empresaSlugSolicitada: string | null;
+
+  /** true cuando hay una empresa válida elegida en el login. */
+  readonly empresaValida = computed(
+    () => this.empresa() !== null && !this.cargandoEmpresas(),
+  );
 
   readonly form = new FormGroup(
     {
@@ -144,7 +191,7 @@ export class RegistroCliente {
   readonly mostrarPassword = signal(false);
   readonly mostrarConfirmacion = signal(false);
   /** Con datos ⇒ se muestra el modal «Cuenta creada». */
-  readonly cuentaCreada = signal<ClienteRegistroResponse | null>(null);
+  readonly cuentaCreada = signal<TenantClienteRegistroRespuesta | null>(null);
 
   /** Espejos en señal: permiten evaluar fortaleza y confirmación en vivo. */
   private readonly passwordActual = signal('');
@@ -175,6 +222,7 @@ export class RegistroCliente {
       this.estadoFormulario() === 'VALID' &&
       this.fortaleza().valida &&
       !this.passwordsDistintas() &&
+      this.empresaValida() &&
       !this.enviando(),
   );
 
@@ -191,6 +239,16 @@ export class RegistroCliente {
     this.form.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.mensajeError.set(null));
+    // Empresa fijada por el login (?empresa=<slug>). No se confía en la URL:
+    // solo se acepta si aparece en la lista real del backend.
+    const empresaUrl = this.route.snapshot.queryParamMap.get('empresa');
+    this.empresaSlugSolicitada =
+      empresaUrl !== null && empresaUrl.trim().length > 0 ? empresaUrl : null;
+
+    // Las empresas se cargan en el navegador (SSR-safe): no bloquea el primer
+    // render ni lanza peticiones durante el prerenderizado.
+    afterNextRender(() => this.cargarEmpresas());
+
   }
 
   // ===== Envío =====
@@ -201,6 +259,15 @@ export class RegistroCliente {
 
     this.form.markAllAsTouched(); // 2)
     this.mensajeError.set(null);
+
+    // La empresa viene fijada desde el login: sin una empresa válida de la
+    // lista real del backend no se envía el registro.
+    const empresa = this.empresa();
+    if (empresa === null) {
+      this.mensajeError.set(this.mensajeEmpresaNoDisponible());
+      return; // 2b)
+    }
+
 
     if (this.form.invalid) {
       return; // 3)
@@ -234,8 +301,8 @@ export class RegistroCliente {
 
     this.enviando.set(true);
 
-    this.authService
-      .registrarCliente(datos) // 8)
+    this.tenantApi
+      .registrarClienteTenant({ ...datos, empresa_slug: empresa.slug }) // 8)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (respuesta) => {
@@ -262,14 +329,76 @@ export class RegistroCliente {
   /** Navega al login con el correo creado precargado (sin clave ni auto-login). */
   irALogin(): void {
     const correo = this.cuentaCreada()?.correo ?? null;
+    const empresa = this.empresa();
     void this.router.navigate(['/login'], {
-      queryParams: correo === null || correo === '' ? {} : { correo },
+      queryParams: {
+        ...(correo === null || correo === '' ? {} : { correo }),
+        ...(empresa === null ? {} : { empresa: empresa.slug }),
+      },
     });
   }
 
   irATienda(): void {
     void this.router.navigateByUrl('/');
   }
+
+  /**
+   * Carga las empresas REALES del backend (`GET /auth/tenant/empresas`) y fija
+   * la empresa recibida desde el login SOLO si aparece en esa lista.
+   */
+  cargarEmpresas(): void {
+    if (this.cargandoEmpresas()) {
+      return;
+    }
+    this.cargandoEmpresas.set(true);
+    this.errorEmpresas.set(null);
+
+    this.tenantApi
+      .empresasPublicas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (empresas) => {
+          this.cargandoEmpresas.set(false);
+          this.empresas.set(empresas);
+          if (empresas.length === 0) {
+            this.errorEmpresas.set(MENSAJE_SIN_EMPRESAS);
+          }
+          this.empresa.set(
+            buscarEmpresaPorSlug(empresas, this.empresaSlugSolicitada),
+          );
+        },
+        error: () => {
+          this.cargandoEmpresas.set(false);
+          this.empresas.set([]);
+          this.empresa.set(null);
+          this.errorEmpresas.set(MENSAJE_EMPRESAS_CARGA);
+        },
+      });
+  }
+
+  /**
+   * Mensaje cuando no hay empresa válida fijada desde el login: distingue
+   * "falta elegirla" de "ya no está disponible" y de "no se pudo cargar".
+   */
+  mensajeEmpresaNoDisponible(): string {
+    if (this.cargandoEmpresas()) {
+      return 'Cargando empresa…';
+    }
+    if (this.empresas().length === 0) {
+      return this.errorEmpresas() ?? MENSAJE_SIN_EMPRESAS;
+    }
+    return this.empresaSlugSolicitada === null
+      ? MENSAJE_EMPRESA_REQUERIDA
+      : MENSAJE_EMPRESA_NO_DISPONIBLE;
+  }
+  /** Parámetros para volver al login conservando la empresa elegida. */
+  parametrosVolverAlLogin(): Record<string, string> {
+    const empresa = this.empresa();
+    return empresa === null ? {} : { empresa: empresa.slug };
+  }
+
+
+
 
   // ===== Mensajes por campo =====
   mensajeNombre(): string | null {
@@ -387,6 +516,28 @@ export class RegistroCliente {
         return 'La contraseña debe cumplir la política: 8 a 128 caracteres, una mayúscula, una minúscula, un número y un carácter especial.';
       }
       return MENSAJE_422;
+    }
+
+    // 400: política de contraseña o confirmación rechazadas por el backend.
+    if (error.status === 400) {
+      const detalle = this.detalle(error);
+      if (/coincid/i.test(detalle)) {
+        return 'Las contraseñas no coinciden.';
+      }
+      if (/password|contrase|pol[ií]tica/i.test(detalle)) {
+        return 'La contraseña debe cumplir la política: 8 a 128 caracteres, una mayúscula, una minúscula, un número y un carácter especial.';
+      }
+      return MENSAJE_422;
+    }
+
+    // 404: la empresa elegida ya no está disponible para registro.
+    if (error.status === 404) {
+      return MENSAJE_EMPRESA_NO_DISPONIBLE;
+    }
+
+    // 503: el registro empresarial todavía no está habilitado en el servidor.
+    if (error.status === 503) {
+      return MENSAJE_SERVIDOR;
     }
 
     if (error.status === 0) {

@@ -1,8 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../../../environments/environment';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import {
   BitacoraCatalogos,
   BitacoraEvento,
@@ -13,20 +13,20 @@ import {
 /**
  * Servicio de Bitácora (CU05 - Consultar Bitácora del Sistema).
  *
- * Consume únicamente los endpoints reales de solo lectura del backend:
- * GET /bitacora
- * GET /bitacora/catalogos
- * GET /bitacora/{bitacora_id}
+ * Consume únicamente los endpoints EMPRESARIALES de solo lectura:
+ * GET /tenant/bitacora
+ * GET /tenant/bitacora/catalogos
+ * GET /tenant/bitacora/{bitacora_id}
  *
- * No existen operaciones de escritura para la bitácora. El JWT se adjunta
- * automáticamente mediante el interceptor global.
+ * No existen operaciones de escritura para la bitácora. El JWT EMPRESARIAL lo
+ * adjunta `TenantApiService` y el backend determina la empresa desde el token:
+ * desde Angular NUNCA se envía `empresa_id`.
  */
 @Injectable({ providedIn: 'root' })
 export class BitacoraService {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly tenantApi = inject(TenantApiService);
 
-  /** GET /bitacora (listado paginado y filtrado). */
+  /** GET /tenant/bitacora (listado paginado y filtrado). */
   listarBitacora(filtros: BitacoraListarFiltros): Observable<BitacoraListResponse> {
     let params = new HttpParams();
     if (filtros.buscar && filtros.buscar.trim().length > 0) {
@@ -53,16 +53,23 @@ export class BitacoraService {
     if (filtros.offset !== undefined && filtros.offset !== null) {
       params = params.set('offset', String(filtros.offset));
     }
-    return this.http.get<BitacoraListResponse>(`${this.apiUrl}/bitacora`, { params });
+    return this.tenantApi.consultar<BitacoraListResponse>(
+      '/tenant/bitacora',
+      params,
+    );
   }
 
-  /** GET /bitacora/catalogos (acciones, entidades y usuarios reales). */
+  /** GET /tenant/bitacora/catalogos (acciones, entidades y usuarios reales). */
   obtenerCatalogos(): Observable<BitacoraCatalogos> {
-    return this.http.get<BitacoraCatalogos>(`${this.apiUrl}/bitacora/catalogos`);
+    return this.tenantApi.consultar<BitacoraCatalogos>(
+      '/tenant/bitacora/catalogos',
+    );
   }
 
-  /** GET /bitacora/{bitacora_id} (detalle de un evento). */
+  /** GET /tenant/bitacora/{bitacora_id} (detalle de un evento). */
   obtenerBitacora(bitacoraId: number): Observable<BitacoraEvento> {
-    return this.http.get<BitacoraEvento>(`${this.apiUrl}/bitacora/${bitacoraId}`);
+    return this.tenantApi.consultar<BitacoraEvento>(
+      `/tenant/bitacora/${bitacoraId}`,
+    );
   }
 }

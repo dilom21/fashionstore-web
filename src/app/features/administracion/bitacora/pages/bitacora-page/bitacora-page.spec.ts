@@ -1,8 +1,10 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Router, provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
+
+import { TenantApiService } from '../../../../saas/services/tenant-api.service';
 
 import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
 import { BitacoraEvento } from '../../models/bitacora.model';
@@ -56,6 +58,14 @@ describe('BitacoraPage (CU05) - scroll de paginación', () => {
         provideHttpClientTesting(),
         { provide: BitacoraService, useValue: bitacoraService },
         { provide: AuthService, useValue: auth },
+        {
+          provide: TenantApiService,
+          useValue: {
+            identidad: () => null,
+            tieneToken: () => false,
+            cerrarSesion: vi.fn(),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -155,5 +165,55 @@ describe('BitacoraPage (CU05) - scroll de paginación', () => {
 
     componente.irAnterior();
     expect(componente.paginaActual()).toBe(2);
+  });
+});
+
+/**
+ * CU05 con backend empresarial: un 401 de `/tenant/bitacora` es sesión
+ * empresarial expirada. Se cierra ESA sesión (nunca la legacy) y se vuelve al
+ * login del personal.
+ */
+describe('BitacoraPage (CU05) - 401 de la sesión empresarial', () => {
+  it('cierra la sesión empresarial y vuelve al login del personal', async () => {
+    const bitacoraService = {
+      listarBitacora: vi.fn(() =>
+        throwError(() => new HttpErrorResponse({ status: 401 })),
+      ),
+      obtenerCatalogos: vi.fn(() =>
+        of({ acciones: [], entidades: [], usuarios: [] }),
+      ),
+      obtenerBitacora: vi.fn(),
+    };
+    const tenant = {
+      identidad: () => ({
+        contexto: 'personal',
+        empresa_nombre: 'Vanter Men',
+      }),
+      tieneToken: () => true,
+      cerrarSesion: vi.fn(),
+    };
+    const auth = { cerrarSesion: vi.fn() };
+
+    await TestBed.configureTestingModule({
+      imports: [BitacoraPage],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: BitacoraService, useValue: bitacoraService },
+        { provide: AuthService, useValue: auth },
+        { provide: TenantApiService, useValue: tenant },
+      ],
+    }).compileComponents();
+
+    const router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(BitacoraPage);
+    fixture.detectChanges();
+
+    expect(tenant.cerrarSesion).toHaveBeenCalledTimes(1);
+    expect(auth.cerrarSesion).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/auth/personal/login');
   });
 });

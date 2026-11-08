@@ -64,7 +64,11 @@ function legacyMock(overrides: Record<string, unknown> = {}): any {
   };
 }
 
-function ejecutar(tenant: any, legacy: any = legacyMock()): boolean | UrlTree {
+function ejecutar(
+  tenant: any,
+  legacy: any = legacyMock(),
+  stateUrl = '/admin/inicio',
+): boolean | UrlTree {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -77,7 +81,7 @@ function ejecutar(tenant: any, legacy: any = legacyMock()): boolean | UrlTree {
   const resultado = TestBed.runInInjectionContext(() =>
     (adminAuthGuard as Guard)(
       {} as ActivatedRouteSnapshot,
-      {} as RouterStateSnapshot,
+      { url: stateUrl } as RouterStateSnapshot,
     ),
   ) as boolean | UrlTree | Observable<boolean | UrlTree>;
 
@@ -219,5 +223,75 @@ describe('adminAuthGuard (panel original con sesión empresarial)', () => {
     });
 
     expect(url(ejecutar(tenantMock(), legacy))).toBe('/');
+  });
+});
+
+/**
+ * CU08: el ENCARGADO_SUCURSAL con sesión empresarial solo puede abrir las
+ * pantallas ya adaptadas (CU13 y CU14). No se habilita todo `/admin/**`.
+ */
+describe('adminAuthGuard (ENCARGADO_SUCURSAL empresarial, CU08)', () => {
+  function encargado(): any {
+    return tenantMock({
+      identidad: () => identidad('ENCARGADO_SUCURSAL'),
+      esEncargadoSucursal: () => true,
+    });
+  }
+
+  it('abre /admin/inventario/consultar (CU13)', () => {
+    expect(
+      ejecutar(encargado(), legacyMock(), '/admin/inventario/consultar'),
+    ).toBe(true);
+  });
+
+  it('abre /admin/inventario/movimientos (CU14)', () => {
+    expect(
+      ejecutar(encargado(), legacyMock(), '/admin/inventario/movimientos'),
+    ).toBe(true);
+  });
+
+  it('acepta la ruta con query string', () => {
+    expect(
+      ejecutar(encargado(), legacyMock(), '/admin/inventario/consultar?offset=20'),
+    ).toBe(true);
+  });
+
+  it('no abre el resto del panel administrativo', () => {
+    const rutas = [
+      '/admin/inicio',
+      '/admin/usuarios',
+      '/admin/seguridad/roles-permisos',
+      '/admin/seguridad/bitacora',
+      '/admin/inventario/sucursales-ciudades',
+      '/admin/catalogo/productos',
+      '/admin/reportes',
+    ];
+
+    for (const ruta of rutas) {
+      expect(url(ejecutar(encargado(), legacyMock(), ruta))).toBe(
+        '/saas/sesion',
+      );
+    }
+  });
+
+  it('el CAJERO no accede a las consultas de CU08', () => {
+    const cajero = tenantMock({
+      identidad: () => identidad('CAJERO'),
+      esCajero: () => true,
+    });
+
+    expect(
+      url(ejecutar(cajero, legacyMock(), '/admin/inventario/consultar')),
+    ).toBe('/saas/sesion');
+  });
+
+  it('un cliente empresarial no accede a CU08', () => {
+    const cliente = tenantMock({
+      identidad: () => identidad('CLIENTE', 'cliente'),
+    });
+
+    expect(
+      url(ejecutar(cliente, legacyMock(), '/admin/inventario/consultar')),
+    ).toBe('/');
   });
 });

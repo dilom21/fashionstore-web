@@ -11,6 +11,23 @@ export const environment = {
   apiUrl: 'http://127.0.0.1:8000',
   //apiUrl: 'https://fashionstore-api-qv8n.onrender.com/',
   /**
+   * Identificador público (slug) de la EMPRESA que representa esta tienda.
+   *
+   * Lo usa el login de CLIENTES para enviar `empresa_slug` a
+   * `POST /auth/tenant/login` (contexto "cliente"). Es configuración pública y
+   * explícita de la tienda: no es un secreto, no autoriza nada por sí sola (el
+   * backend comprueba la membresía y la suscripción de la empresa) y no debe
+   * escribirse en otros servicios.
+   *
+   * Valor real del tenant sembrado por las migraciones SaaS del backend
+   * (`database/saas/preparacion_pg17/010_saas_core_vanter.sql`).
+   *
+   * LIMITACIÓN: una compilación sirve una sola tienda/empresa. Atender varias
+   * tiendas con el mismo despliegue requeriría resolver la empresa por
+   * subdominio/dominio verificado (fuera del alcance actual).
+   */
+  empresaSlug: 'vanter-men',
+  /**
    * Publishable key de Stripe (CU22 - pago electrónico).
    *
    * SOLO se admite una clave pública `pk_test_...` / `pk_live_...`. NUNCA

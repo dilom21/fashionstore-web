@@ -3,8 +3,8 @@
   Ruta: /auth/personal/login — no se enlaza desde la tienda pública.
   Autenticación empresarial (SaaS): POST /auth/tenant/login con contexto
   "personal" + GET /auth/tenant/me para confirmar identidad y rol.
-  La marca de la plataforma es FashionStore; el nombre de la empresa lo escribe
-  el usuario en el formulario y lo confirma el backend.
+  La marca de la plataforma es FashionStore; la empresa se elige en un selector
+  real (GET /auth/tenant/empresas) y la confirma el backend.
 -->
 <main class="p-login">
   <section class="p-login__panel" aria-labelledby="p-login-title">
@@ -36,22 +36,34 @@
 
       <form class="p-login__form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
         <div class="p-login__field">
-          <label class="p-login__label" for="p-login-empresa">Identificador de empresa</label>
-          <input
-            class="p-login__input"
-            [class.p-login__input--error]="mensajeEmpresa() !== null"
-            id="p-login-empresa"
-            type="text"
-            formControlName="empresa_slug"
-            autocomplete="organization"
-            autocapitalize="none"
-            spellcheck="false"
-            placeholder="identificador-de-tu-empresa"
-            required
-            aria-describedby="p-login-empresa-error"
-          />
-          @if (mensajeEmpresa(); as msg) {
-            <p class="p-login__field-error" id="p-login-empresa-error">{{ msg }}</p>
+          <label class="p-login__label" for="p-login-empresa">Empresa</label>
+          @if (cargandoEmpresas()) {
+            <p class="p-login__field-hint" role="status">Cargando empresas…</p>
+          } @else if (empresas().length === 0) {
+            <p class="p-login__field-error" role="alert">
+              {{ errorEmpresas() ?? 'No hay empresas disponibles para iniciar sesión.' }}
+            </p>
+            <button type="button" class="p-login__retry" (click)="cargarEmpresas()">
+              Reintentar
+            </button>
+          } @else {
+            <select
+              class="p-login__input p-login__select"
+              [class.p-login__input--error]="mensajeEmpresa() !== null"
+              id="p-login-empresa"
+              formControlName="empresa_slug"
+              required
+              [attr.aria-invalid]="mensajeEmpresa() !== null"
+              aria-describedby="p-login-empresa-error"
+            >
+              <option value="">Selecciona tu empresa</option>
+              @for (empresa of empresas(); track empresa.slug) {
+                <option [value]="empresa.slug">{{ empresa.nombre_comercial }}</option>
+              }
+            </select>
+            @if (mensajeEmpresa(); as msg) {
+              <p class="p-login__field-error" id="p-login-empresa-error">{{ msg }}</p>
+            }
           }
         </div>
 
@@ -114,7 +126,7 @@
           }
         </div>
 
-        <button type="submit" class="p-login__submit" [disabled]="enviando()" [attr.aria-busy]="enviando()">
+        <button type="submit" class="p-login__submit" [disabled]="enviando() || cargandoEmpresas() || empresas().length === 0" [attr.aria-busy]="enviando()">
           @if (enviando()) {
             <span class="p-login__spinner" aria-hidden="true"></span>
             <span>Iniciando sesión…</span>

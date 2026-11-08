@@ -1,31 +1,36 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../../../environments/environment';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import {
   MovimientoInventarioConsultaFiltros,
   MovimientoInventarioConsultaResponse,
 } from '../models/movimiento-inventario.model';
 
 /**
- * Servicio de consulta de movimientos de inventario (CU14). SOLO LECTURA.
+ * Servicio de consulta de movimientos de inventario (CU14) en modo EMPRESARIAL.
+ * SOLO LECTURA (kardex: nunca crea, edita ni elimina movimientos).
  *
- * Consume el endpoint real GET /movimientos-inventario con filtros y paginación
- * (limit/offset). Construye HttpParams solo con los filtros que tienen valor.
+ * Consume `GET /tenant/inventario/movimientos` (tag Swagger `Inventario SaaS`)
+ * con los mismos filtros del primer parcial y paginación (limit/offset).
  *
- * Para el ENCARGADO_SUCURSAL no se envía `sucursal_id`: el backend obtiene
- * `empleado.sucursal_id` y restringe los resultados. La seguridad real vive en
- * el backend; aquí no se reproduce.
+ * Autorización: exclusivamente el JWT EMPRESARIAL que añade
+ * `TenantApiService.consultar()`. Nunca el JWT legacy y nunca `empresa_id` como
+ * identidad: el backend lo obtiene del token y aplica RLS.
  *
- * El JWT se adjunta automáticamente mediante el interceptor global.
+ * `usuario_correo` puede llegar en `null` cuando RLS restringe la visibilidad
+ * del autor: es un movimiento VÁLIDO y se conserva (no se descarta ni se trata
+ * como registro inválido).
+ *
+ * Para el ENCARGADO_SUCURSAL no se envía `sucursal_id`: el backend limita los
+ * resultados a su sucursal desde el perfil autenticado.
  */
 @Injectable({ providedIn: 'root' })
 export class MovimientoInventarioService {
-  private readonly http = inject(HttpClient);
-  private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly tenantApi = inject(TenantApiService);
 
-  /** GET /movimientos-inventario (filtros + paginación). */
+  /** GET /tenant/inventario/movimientos (filtros + paginación). */
   obtenerMovimientos(
     filtros: MovimientoInventarioConsultaFiltros = {},
   ): Observable<MovimientoInventarioConsultaResponse> {
@@ -76,9 +81,9 @@ export class MovimientoInventarioService {
       params = params.set('offset', filtros.offset.toString());
     }
 
-    return this.http.get<MovimientoInventarioConsultaResponse>(
-      `${this.apiUrl}/movimientos-inventario`,
-      { params },
+    return this.tenantApi.consultar<MovimientoInventarioConsultaResponse>(
+      '/tenant/inventario/movimientos',
+      params,
     );
   }
 }

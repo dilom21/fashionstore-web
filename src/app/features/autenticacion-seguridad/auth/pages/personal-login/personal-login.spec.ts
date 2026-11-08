@@ -19,6 +19,13 @@ const RESPUESTA_LOGIN = {
   contexto: 'personal' as const,
 };
 
+/** Empresas reales que devuelve GET /auth/tenant/empresas en las pruebas. */
+const EMPRESAS = [
+  { slug: 'vanter-men', nombre_comercial: 'Vanter Men' },
+  { slug: 'otra-empresa', nombre_comercial: 'Otra Empresa' },
+];
+
+
 function identidad(
   rol = 'CAJERO',
   contexto: 'personal' | 'cliente' = 'personal',
@@ -42,6 +49,7 @@ function identidad(
 
 function apiMock(overrides: Record<string, unknown> = {}): any {
   return {
+    empresasPublicas: vi.fn(() => of(EMPRESAS)),
     login: vi.fn(() => of(RESPUESTA_LOGIN)),
     me: vi.fn(() => of(identidad())),
     cerrarSesion: vi.fn(),
@@ -121,12 +129,12 @@ describe('PersonalLogin (CU03 SaaS del personal)', () => {
 
     componente.form.controls.empresa_slug.markAsTouched();
     expect(componente.mensajeEmpresa()).toBe(
-      'Ingresa el identificador de tu empresa.',
+      'Selecciona la empresa a la que perteneces.',
     );
 
     componente.form.controls.empresa_slug.setValue('Vanter Men');
     expect(componente.form.controls.empresa_slug.hasError('pattern')).toBe(true);
-    expect(componente.mensajeEmpresa()).toContain('minúsculas');
+    expect(componente.mensajeEmpresa()).toContain('lista');
 
     componente.form.patchValue({ correo: 'cajero@vanter.test' });
     expect(componente.form.controls.correo.valid).toBe(true);
@@ -324,4 +332,64 @@ describe('PersonalLogin (CU03 SaaS del personal)', () => {
     expect(api.restaurarSesion).not.toHaveBeenCalled();
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
+
+  it('carga el selector con las empresas reales y no preselecciona ninguna', async () => {
+    const api = apiMock();
+    await setup(api);
+
+    expect(api.empresasPublicas).toHaveBeenCalledTimes(1);
+    expect(componente.empresas().map((empresa) => empresa.slug)).toEqual([
+      'vanter-men',
+      'otra-empresa',
+    ]);
+    expect(componente.form.controls.empresa_slug.value).toBe('');
+    expect(componente.empresaSeleccionada()).toBeNull();
+  });
+
+  it('no autentica si no se eligió empresa', async () => {
+    const api = apiMock();
+    await setup(api);
+
+    componente.form.patchValue({
+      correo: 'cajero@vanter.test',
+      password: 'Segura123!',
+    });
+    componente.onSubmit();
+
+    expect(api.login).not.toHaveBeenCalled();
+    expect(api.me).not.toHaveBeenCalled();
+    expect(componente.mensajeError()).toContain('Selecciona la empresa');
+  });
+
+  it('no autentica con una empresa que ya no aparece en la lista', async () => {
+    const api = apiMock();
+    await setup(api);
+
+    completarFormulario();
+    componente.form.controls.empresa_slug.setValue('empresa-eliminada');
+    componente.onSubmit();
+
+    expect(api.login).not.toHaveBeenCalled();
+    expect(componente.mensajeError()).toContain('ya no está disponible');
+  });
+
+  it('un fallo del selector se informa y permite reintentar', async () => {
+    const api = apiMock({
+      empresasPublicas: vi.fn(() =>
+        throwError(() => new HttpErrorResponse({ status: 503 })),
+      ),
+    });
+    await setup(api);
+
+    expect(componente.empresas()).toEqual([]);
+    expect(componente.errorEmpresas()).toContain('No pudimos cargar las empresas');
+
+    completarFormulario();
+    componente.onSubmit();
+    expect(api.login).not.toHaveBeenCalled();
+
+    componente.cargarEmpresas();
+    expect(api.empresasPublicas).toHaveBeenCalledTimes(2);
+  });
+
 });

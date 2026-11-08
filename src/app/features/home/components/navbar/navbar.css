@@ -446,6 +446,19 @@
   animation: vm-account-drop 0.18s ease both;
 }
 
+/* Empresa de la sesión de CLIENTE (solo cuando el backend la informó). */
+.nav__account-empresa {
+  margin: 0.1rem 0.4rem 0.35rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-3);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+
 .nav__account-item {
   display: flex;
   align-items: center;

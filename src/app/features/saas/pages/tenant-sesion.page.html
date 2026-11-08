@@ -71,5 +71,16 @@
         <a class="saas-primary" routerLink="/saas/empresa">Ir al panel empresarial</a>
       </p>
     }
+
+    @if (puedeConsultarInventario()) {
+      <p class="saas-inline">
+        <a class="saas-primary" routerLink="/admin/inventario/consultar">
+          Consultar inventario
+        </a>
+        <a class="saas-primary" routerLink="/admin/inventario/movimientos">
+          Movimientos de inventario
+        </a>
+      </p>
+    }
   </section>
 </main>

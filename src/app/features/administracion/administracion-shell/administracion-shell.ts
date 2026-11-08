@@ -37,6 +37,18 @@ const RUTAS_ENCARGADO_SUCURSAL = new Set([
 ]);
 
 /**
+ * Rutas del panel visibles para ENCARGADO_SUCURSAL cuando la sesión es
+ * EMPRESARIAL: solo las pantallas de CU08 ya adaptadas al multitenant
+ * (CU13 - Consultar inventario y CU14 - Movimientos de inventario). El resto de
+ * módulos siguen usando endpoints del sistema anterior, así que no se ofrecen
+ * (y `adminAuthGuard` tampoco las abre para su rol).
+ */
+const RUTAS_ENCARGADO_SAAS = new Set([
+  '/admin/inventario/consultar',
+  '/admin/inventario/movimientos',
+]);
+
+/**
  * Rutas visibles para CAJERO: CU18 (Atender reservas) y CU20 (Registrar venta
  * presencial). No accede al panel administrativo (adminAuthGuard lo devuelve a
  * /dashboard si lo intenta), por lo que solo ve los grupos Reservas y
@@ -81,7 +93,8 @@ export class AdministracionShell {
    * Se filtra por rol reutilizando `filtrarItemsNav` (los grupos sin hijos
    * visibles se descartan solos):
    * - ADMINISTRADOR: todo el panel.
-   * - ENCARGADO_SUCURSAL: CU13, CU14, CU17, CU18 y CU20.
+   * - ENCARGADO_SUCURSAL (sesión empresarial): solo CU08 (CU13 y CU14).
+   * - ENCARGADO_SUCURSAL (sesión legacy): CU13, CU14, CU17, CU18 y CU20.
    * - CAJERO: CU18 y CU20 (Reservas y Ventas y Pagos).
    *
    * Esto es visibilidad, no autorización: cada ruta sigue protegida por su
@@ -95,7 +108,11 @@ export class AdministracionShell {
       return this.filtrarPorRutas(RUTAS_CAJERO);
     }
     if (this.sesion.esEncargadoSucursal()) {
-      return this.filtrarPorRutas(RUTAS_ENCARGADO_SUCURSAL);
+      return this.filtrarPorRutas(
+        this.sesion.esSesionEmpresarial()
+          ? RUTAS_ENCARGADO_SAAS
+          : RUTAS_ENCARGADO_SUCURSAL,
+      );
     }
     return [];
   });

@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import {
   Component,
@@ -17,21 +16,17 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin, of } from 'rxjs';
 
-import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
-import {
-  FiltroOpcion,
-  SucursalFiltro,
-} from '../../../../catalogo/models/catalogo-filtros.model';
-import { CatalogoService } from '../../../../catalogo/services/catalogo.service';
+import { FiltroOpcion } from '../../../../catalogo/models/catalogo-filtros.model';
+import { PanelSesionService } from '../../../services/panel-sesion.service';
 import {
   DisponibilidadInventario,
   InventarioItem,
 } from '../../models/inventario.model';
+import { InventarioFiltrosService } from '../../services/inventario-filtros.service';
 import { InventarioService } from '../../services/inventario.service';
-import { SucursalesService } from '../../services/sucursales.service';
-import { traducirErrorInventario } from '../../utils/http-error.util';
+import { traducirErrorInventarioSaas } from '../../utils/inventario-saas-error.util';
 
 /** Tamaños de página admitidos por GET /inventario (máximo 100). */
 const OPCIONES_LIMITE = [20, 50, 100] as const;
@@ -52,15 +47,21 @@ interface OpcionDisponibilidad {
  * Consultar inventario por sucursal (CU13) - /admin/inventario/consultar.
  *
  * Pantalla SOLO LECTURA: muestra las existencias por producto, variante, talla,
- * color y temporada, con filtros y paginación reales (GET /inventario).
+ * color y temporada, con filtros y paginación reales.
+ *
+ * CU08: la consulta se hace contra el backend EMPRESARIAL
+ * (`GET /tenant/inventario`) con el JWT de `TenantApiService`; el diseño,
+ * las columnas, los filtros, la paginación y la presentación del stock se
+ * conservan del primer parcial.
  *
  * Rol:
- * - ADMINISTRADOR: ve y elige cualquier sucursal (o "Todas las sucursales").
- * - ENCARGADO_SUCURSAL: la sucursal es informativa, no editable; NO se envía
+ * - ADMINISTRADOR: ve y elige cualquier sucursal de su empresa (o "Todas las
+ *   sucursales").
+ * - ENCARGADO_SUCURSAL: su sucursal es informativa, no editable; NO se envía
  *   `sucursal_id` y el backend limita los resultados a su sucursal.
  *
- * Los catálogos de los filtros provienen de GET /catalogo/filtros (público):
- * nunca se hardcodean categorías, tallas, colores, temporadas ni sucursales.
+ * Los catálogos de los filtros provienen de los endpoints empresariales
+ * (categorías, sucursales y `/tenant/inventario/filtros`): nunca se hardcodean.
  */
 @Component({
   selector: 'app-inventario-page',
@@ -70,17 +71,16 @@ interface OpcionDisponibilidad {
 })
 export class InventarioPage implements OnInit {
   private readonly inventarioService = inject(InventarioService);
-  private readonly catalogoService = inject(CatalogoService);
-  private readonly sucursalesService = inject(SucursalesService);
-  private readonly authService = inject(AuthService);
+  private readonly filtrosService = inject(InventarioFiltrosService);
+  private readonly sesion = inject(PanelSesionService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   // ===== Sesión / rol =====
-  readonly esAdministrador = computed(() => this.authService.esAdministrador());
+  readonly esAdministrador = computed(() => this.sesion.esAdministrador());
 
-  // ===== Catálogos de filtros (GET /catalogo/filtros) =====
-  readonly sucursales = signal<SucursalFiltro[]>([]);
+  // ===== Catálogos de filtros (endpoints empresariales de CU08) =====
+  readonly sucursales = signal<FiltroOpcion[]>([]);
   readonly categorias = signal<FiltroOpcion[]>([]);
   readonly tallas = signal<FiltroOpcion[]>([]);
   readonly colores = signal<FiltroOpcion[]>([]);
@@ -150,7 +150,6 @@ export class InventarioPage implements OnInit {
 
   ngOnInit(): void {
     this.cargarCatalogos();
-    this.resolverSucursalAsignada();
     this.cargarInventario(0);
   }
 
@@ -277,31 +276,46 @@ export class InventarioPage implements OnInit {
 
   // ===== Carga de datos =====
 
+  /**
+   * Carga las opciones de los filtros con los endpoints EMPRESARIALES de CU08:
+   * categorías, tallas/colores/temporadas y (solo para el ADMINISTRADOR) las
+   * sucursales activas autorizadas de la empresa.
+   *
+   * El ENCARGADO_SUCURSAL no consulta `/tenant/empresa/sucursales`: no puede
+   * elegir sucursal, y su sucursal (informativa) se completa con la propia
+   * respuesta del inventario.
+   */
   cargarCatalogos(): void {
     this.cargandoCatalogos.set(true);
     this.errorCatalogos.set(null);
 
-    this.catalogoService
-      .obtenerFiltros()
+    forkJoin({
+      sucursales: this.esAdministrador()
+        ? this.filtrosService.obtenerSucursales()
+        : of<FiltroOpcion[]>([]),
+      categorias: this.filtrosService.obtenerCategorias(),
+      opciones: this.filtrosService.obtenerOpciones(),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (catalogos) => {
+        next: ({ sucursales, categorias, opciones }) => {
           this.cargandoCatalogos.set(false);
-          this.sucursales.set(catalogos.sucursales);
-          this.categorias.set(catalogos.categorias);
-          this.tallas.set(catalogos.tallas);
-          this.colores.set(catalogos.colores);
-          this.temporadas.set(catalogos.temporadas);
+          this.sucursales.set(sucursales);
+          this.categorias.set(categorias);
+          this.tallas.set(opciones.tallas);
+          this.colores.set(opciones.colores);
+          this.temporadas.set(opciones.temporadas);
         },
         error: (error: unknown) => {
           this.cargandoCatalogos.set(false);
-          this.errorCatalogos.set(
-            'No se pudieron cargar las opciones de los filtros. Intenta nuevamente.',
-          );
-          const traducido = traducirErrorInventario(error);
+          const traducido = traducirErrorInventarioSaas(error, 'filtros');
           if (traducido.sesionExpirada) {
             this.cerrarSesion();
+            return;
           }
+          this.errorCatalogos.set(
+            `${traducido.mensaje} Puedes seguir consultando el inventario sin filtros.`,
+          );
         },
       });
   }
@@ -347,31 +361,12 @@ export class InventarioPage implements OnInit {
   }
 
   /**
-   * Resuelve el nombre de la sucursal del encargado reutilizando la sesión
-   * (sucursal_id) y el endpoint existente GET /sucursales/{id}. Si no hay
-   * sesión disponible (p. ej. tras refrescar), se completará con la respuesta
-   * de GET /inventario.
+   * Completa la sucursal informativa del encargado con el primer resultado.
+   *
+   * No se consulta ningún endpoint adicional: el nombre llega en la propia
+   * respuesta de `/tenant/inventario` (el backend ya limitó el alcance a su
+   * sucursal). Si aún no hay filas, la etiqueta queda como "Tu sucursal".
    */
-  private resolverSucursalAsignada(): void {
-    if (this.esAdministrador() || this.sucursalAsignada() !== null) {
-      return;
-    }
-    const sucursalId = this.authService.sucursalId();
-    if (sucursalId === null) {
-      return;
-    }
-    this.sucursalesService
-      .obtenerSucursal(sucursalId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (sucursal) => this.sucursalAsignada.set(sucursal.nombre),
-        error: () => {
-          // Sin dato: se completará con la respuesta de GET /inventario.
-        },
-      });
-  }
-
-  /** Completa la sucursal informativa del encargado con el primer resultado. */
   private completarSucursalAsignada(items: readonly InventarioItem[]): void {
     if (this.esAdministrador() || this.sucursalAsignada() !== null) {
       return;
@@ -385,21 +380,18 @@ export class InventarioPage implements OnInit {
   // ===== Errores =====
 
   private manejarError(error: unknown): void {
-    const traducido = traducirErrorInventario(error);
+    const traducido = traducirErrorInventarioSaas(error, 'inventario');
     if (traducido.sesionExpirada) {
       this.cerrarSesion();
       return;
     }
-    if (error instanceof HttpErrorResponse && error.status === 403) {
-      this.error.set('No tienes permisos para consultar este inventario.');
-      return;
-    }
-    // Nunca se muestran detalles técnicos de FastAPI.
-    this.error.set('No se pudo cargar el inventario. Intenta nuevamente.');
+    // 403/404/422/503/red se muestran tal cual: nunca como una lista válida.
+    this.error.set(traducido.mensaje);
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    // Limpia la sesión empresarial y la legacy antes de volver al portero.
+    this.sesion.cerrarSesion();
     void this.router.navigateByUrl('/auth/personal/login');
   }
 }

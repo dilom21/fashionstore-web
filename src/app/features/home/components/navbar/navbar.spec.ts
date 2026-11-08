@@ -3,7 +3,11 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
+import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { CarritoService } from '../../../carrito/services/carrito.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import { Navbar } from './navbar';
 
 @Component({ selector: 'app-catalogo-stub', template: '' })
@@ -93,5 +97,205 @@ describe('Navbar', () => {
     expect(enlace.getAttribute('href')).toBe('/');
 
     expect(fixture.nativeElement.textContent).not.toContain('VANTER');
+  });
+});
+
+/**
+ * Segundo parcial: el navbar debe reconocer la sesión de CLIENTE confirmada por
+ * el mecanismo SaaS (`GET /auth/tenant/me`) sin mezclarla con la sesión del
+ * personal ni disparar consultas de carrito.
+ */
+describe('Navbar — sesión de cliente SaaS', () => {
+  function authMock(opciones: {
+    cliente?: boolean;
+    personal?: boolean;
+  }): any {
+    const usuario = opciones.cliente
+      ? {
+          id: 21,
+          correo: 'cliente@vanter.test',
+          rol: 'CLIENTE',
+          contexto: 'cliente' as const,
+          cliente_id: 5,
+          nombre: 'Juan',
+          apellido: 'Pérez',
+        }
+      : opciones.personal
+        ? {
+            id: 12,
+            correo: 'cajero@vanter.test',
+            rol: 'CAJERO',
+            contexto: 'personal' as const,
+            empleado_id: 7,
+            nombre: 'Harold',
+            apellido: 'Amador',
+            sucursal_id: 2,
+          }
+        : null;
+
+    return {
+      usuarioActual: () => usuario,
+      autenticado: () => usuario !== null,
+      contexto: () => usuario?.contexto ?? null,
+      esCliente: () => usuario?.contexto === 'cliente',
+      esPersonal: () => usuario?.contexto === 'personal',
+      loginCliente: vi.fn(),
+      cerrarSesion: vi.fn(),
+      restaurarSesion: vi.fn(() => of(null)),
+    };
+  }
+
+  /** GET /auth/tenant/me no devuelve nombre/apellido para contexto cliente. */
+  function tenantMock(contexto: 'cliente' | 'personal' | null): any {
+    return {
+      contexto: () => contexto,
+      autenticado: () => contexto !== null,
+      identidad: () =>
+        contexto === null
+          ? null
+          : {
+              usuario_id: 21,
+              empresa_id: 3,
+              empresa_slug: 'vanter-men',
+              empresa_nombre: 'Vanter Men',
+              rol: contexto === 'cliente' ? 'CLIENTE' : 'CAJERO',
+              contexto,
+              plan_codigo: 'PRO',
+              permite_reportes_ia: false,
+              correo: null,
+              empleado_id: null,
+              nombre: null,
+              apellido: null,
+              sucursal_id: null,
+            },
+      cerrarSesion: vi.fn(),
+      tieneToken: () => contexto !== null,
+      restaurarSesion: vi.fn(() => of(null)),
+    };
+  }
+
+  function carritoMock(): any {
+    return {
+      totalCarritosActivos: vi.fn(() => 0),
+      refrescarContador: vi.fn(),
+      limpiar: vi.fn(),
+    };
+  }
+
+  let fixture: ComponentFixture<Navbar>;
+  let navbar: Navbar;
+  let router: Router;
+  let auth: any;
+  let api: any;
+  let carrito: any;
+
+  async function setup(opciones: { auth: any; api: any }): Promise<void> {
+    auth = opciones.auth;
+    api = opciones.api;
+    carrito = carritoMock();
+
+    await TestBed.configureTestingModule({
+      imports: [Navbar],
+      providers: [
+        provideRouter([
+          { path: 'catalogo', component: CatalogoStub },
+          { path: 'carritos', component: CatalogoStub },
+        ]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: auth },
+        { provide: TenantApiService, useValue: api },
+        { provide: CarritoService, useValue: carrito },
+      ],
+    }).compileComponents();
+
+    router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    fixture = TestBed.createComponent(Navbar);
+    navbar = fixture.componentInstance;
+    fixture.detectChanges();
+  }
+
+  it('muestra el estado de sesión iniciada sin inventar el nombre del cliente', async () => {
+    await setup({ auth: authMock({}), api: tenantMock('cliente') });
+
+    const texto = fixture.nativeElement.querySelector(
+      '.nav__account-text',
+    ) as HTMLElement;
+
+    expect(texto).toBeTruthy();
+    expect(texto.textContent?.trim()).toBe('Mi cuenta');
+    expect(navbar.cuentaTexto()).toBe('Mi cuenta');
+    expect(fixture.nativeElement.textContent).not.toContain('null');
+  });
+
+  it('el menú de cuenta ofrece cerrar la sesión empresarial del cliente', async () => {
+    await setup({ auth: authMock({}), api: tenantMock('cliente') });
+
+    const boton = fixture.nativeElement.querySelector(
+      '.nav__account',
+    ) as HTMLButtonElement;
+    boton.click();
+    fixture.detectChanges();
+
+    const items = Array.from(
+      fixture.nativeElement.querySelectorAll('.nav__account-item'),
+    ) as HTMLElement[];
+
+    expect(items.some((i) => i.textContent?.includes('Cerrar sesión'))).toBe(
+      true,
+    );
+    // Las funcionalidades legacy (CU16/CU24) no se ofrecen bajo SaaS.
+    expect(items.some((i) => i.textContent?.includes('Mis reservas'))).toBe(
+      false,
+    );
+    expect(items.some((i) => i.textContent?.includes('Mis compras'))).toBe(
+      false,
+    );
+  });
+
+  it('cerrar sesión cierra solo la sesión empresarial y nunca la de personal', async () => {
+    // Caso sensible: la pestaña tiene sesión de personal legacy Y de cliente SaaS.
+    await setup({
+      auth: authMock({ personal: true }),
+      api: tenantMock('cliente'),
+    });
+
+    navbar.cerrarSesion();
+
+    expect(api.cerrarSesion).toHaveBeenCalledTimes(1);
+    expect(auth.cerrarSesion).not.toHaveBeenCalled();
+    expect(carrito.limpiar).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('cerrar sesión de un cliente SaaS sin sesión legacy no toca la sesión legacy', async () => {
+    await setup({ auth: authMock({}), api: tenantMock('cliente') });
+
+    navbar.cerrarSesion();
+
+    expect(api.cerrarSesion).toHaveBeenCalledTimes(1);
+    expect(auth.cerrarSesion).not.toHaveBeenCalled();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/');
+  });
+
+  it('el login SaaS no consulta el carrito ni actualiza su contador', async () => {
+    await setup({ auth: authMock({}), api: tenantMock('cliente') });
+
+    expect(carrito.refrescarContador).not.toHaveBeenCalled();
+    expect(carrito.totalCarritosActivos).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('.nav__cart-badge')).toBeNull();
+  });
+
+  it('una sesión empresarial de personal no se presenta como sesión de cliente', async () => {
+    await setup({ auth: authMock({}), api: tenantMock('personal') });
+
+    expect(navbar.sesionVisible()).toBe(false);
+    // Sin sesión de cliente se mantiene el enlace de visitante del primer parcial.
+    const texto = fixture.nativeElement.querySelector(
+      '.nav__account-text',
+    ) as HTMLElement;
+    expect(texto.textContent?.trim()).toBe('Identifícate');
   });
 });
