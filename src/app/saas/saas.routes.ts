@@ -10,22 +10,22 @@ import { saasTenantGuard } from './guards/saas-tenant.guard';
  * Se registran bajo `saas` desde `app.routes.ts` y SOLO cuando
  * `environment.saasMode` es true; en modo legacy no existen.
  *
- * - Públicas: `login`, `invitacion`, `sin-permiso`, `no-disponible`.
+ * - P├║blicas: `login`, `invitacion`, `sin-permiso`, `no-disponible`.
  * - Privadas: shell `''` protegido por `saasTenantGuard` (y `canActivateChild`,
- *   para que la protección se reevalúe al navegar entre hijos).
+ *   para que la protecci├│n se reeval├║e al navegar entre hijos).
  *
  * `empresa`, `sucursales`, `personal`, `roles-permisos`, `catalogo`,
  * `ventas-contado`, `reservas`, `compras`, `devoluciones`, `inventario` y
- * `proveedores` ya consumen endpoints tenant reales. Los módulos del negocio
- * sin endpoint tenant siguen deshabilitados en la navegación (no navegan): no
- * se finge información.
+ * `proveedores` ya consumen endpoints tenant reales. Los m├│dulos del negocio
+ * sin endpoint tenant siguen deshabilitados en la navegaci├│n (no navegan): no
+ * se finge informaci├│n.
  */
 
 
 export const saasRoutes: Routes = [
   {
     path: 'tienda/:empresaSlug',
-    title: 'Tienda · SaaS',
+    title: 'Tienda ┬À SaaS',
     loadComponent: () =>
       import('./pages/storefront/saas-storefront.page').then(
         (m) => m.SaasStorefrontPage,
@@ -33,13 +33,13 @@ export const saasRoutes: Routes = [
   },
   {
     path: 'login',
-    title: 'Iniciar sesión · SaaS',
+    title: 'Iniciar sesi├│n ┬À SaaS',
     loadComponent: () =>
       import('./pages/login/saas-login.page').then((m) => m.SaasLoginPage),
   },
   {
     path: 'invitacion',
-    title: 'Aceptar invitación · SaaS',
+    title: 'Aceptar invitaci├│n ┬À SaaS',
     loadComponent: () =>
       import('./pages/invitacion/saas-invitacion.page').then(
         (m) => m.SaasInvitacionPage,
@@ -47,7 +47,7 @@ export const saasRoutes: Routes = [
   },
   {
     path: 'sin-permiso',
-    title: 'Sin permiso · SaaS',
+    title: 'Sin permiso ┬À SaaS',
     loadComponent: () =>
       import('./pages/sin-permiso/saas-sin-permiso.page').then(
         (m) => m.SaasSinPermisoPage,
@@ -55,7 +55,7 @@ export const saasRoutes: Routes = [
   },
   {
     path: 'no-disponible',
-    title: 'No disponible · SaaS',
+    title: 'No disponible ┬À SaaS',
     loadComponent: () =>
       import('./pages/no-disponible/saas-no-disponible.page').then(
         (m) => m.SaasNoDisponiblePage,
@@ -72,7 +72,7 @@ export const saasRoutes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
       {
         path: 'inicio',
-        title: 'Inicio · SaaS',
+        title: 'Inicio ┬À SaaS',
         loadComponent: () =>
           import('./pages/inicio/saas-inicio.page').then(
             (m) => m.SaasInicioPage,
@@ -80,7 +80,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'merchandising',
-        title: 'Merchandising · SaaS',
+        title: 'Merchandising ┬À SaaS',
         canActivate: [requierePermiso('CATALOGO', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/merchandising/saas-merchandising.page').then(
@@ -89,7 +89,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'reportes',
-        title: 'Reportes · SaaS',
+        title: 'Reportes ┬À SaaS',
         canActivate: [requierePermiso('REPORTES', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/reportes/saas-reportes.page').then(
@@ -98,7 +98,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'cliente',
-        title: 'Mi compra · SaaS',
+        title: 'Mi compra ┬À SaaS',
         canActivate: [saasClienteGuard],
         loadComponent: () =>
           import('./pages/cliente/saas-cliente.page').then(
@@ -107,7 +107,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'cliente/pagos/:venta_id',
-        title: 'Pago electrónico · SaaS',
+        title: 'Pago electr├│nico ┬À SaaS',
         canActivate: [saasClienteGuard],
         loadComponent: () =>
           import('./pages/cliente-pago/saas-cliente-pago.page').then(
@@ -117,7 +117,7 @@ export const saasRoutes: Routes = [
       {
         // Cualquier miembro puede consultar los datos de su propia empresa.
         path: 'empresa',
-        title: 'Mi empresa · SaaS',
+        title: 'Mi empresa ┬À SaaS',
         loadComponent: () =>
           import('./pages/empresa/saas-empresa.page').then(
             (m) => m.SaasEmpresaPage,
@@ -125,7 +125,16 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'sucursales',
-        title: 'Sucursales · SaaS',
+        title: 'Sucursales ┬À SaaS',
+        canActivate: [requierePermiso('SUCURSALES', 'CONSULTAR')],
+        loadComponent: () =>
+          import('./pages/sucursales/saas-sucursales.page').then(
+            (m) => m.SaasSucursalesPage,
+          ),
+      },
+      {
+        path: 'sucursales/:id',
+        title: 'Detalle de sucursal ┬À SaaS',
         canActivate: [requierePermiso('SUCURSALES', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/sucursales/saas-sucursales.page').then(
@@ -134,7 +143,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'personal',
-        title: 'Personal · SaaS',
+        title: 'Personal ┬À SaaS',
         canActivate: [requierePermiso('PERSONAL', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/personal/saas-personal.page').then(
@@ -142,10 +151,10 @@ export const saasRoutes: Routes = [
           ),
       },
       {
-        // La edición de la matriz exige PERSONAL/ADMINISTRAR; la pantalla lo
+        // La edici├│n de la matriz exige PERSONAL/ADMINISTRAR; la pantalla lo
         // vuelve a comprobar antes de habilitar la escritura.
         path: 'roles-permisos',
-        title: 'Roles y permisos · SaaS',
+        title: 'Roles y permisos ┬À SaaS',
         canActivate: [requierePermiso('PERSONAL', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/roles-permisos/saas-roles-permisos.page').then(
@@ -153,9 +162,9 @@ export const saasRoutes: Routes = [
           ),
       },
       {
-        // Catálogo real: lectura para todo miembro, escritura solo ADMINISTRADOR.
+        // Cat├ílogo real: lectura para todo miembro, escritura solo ADMINISTRADOR.
         path: 'catalogo',
-        title: 'Catálogo · SaaS',
+        title: 'Cat├ílogo ┬À SaaS',
         canActivate: [requierePermiso('CATALOGO', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/catalogo/saas-catalogo.page').then(
@@ -165,7 +174,7 @@ export const saasRoutes: Routes = [
       {
         // Inventario de solo lectura: el contrato solo expone GET.
         path: 'inventario',
-        title: 'Inventario · SaaS',
+        title: 'Inventario ┬À SaaS',
         canActivate: [requierePermiso('VENTAS', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/inventario/saas-inventario.page').then(
@@ -175,7 +184,7 @@ export const saasRoutes: Routes = [
       {
         // La ruta exige VENTAS/REGISTRAR; la pantalla vuelve a comprobarlo.
         path: 'ventas-contado',
-        title: 'Venta de contado · SaaS',
+        title: 'Venta de contado ┬À SaaS',
         canActivate: [requierePermiso('VENTAS', 'REGISTRAR')],
         loadComponent: () =>
           import('./pages/ventas-contado/saas-ventas-contado.page').then(
@@ -184,9 +193,9 @@ export const saasRoutes: Routes = [
       },
       {
         // Las acciones de reserva validan el rol en el backend; la ruta solo
-        // exige el permiso de consulta del módulo.
+        // exige el permiso de consulta del m├│dulo.
         path: 'reservas',
-        title: 'Reservas · SaaS',
+        title: 'Reservas ┬À SaaS',
         canActivate: [requierePermiso('RESERVAS', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/reservas/saas-reservas.page').then(
@@ -195,7 +204,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'compras',
-        title: 'Compras · SaaS',
+        title: 'Compras ┬À SaaS',
         canActivate: [requierePermiso('COMPRAS', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/compras/saas-compras.page').then(
@@ -203,11 +212,11 @@ export const saasRoutes: Routes = [
           ),
       },
       {
-        // El alta y la asociación de productos exigen COMPRAS/GESTIONAR; la
+        // El alta y la asociaci├│n de productos exigen COMPRAS/GESTIONAR; la
         // pantalla vuelve a comprobarlo antes de habilitar la escritura.
         path: 'proveedores',
-        title: 'Proveedores · SaaS',
-        canActivate: [requierePermiso('COMPRAS', 'GESTIONAR')],
+        title: 'Proveedores ┬À SaaS',
+        canActivate: [requierePermiso('COMPRAS', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/proveedores/saas-proveedores.page').then(
             (m) => m.SaasProveedoresPage,
@@ -215,7 +224,7 @@ export const saasRoutes: Routes = [
       },
       {
         path: 'devoluciones',
-        title: 'Devoluciones · SaaS',
+        title: 'Devoluciones ┬À SaaS',
         canActivate: [requierePermiso('DEVOLUCIONES', 'CONSULTAR')],
         loadComponent: () =>
           import('./pages/devoluciones/saas-devoluciones.page').then(

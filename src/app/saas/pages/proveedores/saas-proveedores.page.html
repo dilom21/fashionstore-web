@@ -22,10 +22,9 @@
   <p class="aviso aviso--atencion" role="status">
     <app-admin-icon class="aviso__icono" icono="alerta" />
     <span>
-      El listado se obtiene de <code>GET /tenant/catalogo/proveedores</code>.
-      Ese contrato no acepta búsqueda ni paginación del servidor, así que el
-      buscador y las páginas se aplican sobre la lista completa. El listado solo
-      publica identificador, razón social y estado.
+    El listado se obtiene de <code>GET /tenant/proveedores</code> con filtros y
+      paginación tenant. La empresa y los datos visibles los determina el JWT
+      empresarial; el cliente nunca envía <code>empresa_id</code>.
     </span>
   </p>
 
@@ -672,12 +671,12 @@
                 </td>
                 <td class="tabla__numero">
                   @let totalAsociado = totalProductosDe(proveedor.id);
-                  @if (totalAsociado !== null) {
+                   @if (totalAsociado !== null) {
                     {{ totalAsociado }}
                   } @else {
                     <span
                       class="tabla__vacio"
-                      title="El listado del contrato no publica el total de productos"
+                       title="El detalle de productos aún no fue consultado"
                     >
                       —
                     </span>

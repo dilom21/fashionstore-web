@@ -1,21 +1,20 @@
-import { ColorResumen } from './color.model';
-import { TallaResumen } from './talla.model';
-
 /**
- * Modelos del dominio Variantes de producto (CU07).
+ * Modelos del dominio Variantes de producto (CU06).
  *
  * El backend normaliza el SKU a MAYÚSCULAS y garantiza unicidad de SKU y de la
  * combinación producto + talla + color.
  */
 
-/** Variante tal como la devuelve GET /productos/{producto_id}/variantes. */
+/** Variante tenant con IDs y nombres planos entregados por el backend. */
 export interface Variante {
   id: number;
   producto_id: number;
   sku: string;
   estado: boolean;
-  talla: TallaResumen;
-  color: ColorResumen;
+  talla_id: number;
+  talla: string;
+  color_id: number;
+  color: string;
 }
 
 /** Filtros opcionales admitidos por GET /productos/{producto_id}/variantes. */

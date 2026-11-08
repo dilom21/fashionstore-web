@@ -32,6 +32,7 @@ import {
 export class PromocionesService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly tenantUrl = `${this.apiUrl}/tenant/merchandising`;
 
   /** GET /promociones (filtros: buscar, estado, tipo_descuento). */
   listarPromociones(
@@ -51,21 +52,21 @@ export class PromocionesService {
     }
 
     return this.http
-      .get<Promocion[]>(`${this.apiUrl}/promociones`, { params })
+      .get<Promocion[]>(`${this.tenantUrl}/promociones`, { params })
       .pipe(map((promociones) => promociones.map((p) => this.normalizar(p))));
   }
 
   /** GET /promociones/{promocion_id}. */
   obtenerPromocion(promocionId: number): Observable<Promocion> {
     return this.http
-      .get<Promocion>(`${this.apiUrl}/promociones/${promocionId}`)
+      .get<Promocion>(`${this.tenantUrl}/promociones/${promocionId}`)
       .pipe(map((promocion) => this.normalizar(promocion)));
   }
 
   /** POST /promociones. */
   crearPromocion(payload: PromocionCreatePayload): Observable<Promocion> {
     return this.http
-      .post<Promocion>(`${this.apiUrl}/promociones`, payload)
+      .post<Promocion>(`${this.tenantUrl}/promociones`, payload)
       .pipe(map((promocion) => this.normalizar(promocion)));
   }
 
@@ -75,7 +76,7 @@ export class PromocionesService {
     payload: PromocionUpdatePayload,
   ): Observable<Promocion> {
     return this.http
-      .patch<Promocion>(`${this.apiUrl}/promociones/${promocionId}`, payload)
+      .patch<Promocion>(`${this.tenantUrl}/promociones/${promocionId}`, payload)
       .pipe(map((promocion) => this.normalizar(promocion)));
   }
 
@@ -87,7 +88,7 @@ export class PromocionesService {
     const payload: PromocionEstadoPayload = { estado };
     return this.http
       .patch<Promocion>(
-        `${this.apiUrl}/promociones/${promocionId}/estado`,
+        `${this.tenantUrl}/promociones/${promocionId}/estado`,
         payload,
       )
       .pipe(map((promocion) => this.normalizar(promocion)));
@@ -97,7 +98,7 @@ export class PromocionesService {
   listarProductos(promocionId: number): Observable<PromocionProductos> {
     return this.http
       .get<PromocionProductos>(
-        `${this.apiUrl}/promociones/${promocionId}/productos`,
+        `${this.tenantUrl}/promociones/${promocionId}/productos`,
       )
       .pipe(map((respuesta) => this.normalizarProductos(respuesta)));
   }

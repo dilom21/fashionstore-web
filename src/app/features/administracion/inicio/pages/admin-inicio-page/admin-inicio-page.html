@@ -4,7 +4,8 @@
       <span class="admin-inicio__eyebrow">Panel Administrativo · Inicio</span>
       <h1 class="admin-inicio__title">Bienvenido{{ nombre() ? ', ' + nombre() : '' }}</h1>
       <p class="admin-inicio__subtitle">
-        Panel administrativo de VANTER MEN. Selecciona un módulo para comenzar.
+        Panel administrativo de {{ empresa() ?? 'FashionStore' }}. Selecciona un
+        módulo para comenzar.
       </p>
     </div>
   </header>
@@ -16,7 +17,12 @@
           <app-admin-icon icono="usuarios" />
         </span>
         <span class="admin-inicio__card-body">
-          <span class="admin-inicio__card-tag">Seguridad · Disponible</span>
+          <span
+            class="admin-inicio__card-tag"
+            [class.admin-inicio__card-tag--pend]="estadoDestino(principalDest) !== 'Disponible'"
+          >
+            Seguridad · {{ estadoDestino(principalDest) }}
+          </span>
           <span class="admin-inicio__card-title" id="admin-inicio-principal">
             {{ principalDest.label }}
           </span>
@@ -44,10 +50,10 @@
           </span>
           <span
             class="admin-inicio__estado"
-            [class.admin-inicio__estado--ok]="destino.estado === 'funcional'"
-            [class.admin-inicio__estado--prox]="destino.estado !== 'funcional'"
+            [class.admin-inicio__estado--ok]="estadoDestino(destino) === 'Disponible'"
+            [class.admin-inicio__estado--prox]="estadoDestino(destino) !== 'Disponible'"
           >
-            {{ destino.estado === 'funcional' ? 'Disponible' : 'Próximamente' }}
+            {{ estadoDestino(destino) }}
           </span>
         </a>
       }

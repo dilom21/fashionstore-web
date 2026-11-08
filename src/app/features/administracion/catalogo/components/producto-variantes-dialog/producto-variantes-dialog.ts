@@ -149,14 +149,14 @@ export class ProductoVariantesDialog {
     if (variante === null) {
       return activas;
     }
-    if (activas.some((talla) => talla.id === variante.talla.id)) {
+    if (activas.some((talla) => talla.id === variante.talla_id)) {
       return activas;
     }
     return [
       ...activas,
       {
-        id: variante.talla.id,
-        nombre: `${variante.talla.nombre} (inactiva)`,
+        id: variante.talla_id,
+        nombre: `${variante.talla} (inactiva)`,
         estado: false,
       },
     ];
@@ -168,14 +168,14 @@ export class ProductoVariantesDialog {
     if (variante === null) {
       return activos;
     }
-    if (activos.some((color) => color.id === variante.color.id)) {
+    if (activos.some((color) => color.id === variante.color_id)) {
       return activos;
     }
     return [
       ...activos,
       {
-        id: variante.color.id,
-        nombre: `${variante.color.nombre} (inactivo)`,
+        id: variante.color_id,
+        nombre: `${variante.color} (inactivo)`,
         estado: false,
       },
     ];
@@ -205,8 +205,8 @@ export class ProductoVariantesDialog {
     this.form.reset(
       {
         sku: variante.sku,
-        tallaId: variante.talla.id,
-        colorId: variante.color.id,
+        tallaId: variante.talla_id,
+        colorId: variante.color_id,
       },
       { emitEvent: false },
     );
@@ -275,10 +275,10 @@ export class ProductoVariantesDialog {
       );
     } else {
       const payload: VarianteUpdatePayload = {};
-      if (tallaId !== varianteActual.talla.id) {
+      if (tallaId !== varianteActual.talla_id) {
         payload.talla_id = tallaId;
       }
-      if (colorId !== varianteActual.color.id) {
+      if (colorId !== varianteActual.color_id) {
         payload.color_id = colorId;
       }
       if (sku !== varianteActual.sku) {

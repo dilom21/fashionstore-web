@@ -15,7 +15,7 @@ import { Footer } from '../../components/footer/footer';
 import { RevealDirective } from '../../../../shared/directives/reveal.directive';
 
 /**
- * Landing pública de VANTER MEN.
+ * Landing pública de FashionStore.
  * Actúa como página compositora: ensambla las secciones en orden
  * (la lógica de cada sección vive en su propio componente).
  */

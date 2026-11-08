@@ -122,10 +122,18 @@
               "buildTarget": "fashionstore-web:build:development"
             },
             "saas-local": {
-              "buildTarget": "fashionstore-web:build:saas-local"
+              "buildTarget": "fashionstore-web:build:saas-local",
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1"
+              ]
             },
             "saas-unified": {
-              "buildTarget": "fashionstore-web:build:saas-unified"
+              "buildTarget": "fashionstore-web:build:saas-unified",
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1"
+              ]
             }
           },
           "defaultConfiguration": "development"

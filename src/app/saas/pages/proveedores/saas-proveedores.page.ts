@@ -513,7 +513,26 @@ export class SaasProveedoresPage {
     this.proveedorAsociando.set(proveedor);
     this.seleccionados.set(new Set<number>());
     this.errorAsociacion.set(null);
-    this.cargarProductos();
+    this.cargandoProductos.set(true);
+    this.proveedoresService
+      .listarProductos(proveedor.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (productos) => {
+          this.seleccionados.set(new Set(productos.map((producto) => producto.id)));
+          this.cargandoProductos.set(false);
+          this.cargarProductos();
+        },
+        error: (error: unknown) => {
+          // Si no se puede leer la relación, no se falsifica una selección.
+          this.seleccionados.set(new Set<number>());
+          this.cargandoProductos.set(false);
+          this.errorAsociacion.set(
+            this.errores.normalizar(error, 'proveedores/productos-asociados'),
+          );
+          this.cargarProductos();
+        },
+      });
   }
 
   cerrarAsociacion(): void {
@@ -606,7 +625,8 @@ export class SaasProveedoresPage {
 
   /** Total asociado conocido de un proveedor (o `null` si no se conoce). */
   totalProductosDe(proveedorId: number): number | null {
-    return this.totalProductos()[proveedorId] ?? null;
+    const fila = this.proveedores().find((item) => item.id === proveedorId);
+    return this.totalProductos()[proveedorId] ?? fila?.total_productos ?? null;
   }
 
   /** Etiqueta accesible del botón de asociación de una fila. */
@@ -644,18 +664,29 @@ export class SaasProveedoresPage {
     this.errorListado.set(null);
     this.sinPermiso.set(false);
 
-    this.catalogoService
-      .listarProveedores()
+      this.proveedoresService
+      .listar({
+        buscar: this.filtroTexto() || undefined,
+        limit: 200,
+        offset: 0,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (proveedores) => {
-          this.proveedores.set(
-            [...proveedores].sort((a, b) =>
+           this.proveedores.set(
+             [...proveedores].sort((a, b) =>
               a.razon_social.localeCompare(b.razon_social),
             ),
           );
           this.cargando.set(false);
-          this.ajustarPagina();
+           this.totalProductos.set(
+             Object.fromEntries(
+               proveedores
+                 .filter((item) => item.total_productos !== undefined)
+                 .map((item) => [item.id, item.total_productos as number]),
+             ),
+           );
+           this.ajustarPagina();
         },
         error: (error: unknown) => {
           this.proveedores.set([]);

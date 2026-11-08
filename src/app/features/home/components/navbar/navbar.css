@@ -352,8 +352,11 @@
 }
 
 @media (max-width: 560px) {
+  /* "FASHIONSTORE" es más largo que la marca anterior: se compacta el
+     tracking para conservar el ancho de la barra en móviles. */
   .nav__brand-name {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
   }
 
   .nav__actions {

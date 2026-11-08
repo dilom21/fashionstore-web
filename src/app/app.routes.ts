@@ -193,6 +193,20 @@ const rutasLegacy: Routes = [
 const rutasSaas: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'saas/inicio' },
   {
+    path: 'auth',
+    loadChildren: () =>
+      import(
+        './features/autenticacion-seguridad/autenticacion-seguridad.routes'
+      ).then((m) => m.autenticacionSeguridadRoutes),
+  },
+  {
+    path: 'admin',
+    loadChildren: () =>
+      import('./features/administracion/administracion.routes').then(
+        (m) => m.administracionRoutes,
+      ),
+  },
+  {
     path: 'saas',
     loadChildren: () =>
       import('./saas/saas.routes').then((m) => m.saasRoutes),

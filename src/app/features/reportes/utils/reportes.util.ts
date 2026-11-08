@@ -1,5 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
+import {
+  MENSAJE_ENDPOINT_LEGACY_BLOQUEADO,
+  esLegacyBloqueadoPorSesionEmpresarial,
+} from '../../../core/sesion/sesion-panel';
+
 /** Error traducido de cualquier consulta/exportación de CU28. */
 export interface ErrorReporte {
   mensaje: string;
@@ -72,6 +77,10 @@ export function traducirErrorReporte(
 
   switch (error.status) {
     case 401:
+      // Sesión empresarial: el 401 indica un endpoint legacy aún no adaptado.
+      if (esLegacyBloqueadoPorSesionEmpresarial()) {
+        return base(MENSAJE_ENDPOINT_LEGACY_BLOQUEADO);
+      }
       return base('Tu sesión expiró. Inicia sesión nuevamente.', {
         sesionExpirada: true,
       });

@@ -64,27 +64,14 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
   align-self: flex-start;
   margin-bottom: 0.5rem;
+  font-size: 1.15rem;
+  transition: filter 0.2s ease;
 }
 
-.p-login__logo {
-  filter: drop-shadow(0 0 10px rgb(192 38 211 / 35%));
-}
-
-.p-login__brand-name {
-  font-size: 1.05rem;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-}
-
-.p-login__brand-name em {
-  font-style: normal;
-  background: var(--grad-accent);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.p-login__brand:hover {
+  filter: brightness(1.08);
 }
 
 .p-login__card {
@@ -353,7 +340,7 @@ html[data-theme='light'] .p-login__field-error {
   text-transform: uppercase;
 }
 
-/* ===== Zona visual ===== */
+/* ===== Zona visual (fotografía de campaña con superposición oscura) ===== */
 .p-login__visual {
   position: relative;
   min-height: 100dvh;
@@ -370,11 +357,17 @@ html[data-theme='light'] .p-login__field-error {
   filter: saturate(1.02) contrast(1.03);
 }
 
+/* Oscurecimiento: funde el borde izquierdo con el panel del formulario. */
 .p-login__visual-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, var(--bg) 0%, rgb(5 9 20 / 62%) 26%, rgb(5 9 20 / 14%) 58%),
+    linear-gradient(
+      to right,
+      var(--bg) 0%,
+      rgb(5 9 20 / 62%) 26%,
+      rgb(5 9 20 / 14%) 58%
+    ),
     linear-gradient(to top, rgb(3 6 14 / 85%) 0%, transparent 46%);
 }
 
@@ -385,30 +378,15 @@ html[data-theme='light'] .p-login__field-error {
   left: clamp(1.6rem, 4vw, 3.5rem);
   z-index: 2;
   max-width: 400px;
-  color: var(--text);
-}
-
-.p-login__visual-brand {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
+  font-size: 1.15rem;
   color: rgb(255 255 255 / 92%);
 }
 
-.p-login__visual-brand em {
-  font-style: normal;
-  background: var(--grad-accent);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 .p-login__visual-caption p {
-  margin-top: 0.4rem;
-  max-width: 34ch;
+  margin-top: 0.7rem;
+  max-width: 36ch;
   color: rgb(243 246 252 / 78%);
-  font-size: 0.9rem;
+  font-size: 0.82em;
   line-height: 1.55;
 }
 

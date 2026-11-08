@@ -219,6 +219,30 @@
   color: var(--text-2);
 }
 
+.detalle__datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.detalle__datos div {
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--bg-2);
+}
+
+.detalle__datos dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-2);
+  text-transform: uppercase;
+}
+
+.detalle__datos dd {
+  margin-top: 0.25rem;
+}
+
 .formulario {
   display: grid;
   gap: 0.9rem;

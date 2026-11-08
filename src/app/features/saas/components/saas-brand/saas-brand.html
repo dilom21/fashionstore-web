@@ -1,0 +1,16 @@
+<!-- Marca tipográfica de FashionStore: percha en degradado + nombre. -->
+<span class="saas-brand">
+  <span class="saas-brand__mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="4.3" r="1.6" />
+      <path d="M12 5.9v2.3" />
+      <path d="M12 8.2 4 14.2a1.7 1.7 0 0 0 1 3h14a1.7 1.7 0 0 0 1-3l-8-6Z" />
+    </svg>
+  </span>
+  <span class="saas-brand__text">
+    <span class="saas-brand__name">Fashion<em>Store</em></span>
+    @if (etiqueta()) {
+      <span class="saas-brand__tag">{{ etiqueta() }}</span>
+    }
+  </span>
+</span>

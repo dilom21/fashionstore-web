@@ -93,6 +93,10 @@ export const rutasServidorLegacy: ServerRoute[] = [
  */
 export const rutasServidorSaas: ServerRoute[] = [
   {
+    path: 'auth/personal/login',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'saas/login',
     renderMode: RenderMode.Server,
   },

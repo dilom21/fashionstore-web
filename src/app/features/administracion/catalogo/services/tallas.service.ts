@@ -1,6 +1,6 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -27,17 +27,11 @@ export class TallasService {
 
   /** GET /tallas con filtros buscar / estado. */
   listarTallas(filtros: TallaListarFiltros = {}): Observable<Talla[]> {
-    let params = new HttpParams();
-
-    const buscar = filtros.buscar?.trim();
-    if (buscar) {
-      params = params.set('buscar', buscar);
-    }
-    if (filtros.estado !== undefined && filtros.estado !== null) {
-      params = params.set('estado', String(filtros.estado));
-    }
-
-    return this.http.get<Talla[]>(`${this.apiUrl}/tallas`, { params });
+    return this.http.get<Array<{ id: number; nombre: string }>>(`${this.apiUrl}/tenant/catalogo/tallas`).pipe(
+      map((tallas) => tallas.map((talla) => ({ ...talla, estado: true })).filter((talla) =>
+        (!filtros.buscar || talla.nombre.toLocaleLowerCase().includes(filtros.buscar.trim().toLocaleLowerCase())) &&
+        filtros.estado !== false)),
+    );
   }
 
   /** GET /tallas/{talla_id}. */

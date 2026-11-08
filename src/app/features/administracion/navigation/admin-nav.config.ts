@@ -12,6 +12,11 @@ import { AdminNavItem } from '../models/admin-nav-item';
  * "Inventario > Gestionar sucursales y ciudades" (CU06) están funcionales.
  * El resto de opciones tienen navegación preparada hacia una pantalla de
  * módulo en construcción.
+ *
+ * La última opción, `CU4-CU5`, es TEMPORAL: lleva al avance ya implementado en
+ * la pantalla empresarial SaaS (/saas/empresa) mientras los módulos de este
+ * panel se adaptan al multitenant. Se declara como opción independiente (no
+ * dentro de Reportes) para conservar el orden y la configuración original.
  */
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
@@ -237,6 +242,23 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
       'Dashboard y reportes: indicadores del negocio, comparativos y exportación a PDF, Excel o CSV.',
     estado: 'funcional',
     permiso: 'REPORTES',
+  },
+  {
+    // Opción TEMPORAL (provisional) inmediatamente debajo de Reportes.
+    //
+    // Conserva a la vista el avance de CU04 (roles y permisos) y CU05 (bitácora)
+    // implementado en la pantalla empresarial SaaS mientras los módulos del
+    // panel se adaptan al multitenant. Es una opción INDEPENDIENTE: no
+    // pertenece al grupo de Reportes y no duplica formularios ni servicios
+    // (reutiliza /saas/empresa y los endpoints /tenant/empresa/**).
+    id: 'cu4-cu5',
+    label: 'CU4-CU5',
+    icon: 'estado',
+    route: '/saas/empresa',
+    descripcion:
+      'Avance provisional de CU04 y CU05 en el panel empresarial: sucursales, personal y roles de la empresa.',
+    estado: 'funcional',
+    permiso: 'SAAS:CU4_CU5',
   },
 ];
 

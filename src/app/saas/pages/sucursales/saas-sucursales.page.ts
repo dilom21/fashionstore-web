@@ -22,23 +22,25 @@ import {
   TenantErrorNormalizado,
   TenantSucursal,
   TenantSucursalCrear,
+  TenantSucursalActualizar,
 } from '../../models/tenant.models';
 import { SaasCatalogoService } from '../../services/saas-catalogo.service';
 import { SaasEmpresaService } from '../../services/saas-empresa.service';
 import { SaasErrorService } from '../../services/saas-error.service';
 import { SaasSessionService } from '../../services/saas-session.service';
 import { SaasSucursalesService } from '../../services/saas-sucursales.service';
+import { ActivatedRoute } from '@angular/router';
 
 /**
  * Sucursales de la empresa (`/tenant/empresa/sucursales`).
  *
  * `ciudad_id` se elige de `GET /tenant/catalogo/ciudades` (diccionario global)
- * y la tabla muestra el nombre de la ciudad. Si el catálogo llega vacío o con
+ * y la tabla muestra el nombre de la ciudad. Si el cat├ílogo llega vac├¡o o con
  * 403 se muestra un aviso y se deshabilita el alta: nunca se permite teclear un
  * identificador a mano.
  *
  * Las escrituras (alta y cambio de estado) exigen ADMINISTRADOR en el backend:
- * la UI oculta los controles para el resto de roles, pero la autorización real
+ * la UI oculta los controles para el resto de roles, pero la autorizaci├│n real
  * sigue siendo del backend.
  */
 @Component({
@@ -54,33 +56,39 @@ export class SaasSucursalesPage {
   private readonly sesion = inject(SaasSessionService);
   private readonly errores = inject(SaasErrorService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
 
   readonly sucursales = signal<TenantSucursal[]>([]);
   readonly cargando = signal(true);
   readonly mensajeError = signal<string | null>(null);
 
-  /** Catálogo global de ciudades que alimenta el selector del alta. */
+  /** Cat├ílogo global de ciudades que alimenta el selector del alta. */
   readonly ciudades = signal<TenantCiudad[]>([]);
   readonly cargandoCiudades = signal(true);
   readonly errorCiudades = signal<string | null>(null);
   readonly ciudadesSinPermiso = signal(false);
 
-  /** Máximo de sucursales activas del plan; `null` si no se pudo consultar. */
+  /** M├íximo de sucursales activas del plan; `null` si no se pudo consultar. */
   readonly maximoPlan = signal<number | null>(null);
 
   readonly formularioAbierto = signal(false);
   readonly guardando = signal(false);
   readonly errorFormulario = signal<TenantErrorNormalizado | null>(null);
   readonly esErrorLimite = signal(false);
+  readonly editando = signal<TenantSucursal | null>(null);
+  readonly detalleId = signal<number | null>(null);
+  readonly detalle = signal<TenantSucursal | null>(null);
+  readonly cargandoDetalle = signal(false);
+  readonly errorDetalle = signal<string | null>(null);
 
   readonly mensajeExito = signal<string | null>(null);
 
-  /** Sucursal pendiente de confirmación (activar/desactivar). */
+  /** Sucursal pendiente de confirmaci├│n (activar/desactivar). */
   readonly confirmacion = signal<TenantSucursal | null>(null);
   readonly cambiandoId = signal<number | null>(null);
   readonly errorConfirmacion = signal<string | null>(null);
 
-  /** Elemento que abrió el diálogo, para devolverle el foco al cerrarlo. */
+  /** Elemento que abri├│ el di├ílogo, para devolverle el foco al cerrarlo. */
   private focoPrevio: HTMLElement | null = null;
 
   readonly form = new FormGroup({
@@ -112,12 +120,12 @@ export class SaasSucursalesPage {
   private readonly ciudadInput =
     viewChild<ElementRef<HTMLSelectElement>>('ciudadInput');
 
-  /** `true` cuando la membresía tiene rol ADMINISTRADOR. */
+  /** `true` cuando la membres├¡a tiene rol ADMINISTRADOR. */
   readonly esAdministrador = computed(
     () => normalizarRol(this.sesion.rol()) === TENANT_ROL_ADMINISTRADOR,
   );
 
-  /** `true` si el catálogo de ciudades está disponible para el alta. */
+  /** `true` si el cat├ílogo de ciudades est├í disponible para el alta. */
   readonly catalogoCiudadesDisponible = computed(
     () =>
       !this.cargandoCiudades() &&
@@ -125,7 +133,7 @@ export class SaasSucursalesPage {
       !this.ciudadesSinPermiso(),
   );
 
-  /** El alta solo se habilita al administrador y con catálogo de ciudades. */
+  /** El alta solo se habilita al administrador y con cat├ílogo de ciudades. */
   readonly puedeCrear = computed(
     () => this.esAdministrador() && this.catalogoCiudadesDisponible(),
   );
@@ -146,7 +154,7 @@ export class SaasSucursalesPage {
   readonly textoLimite = computed(() => {
     const maximo = this.maximoPlan();
     if (maximo === null) {
-      return 'El límite del plan no está disponible en este momento.';
+      return 'El l├¡mite del plan no est├í disponible en este momento.';
     }
     return `${this.activas()} de ${maximo} sucursales activas permitidas por el plan.`;
   });
@@ -155,6 +163,11 @@ export class SaasSucursalesPage {
     this.cargarLimitePlan();
     this.cargarCiudades();
     this.cargarSucursales();
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (Number.isInteger(id) && id > 0) {
+      this.detalleId.set(id);
+      this.cargarDetalle(id);
+    }
   }
 
   recargar(): void {
@@ -176,6 +189,7 @@ export class SaasSucursalesPage {
       return;
     }
     this.formularioAbierto.set(true);
+    this.editando.set(null);
     this.errorFormulario.set(null);
     this.esErrorLimite.set(false);
   }
@@ -185,11 +199,12 @@ export class SaasSucursalesPage {
       return;
     }
     this.formularioAbierto.set(false);
+    this.editando.set(null);
     this.errorFormulario.set(null);
     this.esErrorLimite.set(false);
   }
 
-  /** Envía el alta. Ante error conserva los datos escritos en el formulario. */
+  /** Env├¡a el alta. Ante error conserva los datos escritos en el formulario. */
   enviar(): void {
     if (this.guardando() || !this.puedeCrear()) {
       return;
@@ -226,13 +241,31 @@ export class SaasSucursalesPage {
 
     this.guardando.set(true);
 
+    const editando = this.editando();
+    if (editando !== null) {
+      const actualizacion: TenantSucursalActualizar = dto;
+      this.sucursalesService.actualizar(editando.id, actualizacion)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (sucursal) => {
+            this.guardando.set(false);
+            this.detalle.set(sucursal);
+            this.formularioAbierto.set(false);
+            this.editando.set(null);
+            this.mensajeExito.set(`Sucursal ┬½${sucursal.nombre}┬╗ actualizada correctamente.`);
+            this.refrescarDatosTenant();
+          },
+          error: (error: unknown) => this.manejarErrorFormulario(error, 'sucursales/editar'),
+        });
+      return;
+    }
+
     this.sucursalesService
       .crear(dto)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (sucursal) => {
           this.guardando.set(false);
-          this.sucursales.update((lista) => ordenarPorId([...lista, sucursal]));
           this.formularioAbierto.set(false);
           this.form.reset({
             nombre: '',
@@ -241,8 +274,9 @@ export class SaasSucursalesPage {
             ciudad_id: null,
           });
           this.mensajeExito.set(
-            `Sucursal «${sucursal.nombre}» creada correctamente.`,
+            `Sucursal ┬½${sucursal.nombre}┬╗ creada correctamente.`,
           );
+          this.refrescarDatosTenant();
         },
         error: (error: unknown) => {
           this.guardando.set(false);
@@ -262,7 +296,28 @@ export class SaasSucursalesPage {
       });
   }
 
-  /** Pide confirmación antes de cambiar el estado de una sucursal. */
+  abrirEdicion(sucursal: TenantSucursal): void {
+    if (!this.esAdministrador() || this.guardando()) return;
+    this.editando.set(sucursal);
+    this.form.reset({
+      nombre: sucursal.nombre,
+      direccion: sucursal.direccion,
+      telefono: sucursal.telefono ?? '',
+      ciudad_id: sucursal.ciudad_id,
+    });
+    this.errorFormulario.set(null);
+    this.formularioAbierto.set(true);
+  }
+
+  private manejarErrorFormulario(error: unknown, contexto: string): void {
+    this.guardando.set(false);
+    const normalizado = this.errores.normalizar(error, contexto);
+    this.errorFormulario.set(normalizado);
+    this.esErrorLimite.set(normalizado.estado === 409 && /limite de sucursales/i.test(normalizado.mensaje));
+    if (normalizado.esValidacion) this.enfocarPrimerError();
+  }
+
+  /** Pide confirmaci├│n antes de cambiar el estado de una sucursal. */
   pedirConfirmacion(sucursal: TenantSucursal, evento?: Event): void {
     if (!this.esAdministrador()) {
       return;
@@ -284,10 +339,10 @@ export class SaasSucursalesPage {
   }
 
   /**
-   * Mantiene el foco dentro del diálogo mientras está abierto.
+   * Mantiene el foco dentro del di├ílogo mientras est├í abierto.
    *
    * Se usa junto con `role="dialog" aria-modal="true"`; sin trampa de foco el
-   * lector de pantalla podría salir al contenido de fondo.
+   * lector de pantalla podr├¡a salir al contenido de fondo.
    */
   contenerFoco(evento: KeyboardEvent): void {
     if (evento.key !== 'Tab') {
@@ -344,9 +399,10 @@ export class SaasSucursalesPage {
           );
           this.mensajeExito.set(
             actualizada.estado
-              ? `Sucursal «${actualizada.nombre}» activada.`
-              : `Sucursal «${actualizada.nombre}» desactivada.`,
+              ? `Sucursal ┬½${actualizada.nombre}┬╗ activada.`
+              : `Sucursal ┬½${actualizada.nombre}┬╗ desactivada.`,
           );
+          this.refrescarDatosTenant();
           this.restaurarFoco();
         },
         error: (error: unknown) => {
@@ -358,7 +414,7 @@ export class SaasSucursalesPage {
       });
   }
 
-  /** Mensaje de validación del nombre. */
+  /** Mensaje de validaci├│n del nombre. */
   mensajeNombre(): string | null {
     const control = this.form.controls.nombre;
     if (control.untouched || !control.invalid) {
@@ -366,30 +422,30 @@ export class SaasSucursalesPage {
     }
     return control.hasError('required')
       ? 'Ingresa el nombre de la sucursal.'
-      : 'El nombre admite como máximo 120 caracteres.';
+      : 'El nombre admite como m├íximo 120 caracteres.';
   }
 
-  /** Mensaje de validación de la dirección. */
+  /** Mensaje de validaci├│n de la direcci├│n. */
   mensajeDireccion(): string | null {
     const control = this.form.controls.direccion;
     if (control.untouched || !control.invalid) {
       return null;
     }
     return control.hasError('required')
-      ? 'Ingresa la dirección de la sucursal.'
-      : 'La dirección admite como máximo 255 caracteres.';
+      ? 'Ingresa la direcci├│n de la sucursal.'
+      : 'La direcci├│n admite como m├íximo 255 caracteres.';
   }
 
-  /** Mensaje de validación del teléfono (opcional). */
+  /** Mensaje de validaci├│n del tel├®fono (opcional). */
   mensajeTelefono(): string | null {
     const control = this.form.controls.telefono;
     if (control.untouched || !control.invalid) {
       return null;
     }
-    return 'El teléfono admite como máximo 30 caracteres.';
+    return 'El tel├®fono admite como m├íximo 30 caracteres.';
   }
 
-  /** Mensaje de validación del identificador de ciudad. */
+  /** Mensaje de validaci├│n del identificador de ciudad. */
   mensajeCiudad(): string | null {
     const control = this.form.controls.ciudad_id;
     if (control.untouched || !control.invalid) {
@@ -398,7 +454,7 @@ export class SaasSucursalesPage {
     if (control.hasError('required')) {
       return 'Selecciona la ciudad de la sucursal.';
     }
-    return 'Selecciona una ciudad válida.';
+    return 'Selecciona una ciudad v├ílida.';
   }
 
   /** Nombre de la ciudad para la tabla; el `#id` queda como respaldo. */
@@ -409,14 +465,14 @@ export class SaasSucursalesPage {
     );
   }
 
-  /** Nombre completo de la sucursal destino de una acción. */
+  /** Nombre completo de la sucursal destino de una acci├│n. */
   etiquetaAccion(sucursal: TenantSucursal): string {
     return sucursal.estado
       ? `Desactivar la sucursal ${sucursal.nombre}`
       : `Activar la sucursal ${sucursal.nombre}`;
   }
 
-  /** Lleva el foco al primer campo inválido del formulario. */
+  /** Lleva el foco al primer campo inv├ílido del formulario. */
   private enfocarPrimerError(): void {
     const candidatos: Array<[
       boolean,
@@ -488,7 +544,30 @@ export class SaasSucursalesPage {
       });
   }
 
-  /** Devuelve el foco al botón que abrió el diálogo. */
+  private cargarDetalle(id: number): void {
+    this.cargandoDetalle.set(true);
+    this.errorDetalle.set(null);
+    this.sucursalesService.obtener(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (sucursal) => {
+        this.detalle.set(sucursal);
+        this.cargandoDetalle.set(false);
+      },
+      error: (error: unknown) => {
+        this.detalle.set(null);
+        this.cargandoDetalle.set(false);
+        this.errorDetalle.set(this.errores.mensajeDeError(error, 'sucursales/detalle'));
+      },
+    });
+  }
+
+  private refrescarDatosTenant(): void {
+    this.cargarSucursales();
+    this.cargarLimitePlan();
+    const id = this.detalleId();
+    if (id !== null) this.cargarDetalle(id);
+  }
+
+  /** Devuelve el foco al bot├│n que abri├│ el di├ílogo. */
   private restaurarFoco(): void {
     const previo = this.focoPrevio;
     this.focoPrevio = null;
@@ -497,16 +576,14 @@ export class SaasSucursalesPage {
     }
   }
 
-  /** El límite es informativo: si falla, la lista de sucursales sigue viva. */
+  /** El l├¡mite es informativo: si falla, la lista de sucursales sigue viva. */
   private cargarLimitePlan(): void {
     this.empresaService
-      .obtenerEmpresa()
+      .obtenerPlan()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (empresa) => {
-          this.maximoPlan.set(
-            empresa.suscripcion?.max_sucursales_activas ?? null,
-          );
+        next: (plan) => {
+          this.maximoPlan.set(plan.max_sucursales_activas);
         },
         error: () => {
           this.maximoPlan.set(null);
@@ -515,7 +592,7 @@ export class SaasSucursalesPage {
   }
 }
 
-/** Normaliza un nombre de rol para compararlo (mayúsculas, sin espacios). */
+/** Normaliza un nombre de rol para compararlo (may├║sculas, sin espacios). */
 function normalizarRol(rol: string | null | undefined): string {
   return (rol ?? '').trim().toUpperCase();
 }

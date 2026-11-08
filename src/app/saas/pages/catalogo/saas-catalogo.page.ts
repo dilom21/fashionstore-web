@@ -67,8 +67,8 @@ const PATRON_PRECIO = /^\d{1,10}(?:[.,]\d{1,2})?$/;
  * LIMITACIONES DEL CONTRATO (se advierten en pantalla):
  * - No existe `estado` ni `DELETE`: no hay activar, desactivar ni borrar.
  * - Las tallas y colores se eligen de los diccionarios globales
- *   (`GET /tenant/catalogo/tallas` y `/colores`); el contrato de variantes
- *   devuelve sus nombres, no sus identificadores.
+ *   (`GET /tenant/catalogo/tallas` y `/colores`); la variante devuelve tanto
+ *   sus identificadores reales como sus nombres.
  * - El listado de productos no devuelve un total: la paginación avanza con el
  *   tamaño de página.
  * - `precio` viaja como texto decimal (`"120.00"`); solo se formatea.
@@ -204,7 +204,7 @@ export class SaasCatalogoPage {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(80)],
     }),
-    // El alta exige talla y color; la edición solo envía los que se rellenen.
+    // Tanto el alta como la edición trabajan con IDs reales del backend.
     talla_id: new FormControl<number | null>(null, {
       validators: [
         Validators.required,
@@ -759,9 +759,9 @@ export class SaasCatalogoPage {
   /**
    * Prepara la edición de una variante.
    *
-   * El contrato solo devuelve los NOMBRES de talla y color: los identificadores
-   * numéricos actuales no están expuestos. Por eso se precarga el SKU y los
-   * campos numéricos quedan vacíos y opcionales (solo viajan si se rellenan).
+   * La respuesta incluye los IDs reales junto con los nombres. Se precargan
+   * esos IDs para que los selectores reflejen la variante actual y el PATCH no
+   * dependa de deducciones por nombre.
    */
   editarVariante(variante: TenantVariante): void {
     if (!this.esAdministrador() || this.guardandoVariante()) {
@@ -772,8 +772,8 @@ export class SaasCatalogoPage {
     this.aplicarValidadoresVariante(true);
     this.formVariante.reset({
       sku: variante.sku,
-      talla_id: null,
-      color_id: null,
+      talla_id: variante.talla_id,
+      color_id: variante.color_id,
     });
     this.errorVariante.set(null);
     this.mensajeExito.set(null);
@@ -823,7 +823,7 @@ export class SaasCatalogoPage {
       this.enfocarPrimerErrorVariante();
       return;
     }
-    if (!esEdicion && (tallaId === null || colorId === null)) {
+    if (tallaId === null || colorId === null) {
       this.enfocarPrimerErrorVariante();
       return;
     }
@@ -868,10 +868,10 @@ export class SaasCatalogoPage {
     }
 
     const dto: TenantVarianteEditar = { sku };
-    if (tallaId !== null) {
+    if (tallaId !== original.talla_id) {
       dto.talla_id = tallaId;
     }
-    if (colorId !== null) {
+    if (colorId !== original.color_id) {
       dto.color_id = colorId;
     }
 

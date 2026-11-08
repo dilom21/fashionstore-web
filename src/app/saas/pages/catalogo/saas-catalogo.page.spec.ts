@@ -38,7 +38,9 @@ const VARIANTE: TenantVariante = {
   id: 21,
   producto_id: 9,
   sku: 'POL-M-BLA',
+  talla_id: 4,
   talla: 'M',
+  color_id: 7,
   color: 'Blanco',
 };
 
@@ -212,6 +214,25 @@ describe('SaasCatalogoPage', () => {
       { ...VARIANTE, sku: 'POL-M-BLA-2' },
     ]);
     expect(componente.mensajeExito()).toContain('actualizada');
+  });
+
+  it('precarga talla/color por ID y conserva esos IDs al editar', () => {
+    componente.activarTab('productos');
+    componente.verVariantes(PRODUCTO);
+    esperar(`${BASE}/productos/9/variantes`).flush([VARIANTE]);
+
+    componente.editarVariante(VARIANTE);
+    expect(componente.formVariante.controls.talla_id.value).toBe(4);
+    expect(componente.formVariante.controls.color_id.value).toBe(7);
+
+    componente.formVariante.controls.sku.setValue('POL-M-BLA-4');
+    componente.enviarVariante();
+    const peticion = esperar(`${BASE}/variantes/21`);
+    expect(peticion.request.body).toEqual({ sku: 'POL-M-BLA-4' });
+    peticion.flush({ ...VARIANTE, sku: 'POL-M-BLA-4' });
+    esperar(`${BASE}/productos/9/variantes`).flush([
+      { ...VARIANTE, sku: 'POL-M-BLA-4' },
+    ]);
   });
 
   it('crea una variante con los ids elegidos en los selectores', () => {

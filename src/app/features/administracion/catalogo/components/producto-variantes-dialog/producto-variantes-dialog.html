@@ -210,8 +210,8 @@
             @for (variante of variantes(); track variante.id) {
               <tr>
                 <td data-label="SKU" class="pvd__sku">{{ variante.sku }}</td>
-                <td data-label="Talla">{{ variante.talla.nombre }}</td>
-                <td data-label="Color">{{ variante.color.nombre }}</td>
+                <td data-label="Talla">{{ variante.talla }}</td>
+                <td data-label="Color">{{ variante.color }}</td>
                 <td data-label="Estado">
                   @if (variante.estado) {
                     <span class="pvd__badge pvd__badge--on">Activa</span>

@@ -39,7 +39,9 @@ const VARIANTE: TenantVariante = {
   id: 21,
   producto_id: 9,
   sku: 'POL-M-BLA',
+  talla_id: 4,
   talla: 'M',
+  color_id: 7,
   color: 'Blanco',
 };
 
@@ -447,9 +449,11 @@ describe('SaasCatalogoService', () => {
         id: 21,
         producto_id: 9,
         producto_nombre: 'Polera oversize',
-        sku: 'POL-M-BLA',
-        talla: 'M',
-        color: 'Blanco',
+         sku: 'POL-M-BLA',
+         talla_id: 4,
+         talla: 'M',
+         color_id: 7,
+         color: 'Blanco',
       },
     ]);
 

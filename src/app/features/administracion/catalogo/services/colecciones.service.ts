@@ -30,6 +30,7 @@ import {
 export class ColeccionesService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly tenantUrl = `${this.apiUrl}/tenant/merchandising`;
 
   /** GET /colecciones (filtros: buscar, temporada_id, estado). */
   listarColecciones(
@@ -51,19 +52,19 @@ export class ColeccionesService {
       params = params.set('estado', String(filtros.estado));
     }
 
-    return this.http.get<Coleccion[]>(`${this.apiUrl}/colecciones`, { params });
+    return this.http.get<Coleccion[]>(`${this.tenantUrl}/colecciones`, { params });
   }
 
   /** GET /colecciones/{coleccion_id} (incluye temporada y total_productos). */
   obtenerColeccion(coleccionId: number): Observable<ColeccionDetalle> {
     return this.http.get<ColeccionDetalle>(
-      `${this.apiUrl}/colecciones/${coleccionId}`,
+      `${this.tenantUrl}/colecciones/${coleccionId}`,
     );
   }
 
   /** POST /colecciones. */
   crearColeccion(payload: ColeccionCreatePayload): Observable<Coleccion> {
-    return this.http.post<Coleccion>(`${this.apiUrl}/colecciones`, payload);
+    return this.http.post<Coleccion>(`${this.tenantUrl}/colecciones`, payload);
   }
 
   /** PATCH /colecciones/{coleccion_id} (solo campos modificados). */
@@ -72,7 +73,7 @@ export class ColeccionesService {
     payload: ColeccionUpdatePayload,
   ): Observable<Coleccion> {
     return this.http.patch<Coleccion>(
-      `${this.apiUrl}/colecciones/${coleccionId}`,
+      `${this.tenantUrl}/colecciones/${coleccionId}`,
       payload,
     );
   }
@@ -84,7 +85,7 @@ export class ColeccionesService {
   ): Observable<Coleccion> {
     const payload: ColeccionEstadoPayload = { estado };
     return this.http.patch<Coleccion>(
-      `${this.apiUrl}/colecciones/${coleccionId}/estado`,
+      `${this.tenantUrl}/colecciones/${coleccionId}/estado`,
       payload,
     );
   }
@@ -93,7 +94,7 @@ export class ColeccionesService {
   listarProductos(coleccionId: number): Observable<ColeccionProductos> {
     return this.http
       .get<ColeccionProductos>(
-        `${this.apiUrl}/colecciones/${coleccionId}/productos`,
+        `${this.tenantUrl}/colecciones/${coleccionId}/productos`,
       )
       .pipe(map((respuesta) => this.normalizarProductos(respuesta)));
   }

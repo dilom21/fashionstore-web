@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminAuthGuard } from '../../core/guards/admin-auth.guard';
+import { saasTenantGuard } from '../../saas/guards/saas-tenant.guard';
 import { AdministracionShell } from './administracion-shell/administracion-shell';
 
 /**
@@ -113,6 +114,7 @@ export const administracionRoutes: Routes = [
       // ===== CU08 - Gestionar temporadas y colecciones (funcional) =====
       {
         path: 'catalogo/temporadas-colecciones',
+        canActivate: [saasTenantGuard],
         loadComponent: () =>
           import(
             './catalogo/pages/temporadas-colecciones-page/temporadas-colecciones-page'
@@ -121,6 +123,7 @@ export const administracionRoutes: Routes = [
       // ===== CU10 - Gestionar promociones (funcional) =====
       {
         path: 'catalogo/promociones',
+        canActivate: [saasTenantGuard],
         loadComponent: () =>
           import(
             './catalogo/pages/promociones-page/promociones-page'
@@ -165,18 +168,20 @@ export const administracionRoutes: Routes = [
       // ===== CU11 - Gestionar proveedores (funcional) =====
       {
         path: 'compras-proveedores/proveedores',
+        canActivate: [saasTenantGuard],
         loadComponent: () =>
-          import(
-            './compras-proveedores/pages/proveedores-page/proveedores-page'
-          ).then((m) => m.ProveedoresPage),
+          import('../../saas/pages/proveedores/saas-proveedores.page').then(
+            (m) => m.SaasProveedoresPage,
+          ),
       },
       // ===== CU12 - Gestionar compras a proveedores (funcional) =====
       {
         path: 'compras-proveedores/ordenes-compra',
+        canActivate: [saasTenantGuard],
         loadComponent: () =>
-          import(
-            './compras-proveedores/pages/ordenes-compra-page/ordenes-compra-page'
-          ).then((m) => m.OrdenesCompraPage),
+          import('../../saas/pages/compras/saas-compras.page').then(
+            (m) => m.SaasComprasPage,
+          ),
       },
       {
         path: 'compras',

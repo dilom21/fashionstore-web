@@ -45,7 +45,9 @@ const VARIANTE: TenantVarianteEmpresa = {
   producto_id: 5,
   producto_nombre: 'Polera oversize',
   sku: 'POL-M-BLA',
+  talla_id: 4,
   talla: 'M',
+  color_id: 7,
   color: 'Blanco',
 };
 

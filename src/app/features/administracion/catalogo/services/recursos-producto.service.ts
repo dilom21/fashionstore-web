@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -40,9 +40,9 @@ export class RecursosProductoService {
       params = params.set('estado', String(filtros.estado));
     }
     return this.http.get<RecursoProducto[]>(
-      `${this.apiUrl}/productos/${productoId}/recursos`,
+      `${this.apiUrl}/tenant/catalogo/productos/${productoId}/recursos`,
       { params },
-    );
+    ).pipe(map((recursos) => recursos.map((r) => this.normalizar(r))));
   }
 
   /** POST /productos/{producto_id}/recursos. */
@@ -51,9 +51,9 @@ export class RecursosProductoService {
     payload: RecursoProductoCreatePayload,
   ): Observable<RecursoProducto> {
     return this.http.post<RecursoProducto>(
-      `${this.apiUrl}/productos/${productoId}/recursos`,
+      `${this.apiUrl}/tenant/catalogo/productos/${productoId}/recursos`,
       payload,
-    );
+    ).pipe(map((r) => this.normalizar(r)));
   }
 
   /** PATCH /recursos-producto/{recurso_id}. */
@@ -62,9 +62,9 @@ export class RecursosProductoService {
     payload: RecursoProductoUpdatePayload,
   ): Observable<RecursoProducto> {
     return this.http.patch<RecursoProducto>(
-      `${this.apiUrl}/recursos-producto/${recursoId}`,
+      `${this.apiUrl}/tenant/catalogo/recursos-producto/${recursoId}`,
       payload,
-    );
+    ).pipe(map((r) => this.normalizar(r)));
   }
 
   /** PATCH /recursos-producto/{recurso_id}/estado. */
@@ -74,16 +74,25 @@ export class RecursosProductoService {
   ): Observable<RecursoProducto> {
     const payload: RecursoProductoEstadoPayload = { estado };
     return this.http.patch<RecursoProducto>(
-      `${this.apiUrl}/recursos-producto/${recursoId}/estado`,
+      `${this.apiUrl}/tenant/catalogo/recursos-producto/${recursoId}/estado`,
       payload,
-    );
+    ).pipe(map((r) => this.normalizar(r)));
   }
 
   /** PATCH /recursos-producto/{recurso_id}/principal (sin cuerpo). */
   marcarPrincipal(recursoId: number): Observable<RecursoProducto> {
     return this.http.patch<RecursoProducto>(
-      `${this.apiUrl}/recursos-producto/${recursoId}/principal`,
+      `${this.apiUrl}/tenant/catalogo/recursos-producto/${recursoId}/principal`,
       {},
-    );
+    ).pipe(map((r) => this.normalizar(r)));
+  }
+
+  private normalizar(recurso: RecursoProducto & {
+    color?: string | { id: number; nombre: string } | null;
+  }): RecursoProducto {
+    const color = typeof recurso.color === 'string'
+      ? { id: recurso.color_id ?? 0, nombre: recurso.color }
+      : recurso.color;
+    return { ...recurso, color: color ?? null } as RecursoProducto;
   }
 }

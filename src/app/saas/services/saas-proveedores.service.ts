@@ -1,13 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { HttpParams } from '@angular/common/http';
 
 import { environment } from '../../../environments/environment';
 import {
   TenantProveedorCreado,
   TenantProveedorCrear,
+  TenantProveedor,
+  TenantProducto,
   TenantProveedorProductosResultado,
 } from '../models/tenant.models';
+
+export interface FiltroProveedoresTenant {
+  buscar?: string | null;
+  estado?: boolean | null;
+  limit?: number;
+  offset?: number;
+}
 
 /**
  * Alta tenant de proveedores (`/tenant/proveedores`).
@@ -33,6 +43,29 @@ export class SaasProveedoresService {
 
   /** Prefijo exacto del recurso (sin `/` final). */
   private readonly base = `${this.apiUrl}/tenant/proveedores`;
+
+  /** `GET /tenant/proveedores` — listado paginado y filtrable. */
+  listar(filtros: FiltroProveedoresTenant = {}): Observable<TenantProveedor[]> {
+    let params = new HttpParams();
+    const buscar = (filtros.buscar ?? '').trim();
+    if (buscar) params = params.set('buscar', buscar);
+    if (filtros.estado !== undefined && filtros.estado !== null) {
+      params = params.set('estado', filtros.estado);
+    }
+    if (filtros.limit !== undefined) params = params.set('limit', filtros.limit);
+    if (filtros.offset !== undefined) params = params.set('offset', filtros.offset);
+    return this.http.get<TenantProveedor[]>(this.base, { params });
+  }
+
+  /** `GET /tenant/proveedores/{id}` — detalle empresarial. */
+  obtener(id: number): Observable<TenantProveedorCreado> {
+    return this.http.get<TenantProveedorCreado>(`${this.base}/${id}`);
+  }
+
+  /** `GET /tenant/proveedores/{id}/productos` — productos asociados. */
+  listarProductos(id: number): Observable<TenantProducto[]> {
+    return this.http.get<TenantProducto[]>(`${this.base}/${id}/productos`);
+  }
 
   /** `POST /tenant/proveedores` — crea un proveedor de la empresa (201). */
   crear(dto: TenantProveedorCrear): Observable<TenantProveedorCreado> {

@@ -56,6 +56,44 @@ describe('SaasSucursalesService', () => {
     expect(resultado).toEqual([SUCURSAL]);
   });
 
+  it('obtiene el detalle de una sucursal propia', () => {
+    service.obtener(5).subscribe((valor) => expect(valor).toEqual(SUCURSAL));
+    const peticion = http.expectOne(`${URL_SUCURSALES}/5`);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(SUCURSAL);
+  });
+
+  it('actualiza solo campos permitidos y nunca empresa_id', () => {
+    service.actualizar(5, {
+      ciudad_id: 4,
+      nombre: 'Sucursal Norte',
+      direccion: 'Calle 1',
+      telefono: '71111111',
+    }).subscribe();
+    const peticion = http.expectOne(`${URL_SUCURSALES}/5`);
+    expect(peticion.request.method).toBe('PATCH');
+    expect(peticion.request.body).toEqual({
+      ciudad_id: 4,
+      nombre: 'Sucursal Norte',
+      direccion: 'Calle 1',
+      telefono: '71111111',
+    });
+    expect(peticion.request.body.empresa_id).toBeUndefined();
+    peticion.flush({ ...SUCURSAL, ciudad_id: 4, nombre: 'Sucursal Norte' });
+  });
+
+  it('propaga el 422 de edici├│n sin transformarlo', () => {
+    let estado = 0;
+    service.actualizar(5, { ciudad_id: 0, nombre: '', direccion: '' }).subscribe({
+      error: (error: HttpErrorResponse) => (estado = error.status),
+    });
+    http.expectOne(`${URL_SUCURSALES}/5`).flush(
+      { detail: [{ type: 'missing', loc: ['body', 'nombre'], msg: 'Field required' }] },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+    expect(estado).toBe(422);
+  });
+
   it('crear hace POST con el cuerpo exacto del contrato', () => {
     const dto: TenantSucursalCrear = {
       ciudad_id: 3,
@@ -79,11 +117,11 @@ describe('SaasSucursalesService', () => {
     expect(creada).toEqual(SUCURSAL);
   });
 
-  it('crear omite el teléfono cuando no se envía', () => {
+  it('crear omite el tel├®fono cuando no se env├¡a', () => {
     service
       .crear({
         ciudad_id: 3,
-        nombre: 'Sin teléfono',
+        nombre: 'Sin tel├®fono',
         direccion: 'Calle 9',
       })
       .subscribe();
@@ -99,7 +137,7 @@ describe('SaasSucursalesService', () => {
     peticion.flush({ ...SUCURSAL, telefono: null });
   });
 
-  it('crear no envía campos ajenos al contrato (extra=forbid)', () => {
+  it('crear no env├¡a campos ajenos al contrato (extra=forbid)', () => {
     service
       .crear({ ciudad_id: 3, nombre: 'X', direccion: 'Y' })
       .subscribe();
@@ -111,7 +149,7 @@ describe('SaasSucursalesService', () => {
     peticion.flush(SUCURSAL);
   });
 
-  it('propaga el 409 de límite de sucursales sin transformarlo', () => {
+  it('propaga el 409 de l├¡mite de sucursales sin transformarlo', () => {
     let estado = 0;
     let detalle = '';
 

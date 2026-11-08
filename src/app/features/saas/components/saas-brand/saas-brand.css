@@ -1,0 +1,59 @@
+/* ===== Marca de la plataforma (FashionStore) =====
+   Todas las medidas en `em` para que la marca escale con el tamaño de fuente
+   que fije cada pantalla contenedora. */
+.saas-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: inherit;
+  line-height: 1.15;
+  color: inherit;
+}
+
+.saas-brand__mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.95em;
+  height: 1.95em;
+  border-radius: 0.55em;
+  background: var(--grad-accent);
+  box-shadow: 0 8px 20px -10px rgb(192 38 211 / 75%);
+}
+
+.saas-brand__mark svg {
+  display: block;
+  width: 64%;
+  height: 64%;
+}
+
+.saas-brand__text {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.18em;
+  min-width: 0;
+}
+
+.saas-brand__name {
+  font-weight: 900;
+  font-size: 1em;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+
+.saas-brand__name em {
+  font-style: normal;
+  background: var(--grad-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.saas-brand__tag {
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}

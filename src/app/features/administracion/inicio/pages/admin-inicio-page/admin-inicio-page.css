@@ -114,6 +114,12 @@
   color: #4ade80;
 }
 
+/* Sesión empresarial: el módulo conserva su interfaz pero aún no está
+   adaptado al multitenant (no se presenta como disponible). */
+.admin-inicio__card-tag--pend {
+  color: var(--text-3);
+}
+
 .admin-inicio__card-title {
   margin-top: 0.15rem;
   font-size: 1.06rem;

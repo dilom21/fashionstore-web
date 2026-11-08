@@ -8,7 +8,7 @@
       <p class="sucursales__eyebrow">Red de la empresa</p>
       <h1 class="sucursales__titulo" id="sucursales-titulo">Sucursales</h1>
       <p class="sucursales__ayuda">
-        Sucursales registradas, su ciudad, su dirección y el estado que decide
+        Sucursales registradas, su ciudad, su direcci├│n y el estado que decide
         si pueden operar.
       </p>
     </div>
@@ -26,7 +26,7 @@
           [attr.title]="
             puedeCrear()
               ? null
-              : 'El catálogo de ciudades no está disponible para esta sesión'
+              : 'El cat├ílogo de ciudades no est├í disponible para esta sesi├│n'
           "
         >
           <app-admin-icon icono="mas" />
@@ -48,8 +48,8 @@
       <app-admin-icon class="aviso__icono" icono="alerta" />
       <div class="aviso__cuerpo">
         <p>
-          Tu sesión no tiene el permiso SUCURSALES/CONSULTAR, así que el catálogo
-          de ciudades no está disponible y el alta de sucursales queda
+          Tu sesi├│n no tiene el permiso SUCURSALES/CONSULTAR, as├¡ que el cat├ílogo
+          de ciudades no est├í disponible y el alta de sucursales queda
           deshabilitada. La consulta del listado sigue funcionando.
         </p>
         <button
@@ -57,7 +57,7 @@
           class="boton boton--secundario"
           (click)="recargarCiudades()"
         >
-          Reintentar catálogo
+          Reintentar cat├ílogo
         </button>
       </div>
     </div>
@@ -66,8 +66,8 @@
       <app-admin-icon class="aviso__icono" icono="alerta" />
       <div class="aviso__cuerpo">
         <p>
-          No se pudo cargar el catálogo de ciudades. El alta de sucursales está
-          deshabilitada hasta que el catálogo esté disponible.
+          No se pudo cargar el cat├ílogo de ciudades. El alta de sucursales est├í
+          deshabilitada hasta que el cat├ílogo est├® disponible.
         </p>
         <p class="aviso__detalle">{{ errorCatalogo }}</p>
         <button
@@ -75,7 +75,7 @@
           class="boton boton--secundario"
           (click)="recargarCiudades()"
         >
-          Reintentar catálogo
+          Reintentar cat├ílogo
         </button>
       </div>
     </div>
@@ -83,7 +83,7 @@
     <p class="aviso aviso--atencion" role="status">
       <app-admin-icon class="aviso__icono" icono="alerta" />
       <span>
-        El catálogo de ciudades llegó vacío: no es posible registrar sucursales
+        El cat├ílogo de ciudades lleg├│ vac├¡o: no es posible registrar sucursales
         hasta que un administrador cargue ciudades en el sistema.
       </span>
     </p>
@@ -117,8 +117,8 @@
         <p class="aviso aviso--atencion" role="status">
           <app-admin-icon class="aviso__icono" icono="alerta" />
           <span>
-            Ya usas el máximo de sucursales activas de tu plan. El servidor
-            rechazará el alta hasta que desactives una sucursal o se amplíe el
+            Ya usas el m├íximo de sucursales activas de tu plan. El servidor
+            rechazar├í el alta hasta que desactives una sucursal o se ampl├¡e el
             plan.
           </span>
         </p>
@@ -133,7 +133,7 @@
               <p class="aviso__detalle">
                 Tu plan permite {{ maximo() }} sucursales activas y ya tienes
                 {{ activas() }}. Desactiva una sucursal o solicita al
-                superadministrador un plan con más sucursales.
+                superadministrador un plan con m├ís sucursales.
               </p>
             }
             @if (error.estado === 404) {
@@ -176,7 +176,7 @@
 
         <div class="campo">
           <label class="campo__label" for="sucursal-direccion">
-            Dirección
+            Direcci├│n
           </label>
           <input
             #direccionInput
@@ -200,7 +200,7 @@
 
         <div class="campo">
           <label class="campo__label" for="sucursal-telefono">
-            Teléfono <span class="campo__opcional">(opcional)</span>
+            Tel├®fono <span class="campo__opcional">(opcional)</span>
           </label>
           <input
             #telefonoInput
@@ -236,7 +236,7 @@
                 : 'sucursal-ciudad-aviso'
             "
           >
-            <option [ngValue]="null">Selecciona una ciudad…</option>
+            <option [ngValue]="null">Selecciona una ciudadÔÇª</option>
             @for (ciudad of ciudades(); track ciudad.id) {
               <option [ngValue]="ciudad.id">{{ ciudad.nombre }}</option>
             }
@@ -258,7 +258,7 @@
             class="boton boton--primario"
             [disabled]="guardando() || !puedeCrear()"
           >
-            {{ guardando() ? 'Creando…' : 'Crear sucursal' }}
+            {{ guardando() ? 'CreandoÔÇª' : 'Crear sucursal' }}
           </button>
           <button
             type="button"
@@ -274,7 +274,7 @@
   }
 
   @if (cargando()) {
-    <p class="vm-sr-only" role="status">Cargando las sucursales…</p>
+    <p class="vm-sr-only" role="status">Cargando las sucursalesÔÇª</p>
     <div class="esqueleto" aria-hidden="true">
       <div class="esqueleto__bloque"></div>
       <div class="esqueleto__bloque"></div>
@@ -283,7 +283,7 @@
   } @else if (!mensajeError()) {
     @if (sucursales().length === 0) {
       <p class="estado-vacio">
-        Aún no hay sucursales registradas en esta empresa.
+        A├║n no hay sucursales registradas en esta empresa.
       </p>
     } @else {
       <div
@@ -301,8 +301,8 @@
             <tr>
               <th scope="col">Nombre</th>
               <th scope="col">Ciudad</th>
-              <th scope="col">Dirección</th>
-              <th scope="col">Teléfono</th>
+              <th scope="col">Direcci├│n</th>
+              <th scope="col">Tel├®fono</th>
               <th scope="col">Estado</th>
               @if (esAdministrador()) {
                 <th scope="col">Acciones</th>
@@ -319,7 +319,7 @@
                   @if (sucursal.telefono) {
                     {{ sucursal.telefono }}
                   } @else {
-                    <span class="tabla__vacio">—</span>
+                    <span class="tabla__vacio">ÔÇö</span>
                   }
                 </td>
                 <td>
@@ -378,12 +378,12 @@
       </h2>
       <p class="modal__detalle" id="confirmar-detalle">
         @if (sucursal.estado) {
-          La sucursal «{{ sucursal.nombre }}» dejará de operar. El backend
-          rechazará la desactivación si tiene empleados, stock reservado o
+          La sucursal ┬½{{ sucursal.nombre }}┬╗ dejar├í de operar. El backend
+          rechazar├í la desactivaci├│n si tiene empleados, stock reservado o
           reservas pendientes.
         } @else {
-          La sucursal «{{ sucursal.nombre }}» volverá a operar. El backend
-          verificará el límite del plan y que su ciudad siga activa.
+          La sucursal ┬½{{ sucursal.nombre }}┬╗ volver├í a operar. El backend
+          verificar├í el l├¡mite del plan y que su ciudad siga activa.
         }
       </p>
 
@@ -409,10 +409,10 @@
         >
           {{
             cambiandoId() !== null
-              ? 'Aplicando…'
+              ? 'AplicandoÔÇª'
               : sucursal.estado
-                ? 'Sí, desactivar'
-                : 'Sí, activar'
+                ? 'S├¡, desactivar'
+                : 'S├¡, activar'
           }}
         </button>
       </div>

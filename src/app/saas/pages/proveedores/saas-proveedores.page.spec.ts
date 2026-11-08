@@ -16,7 +16,7 @@ import { SaasSessionService } from '../../services/saas-session.service';
 import { SaasProveedoresPage } from './saas-proveedores.page';
 
 const API = environment.apiUrl.replace(/\/+$/, '');
-const URL_PROVEEDORES = `${API}/tenant/catalogo/proveedores`;
+const URL_PROVEEDORES = `${API}/tenant/proveedores`;
 const URL_CREAR = `${API}/tenant/proveedores`;
 const URL_PRODUCTOS = `${API}/tenant/catalogo/productos`;
 
@@ -111,7 +111,7 @@ describe('SaasProveedoresPage', () => {
   /** Responde el listado del catálogo de proveedores. */
   function cargarListado(proveedores: TenantProveedor[] = [PROVEEDOR_A]): void {
     http
-      .expectOne((peticion) => peticion.url === URL_PROVEEDORES)
+      .expectOne((peticion) => peticion.url.startsWith(URL_PROVEEDORES))
       .flush(proveedores);
     fixture.detectChanges();
   }
@@ -132,6 +132,9 @@ describe('SaasProveedoresPage', () => {
     productos: TenantProducto[] = [PRODUCTO],
   ): void {
     componente.abrirAsociacion(PROVEEDOR_A);
+    http
+      .expectOne((peticion) => peticion.url === `${URL_CREAR}/3/productos`)
+      .flush([]);
     http
       .expectOne((peticion) => peticion.url === URL_PRODUCTOS)
       .flush(productos);
@@ -202,7 +205,7 @@ describe('SaasProveedoresPage', () => {
 
   it('un 403 del listado se muestra como falta de COMPRAS/CONSULTAR', () => {
     http
-      .expectOne((peticion) => peticion.url === URL_PROVEEDORES)
+      .expectOne((peticion) => peticion.url.startsWith(URL_PROVEEDORES))
       .flush(
         { detail: 'Permiso insuficiente' },
         { status: 403, statusText: 'Forbidden' },
@@ -218,7 +221,7 @@ describe('SaasProveedoresPage', () => {
 
   it('un 503 del listado se traduce con el servicio de errores', () => {
     http
-      .expectOne((peticion) => peticion.url === URL_PROVEEDORES)
+      .expectOne((peticion) => peticion.url.startsWith(URL_PROVEEDORES))
       .flush(
         { detail: 'Catálogo apagado' },
         { status: 503, statusText: 'Service Unavailable' },

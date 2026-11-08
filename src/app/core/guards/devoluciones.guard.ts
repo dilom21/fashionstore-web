@@ -3,6 +3,7 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Observable, catchError, map, of } from 'rxjs';
 
 import { AuthService } from '../../features/autenticacion-seguridad/auth/services/auth.service';
+import { evaluarAccesoPanelEmpresarial } from './sesion-panel-saas';
 
 /**
  * Guard del área de devoluciones (CU25 - /personal/devoluciones).
@@ -29,6 +30,14 @@ export const devolucionesGuard: CanActivateFn = ():
   | Observable<boolean | UrlTree> => {
   const authService = inject(AuthService);
   const router = inject(Router);
+
+  // Sesión EMPRESARIAL (SaaS): el ADMINISTRADOR de la empresa puede recorrer
+  // la interfaz original de CU25. Los endpoints legacy siguen bloqueados por el
+  // backend (401) mientras el módulo no esté adaptado al multitenant.
+  const accesoEmpresarial = evaluarAccesoPanelEmpresarial();
+  if (accesoEmpresarial !== null) {
+    return accesoEmpresarial;
+  }
 
   const decidir = (): boolean | UrlTree => {
     if (authService.contexto() === 'cliente') {

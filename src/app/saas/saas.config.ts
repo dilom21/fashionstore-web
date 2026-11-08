@@ -17,7 +17,7 @@ import { environment } from '../../environments/environment';
  */
 export const SAAS_STORAGE_KEYS = {
   /** JWT emitido por `POST /auth/tenant/login`. */
-  token: 'vanter_saas_access_token',
+  token: 'fashionstore_saas_tenant_access_token',
   /** Slug de la empresa con la que se abrió la sesión (autocompletar login). */
   empresaSlug: 'vanter_saas_empresa_slug',
   /** Correo del usuario (autocompletar login; NUNCA la contraseña). */

@@ -1,6 +1,6 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -27,17 +27,11 @@ export class ColoresService {
 
   /** GET /colores con filtros buscar / estado. */
   listarColores(filtros: ColorListarFiltros = {}): Observable<Color[]> {
-    let params = new HttpParams();
-
-    const buscar = filtros.buscar?.trim();
-    if (buscar) {
-      params = params.set('buscar', buscar);
-    }
-    if (filtros.estado !== undefined && filtros.estado !== null) {
-      params = params.set('estado', String(filtros.estado));
-    }
-
-    return this.http.get<Color[]>(`${this.apiUrl}/colores`, { params });
+    return this.http.get<Array<{ id: number; nombre: string }>>(`${this.apiUrl}/tenant/catalogo/colores`).pipe(
+      map((colores) => colores.map((color) => ({ ...color, estado: true })).filter((color) =>
+        (!filtros.buscar || color.nombre.toLocaleLowerCase().includes(filtros.buscar.trim().toLocaleLowerCase())) &&
+        filtros.estado !== false)),
+    );
   }
 
   /** GET /colores/{color_id}. */
