@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+﻿import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
@@ -22,19 +22,19 @@ import { ColeccionesService } from '../../services/colecciones.service';
 import { TemporadasService } from '../../services/temporadas.service';
 import { traducirErrorTemporadasColecciones } from '../../utils/temporadas-colecciones-error.util';
 
-/** Pestañas disponibles de la pantalla. */
+/** Pesta├▒as disponibles de la pantalla. */
 type TabTemporadasColecciones = 'temporadas' | 'colecciones';
 
 /** Valores posibles del filtro de estado. */
 type FiltroEstado = 'todos' | 'activos' | 'inactivos';
 
-/** Confirmación de habilitar/deshabilitar una temporada. */
+/** Confirmaci├│n de habilitar/deshabilitar una temporada. */
 interface ConfirmacionTemporada {
   temporada: Temporada;
   habilitar: boolean;
 }
 
-/** Confirmación de habilitar/deshabilitar una colección. */
+/** Confirmaci├│n de habilitar/deshabilitar una colecci├│n. */
 interface ConfirmacionColeccion {
   coleccion: Coleccion;
   habilitar: boolean;
@@ -51,14 +51,14 @@ type DestinoError =
  * Gestionar temporadas y colecciones (CU08) -
  * /admin/catalogo/temporadas-colecciones.
  *
- * Pantalla con dos pestañas:
+ * Pantalla con dos pesta├▒as:
  * - Temporadas: GET/POST/PATCH /temporadas y PATCH /temporadas/{id}/estado,
- *   con búsqueda y filtro de estado.
+ *   con b├║squeda y filtro de estado.
  * - Colecciones: GET/POST/PATCH /colecciones y PATCH /colecciones/{id}/estado,
- *   con búsqueda y filtros de temporada y estado. La asignación de productos se
- *   realiza en un diálogo con un único PUT /colecciones/{id}/productos.
+ *   con b├║squeda y filtros de temporada y estado. La asignaci├│n de productos se
+ *   realiza en un di├ílogo con un ├║nico PUT /colecciones/{id}/productos.
  *
- * No existe DELETE físico: el estado se cambia con los endpoints /estado. Los
+ * No existe DELETE f├¡sico: el estado se cambia con los endpoints /estado. Los
  * errores 400/404/409/422 se muestran con el `detail` real del backend.
  */
 @Component({
@@ -87,7 +87,7 @@ export class TemporadasColeccionesPage {
 
   readonly tabActiva = signal<TabTemporadasColecciones>('temporadas');
 
-  // ===== Temporadas (listado de la pestaña) =====
+  // ===== Temporadas (listado de la pesta├▒a) =====
   readonly temporadas = signal<Temporada[]>([]);
   readonly cargandoTemporadas = signal(false);
   readonly errorTemporadas = signal<string | null>(null);
@@ -102,7 +102,7 @@ export class TemporadasColeccionesPage {
     estado: new FormControl<FiltroEstado>('todos', { nonNullable: true }),
   });
 
-  // ===== Temporadas de catálogo (filtro y formulario de colección) =====
+  // ===== Temporadas de cat├ílogo (filtro y formulario de colecci├│n) =====
   readonly temporadasCatalogo = signal<Temporada[]>([]);
   readonly cargandoTemporadasCatalogo = signal(false);
   readonly errorTemporadasCatalogo = signal<string | null>(null);
@@ -128,7 +128,7 @@ export class TemporadasColeccionesPage {
   readonly procesandoEstadoColeccion = signal(false);
   readonly coleccionesCargadas = signal(false);
 
-  /** Total de productos asignados por colección (desde el detalle). */
+  /** Total de productos asignados por colecci├│n (desde el detalle). */
   readonly totalesProductos = signal<ReadonlyMap<number, number>>(new Map());
 
   readonly filtrosColecciones = new FormGroup({
@@ -140,7 +140,7 @@ export class TemporadasColeccionesPage {
     estado: new FormControl<FiltroEstado>('todos', { nonNullable: true }),
   });
 
-  // ===== Diálogos =====
+  // ===== Di├ílogos =====
   readonly dialogoTemporadaAbierto = signal(false);
   readonly temporadaEnForm = signal<Temporada | null>(null);
   readonly detalleTemporada = signal<Temporada | null>(null);
@@ -170,7 +170,7 @@ export class TemporadasColeccionesPage {
     this.cargarTemporadasCatalogo();
   }
 
-  // ===== Pestañas =====
+  // ===== Pesta├▒as =====
 
   activarTab(tab: TabTemporadasColecciones): void {
     if (this.tabActiva() === tab) {
@@ -247,7 +247,7 @@ export class TemporadasColeccionesPage {
       });
   }
 
-  /** Si la temporada del filtro dejó de existir, se limpia. */
+  /** Si la temporada del filtro dej├│ de existir, se limpia. */
   private ajustarFiltroTemporada(): void {
     const seleccionada = this.filtrosColecciones.controls.temporadaId.value;
     if (seleccionada === null) {
@@ -329,7 +329,7 @@ export class TemporadasColeccionesPage {
         next: (actualizada) => {
           this.procesandoEstadoTemporada.set(false);
           this.exitoTemporadas.set(
-            `Se ${habilitar ? 'habilitó' : 'deshabilitó'} la temporada "${actualizada.nombre}".`,
+            `Se ${habilitar ? 'habilit├│' : 'deshabilit├│'} la temporada "${actualizada.nombre}".`,
           );
           this.cargarTemporadas();
           this.cargarTemporadasCatalogo();
@@ -392,8 +392,8 @@ export class TemporadasColeccionesPage {
 
   /**
    * El listado GET /colecciones no incluye `total_productos`; se obtiene del
-   * detalle de cada colección en paralelo. Si un detalle falla, la colección
-   * queda sin total (se muestra "—").
+   * detalle de cada colecci├│n en paralelo. Si un detalle falla, la colecci├│n
+   * queda sin total (se muestra "ÔÇö").
    */
   private cargarTotalesProductos(colecciones: Coleccion[]): void {
     if (colecciones.length === 0) {
@@ -452,8 +452,8 @@ export class TemporadasColeccionesPage {
     this.cerrarDialogoColeccion();
     this.exitoColecciones.set(
       editando === null
-        ? `Colección "${coleccion.nombre}" creada correctamente.`
-        : `Colección "${coleccion.nombre}" actualizada correctamente.`,
+        ? `Colecci├│n "${coleccion.nombre}" creada correctamente.`
+        : `Colecci├│n "${coleccion.nombre}" actualizada correctamente.`,
     );
     this.cargarColecciones();
   }
@@ -500,7 +500,7 @@ export class TemporadasColeccionesPage {
       return siguiente;
     });
     this.exitoColecciones.set(
-      `Colección "${coleccion.nombre}": ${total} producto(s) asignado(s).`,
+      `Colecci├│n "${coleccion.nombre}": ${total} producto(s) asignado(s).`,
     );
   }
 
@@ -537,7 +537,7 @@ export class TemporadasColeccionesPage {
         next: (actualizada) => {
           this.procesandoEstadoColeccion.set(false);
           this.exitoColecciones.set(
-            `Se ${habilitar ? 'habilitó' : 'deshabilitó'} la colección "${actualizada.nombre}".`,
+            `Se ${habilitar ? 'habilit├│' : 'deshabilit├│'} la colecci├│n "${actualizada.nombre}".`,
           );
           this.cargarColecciones();
         },
@@ -564,14 +564,14 @@ export class TemporadasColeccionesPage {
     if (this.tieneFiltrosTemporadas()) {
       return 'No hay temporadas que coincidan con los filtros aplicados.';
     }
-    return 'Todavía no hay temporadas registradas.';
+    return 'Todav├¡a no hay temporadas registradas.';
   }
 
   mensajeVacioColecciones(): string {
     if (this.tieneFiltrosColecciones()) {
       return 'No hay colecciones que coincidan con los filtros aplicados.';
     }
-    return 'Todavía no hay colecciones registradas.';
+    return 'Todav├¡a no hay colecciones registradas.';
   }
 
   // ===== Errores =====

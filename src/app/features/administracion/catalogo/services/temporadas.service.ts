@@ -15,8 +15,9 @@ import {
  * Servicio de Temporadas (CU08).
  *
  * Consume el contrato real del backend:
- * GET/POST /temporadas, GET/PATCH /temporadas/{id},
- * PATCH /temporadas/{id}/estado.
+ * GET/POST /tenant/merchandising/temporadas,
+ * GET/PATCH /tenant/merchandising/temporadas/{id},
+ * PATCH /tenant/merchandising/temporadas/{id}/estado.
  *
  * Todos los endpoints requieren administrador. El JWT se adjunta
  * automáticamente mediante el interceptor global.
@@ -25,6 +26,7 @@ import {
 export class TemporadasService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly tenantUrl = `${this.apiUrl}/tenant/merchandising`;
 
   /** GET /temporadas (filtros opcionales: buscar, estado). */
   listarTemporadas(
@@ -40,17 +42,17 @@ export class TemporadasService {
       params = params.set('estado', String(filtros.estado));
     }
 
-    return this.http.get<Temporada[]>(`${this.apiUrl}/temporadas`, { params });
+    return this.http.get<Temporada[]>(`${this.tenantUrl}/temporadas`, { params });
   }
 
   /** GET /temporadas/{temporada_id}. */
   obtenerTemporada(temporadaId: number): Observable<Temporada> {
-    return this.http.get<Temporada>(`${this.apiUrl}/temporadas/${temporadaId}`);
+    return this.http.get<Temporada>(`${this.tenantUrl}/temporadas/${temporadaId}`);
   }
 
   /** POST /temporadas. */
   crearTemporada(payload: TemporadaCreatePayload): Observable<Temporada> {
-    return this.http.post<Temporada>(`${this.apiUrl}/temporadas`, payload);
+    return this.http.post<Temporada>(`${this.tenantUrl}/temporadas`, payload);
   }
 
   /** PATCH /temporadas/{temporada_id} (solo campos modificados). */
@@ -59,7 +61,7 @@ export class TemporadasService {
     payload: TemporadaUpdatePayload,
   ): Observable<Temporada> {
     return this.http.patch<Temporada>(
-      `${this.apiUrl}/temporadas/${temporadaId}`,
+      `${this.tenantUrl}/temporadas/${temporadaId}`,
       payload,
     );
   }
@@ -71,7 +73,7 @@ export class TemporadasService {
   ): Observable<Temporada> {
     const payload: TemporadaEstadoPayload = { estado };
     return this.http.patch<Temporada>(
-      `${this.apiUrl}/temporadas/${temporadaId}/estado`,
+      `${this.tenantUrl}/temporadas/${temporadaId}/estado`,
       payload,
     );
   }

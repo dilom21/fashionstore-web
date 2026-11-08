@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { adminAuthGuard } from '../../core/guards/admin-auth.guard';
+import { tenantAdminAuthGuard } from '../../core/guards/tenant-admin-auth.guard';
 import { AdministracionShell } from './administracion-shell/administracion-shell';
 
 /**
@@ -105,6 +106,7 @@ export const administracionRoutes: Routes = [
       // ===== CU07 - Gestionar catálogo de productos (funcional) =====
       {
         path: 'catalogo/productos',
+        canActivate: [tenantAdminAuthGuard],
         loadComponent: () =>
           import(
             './catalogo/pages/catalogo-productos-page/catalogo-productos-page'
@@ -113,6 +115,7 @@ export const administracionRoutes: Routes = [
       // ===== CU08 - Gestionar temporadas y colecciones (funcional) =====
       {
         path: 'catalogo/temporadas-colecciones',
+        canActivate: [tenantAdminAuthGuard],
         loadComponent: () =>
           import(
             './catalogo/pages/temporadas-colecciones-page/temporadas-colecciones-page'
@@ -121,6 +124,7 @@ export const administracionRoutes: Routes = [
       // ===== CU10 - Gestionar promociones (funcional) =====
       {
         path: 'catalogo/promociones',
+        canActivate: [tenantAdminAuthGuard],
         loadComponent: () =>
           import(
             './catalogo/pages/promociones-page/promociones-page'
@@ -165,6 +169,7 @@ export const administracionRoutes: Routes = [
       // ===== CU11 - Gestionar proveedores (funcional) =====
       {
         path: 'compras-proveedores/proveedores',
+        canActivate: [tenantAdminAuthGuard],
         loadComponent: () =>
           import(
             './compras-proveedores/pages/proveedores-page/proveedores-page'
@@ -173,6 +178,7 @@ export const administracionRoutes: Routes = [
       // ===== CU12 - Gestionar compras a proveedores (funcional) =====
       {
         path: 'compras-proveedores/ordenes-compra',
+        canActivate: [tenantAdminAuthGuard],
         loadComponent: () =>
           import(
             './compras-proveedores/pages/ordenes-compra-page/ordenes-compra-page'

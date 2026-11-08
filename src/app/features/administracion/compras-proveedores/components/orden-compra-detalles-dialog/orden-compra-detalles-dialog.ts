@@ -468,7 +468,7 @@ export class OrdenCompraDetallesDialog {
             (variante): OpcionVariante => ({
               id: variante.id,
               sku: variante.sku,
-              etiqueta: `${variante.sku} · ${variante.talla.nombre} / ${variante.color.nombre}`,
+              etiqueta: `${variante.sku} · ${variante.talla} / ${variante.color}`,
             }),
           ),
         ),

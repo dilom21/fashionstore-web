@@ -13,6 +13,7 @@ import {
   ProductoListarFiltros,
   ProductoUpdatePayload,
 } from '../models/producto.model';
+import { obtenerEmpresaSlugPublica } from '../../../../core/config/empresa-publica';
 
 /**
  * Servicio de Productos (CU07) con contrato mixto.
@@ -54,15 +55,21 @@ export class ProductosService {
       sucursal_id: filtros.sucursal_id,
       con_stock: filtros.con_stock,
     });
+    const ruta = environment.saasMode
+      ? `${this.apiUrl}/catalogo/public/${obtenerEmpresaSlugPublica() ?? ''}/productos`
+      : `${this.apiUrl}/productos`;
     return this.http
-      .get<Producto[]>(`${this.apiUrl}/productos`, { params })
+      .get<Producto[]>(ruta, { params })
       .pipe(map((productos) => productos.map((p) => this.normalizar(p))));
   }
 
   /** GET /productos/{producto_id} (detalle público con variantes/recursos). */
   obtenerProductoPublico(productoId: number): Observable<ProductoDetalle> {
+    const ruta = environment.saasMode
+      ? `${this.apiUrl}/catalogo/public/${obtenerEmpresaSlugPublica() ?? ''}/productos/${productoId}`
+      : `${this.apiUrl}/productos/${productoId}`;
     return this.http
-      .get<ProductoDetalle>(`${this.apiUrl}/productos/${productoId}`)
+      .get<ProductoDetalle>(ruta)
       .pipe(map((producto) => this.normalizar(producto)));
   }
 
@@ -89,28 +96,29 @@ export class ProductosService {
   listarProductosAdmin(
     filtros: ProductoListarFiltros = {},
   ): Observable<Producto[]> {
-    const params = this.construirParams({
-      buscar: filtros.buscar,
-      categoria_id: filtros.categoria_id,
-      estado: filtros.estado,
-    });
-    return this.http
-      .get<Producto[]>(`${this.apiUrl}/productos/admin`, { params })
-      .pipe(map((productos) => productos.map((p) => this.normalizar(p))));
+    let params = new HttpParams().set('limit', 100).set('offset', 0);
+    if (filtros.categoria_id) params = params.set('categoria_id', filtros.categoria_id);
+    return this.http.get<Producto[]>(`${this.apiUrl}/tenant/catalogo/productos`, { params }).pipe(
+      map((productos) => productos.map((p) => this.normalizarTenant(p)).filter((p) => {
+        const texto = filtros.buscar?.trim().toLocaleLowerCase();
+        return (!texto || p.nombre.toLocaleLowerCase().includes(texto)) &&
+          (filtros.estado === undefined || p.estado === filtros.estado);
+      })),
+    );
   }
 
   /** GET /productos/admin/{producto_id}. */
   obtenerProductoAdmin(productoId: number): Observable<Producto> {
     return this.http
-      .get<Producto>(`${this.apiUrl}/productos/admin/${productoId}`)
-      .pipe(map((producto) => this.normalizar(producto)));
+      .get<Producto>(`${this.apiUrl}/tenant/catalogo/productos/${productoId}`)
+      .pipe(map((producto) => this.normalizarTenant(producto)));
   }
 
   /** POST /productos. */
   crearProducto(payload: ProductoCreatePayload): Observable<Producto> {
     return this.http
-      .post<Producto>(`${this.apiUrl}/productos`, payload)
-      .pipe(map((producto) => this.normalizar(producto)));
+      .post<Producto>(`${this.apiUrl}/tenant/catalogo/productos`, payload)
+      .pipe(map((producto) => this.normalizarTenant(producto)));
   }
 
   /** PATCH /productos/{producto_id} (solo campos modificados). */
@@ -119,8 +127,8 @@ export class ProductosService {
     payload: ProductoUpdatePayload,
   ): Observable<Producto> {
     return this.http
-      .patch<Producto>(`${this.apiUrl}/productos/${productoId}`, payload)
-      .pipe(map((producto) => this.normalizar(producto)));
+      .patch<Producto>(`${this.apiUrl}/tenant/catalogo/productos/${productoId}`, payload)
+      .pipe(map((producto) => this.normalizarTenant(producto)));
   }
 
   /** PATCH /productos/{producto_id}/estado (habilitar/deshabilitar). */
@@ -130,8 +138,8 @@ export class ProductosService {
   ): Observable<Producto> {
     const payload: ProductoEstadoPayload = { estado };
     return this.http
-      .patch<Producto>(`${this.apiUrl}/productos/${productoId}/estado`, payload)
-      .pipe(map((producto) => this.normalizar(producto)));
+      .patch<Producto>(`${this.apiUrl}/tenant/catalogo/productos/${productoId}/estado`, payload)
+      .pipe(map((producto) => this.normalizarTenant(producto)));
   }
 
   // ===== Utilidades =====
@@ -184,5 +192,17 @@ export class ProductosService {
   /** El backend puede serializar `precio` (Decimal) como número o string. */
   private normalizar<T extends { precio: number }>(entidad: T): T {
     return { ...entidad, precio: Number(entidad.precio) };
+  }
+
+  private normalizarTenant(entidad: Producto & { categoria_nombre?: string }): Producto {
+    return {
+      ...entidad,
+      precio: Number(entidad.precio),
+      categoria: entidad.categoria ?? {
+        id: entidad.categoria_id,
+        nombre: entidad.categoria_nombre ?? 'Sin categoría',
+      },
+      imagen_principal_url: entidad.imagen_principal_url ?? null,
+    };
   }
 }

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { CatalogoFiltros } from '../models/catalogo-filtros.model';
+import { obtenerEmpresaSlugPublica } from '../../../core/config/empresa-publica';
 
 /**
  * Servicio público del catálogo (CU09).
@@ -22,6 +23,9 @@ export class CatalogoService {
 
   /** GET /catalogo/filtros (solo opciones activas). */
   obtenerFiltros(): Observable<CatalogoFiltros> {
-    return this.http.get<CatalogoFiltros>(`${this.apiUrl}/catalogo/filtros`);
+    const ruta = environment.saasMode
+      ? `${this.apiUrl}/catalogo/public/${obtenerEmpresaSlugPublica() ?? ''}/filtros`
+      : `${this.apiUrl}/catalogo/filtros`;
+    return this.http.get<CatalogoFiltros>(ruta);
   }
 }

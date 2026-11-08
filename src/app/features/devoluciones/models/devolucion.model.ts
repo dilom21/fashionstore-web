@@ -229,3 +229,40 @@ export interface DisponibilidadVenta {
   items: DisponibilidadItem[];
   cantidad_total_unidades: number;
 }
+
+/** Contrato CU15 SaaS (se mantiene separado del contrato legacy CU25). */
+export type TipoOperacionCu15 = 'CAMBIO' | 'SIN_CAMBIO';
+export type CondicionFisicaCu15 = 'APTO' | 'NO_APTO' | 'CUARENTENA';
+export interface SolicitudCu15 {
+  venta_id: number;
+  tipo: TipoOperacionCu15;
+  sucursal_recepcion_id: number;
+  motivo: string;
+  observacion?: string | null;
+  items: Array<{ detalle_venta_id: number; cantidad: number; variante_nueva_id?: number | null }>;
+  idempotency_key: string;
+}
+export interface ElegibilidadCu15 {
+  venta_id: number;
+  fecha_compra: string;
+  fecha_limite_reclamo: string;
+  es_elegible: boolean;
+  motivo: string | null;
+  items: Array<Record<string, unknown>>;
+}
+export interface NotaCu15 {
+  nota_id: number;
+  numero: string;
+  tipo: TipoOperacionCu15;
+  estado: string;
+  venta_id: number;
+  fecha_hora: string;
+  importe_origen: number;
+  importe_sustituto: number;
+  diferencia: number;
+  importe_reembolsable?: number | null;
+  importe_retenido?: number | null;
+  reembolso_estado?: string | null;
+  outbox_pendiente: boolean;
+  items?: Array<Record<string, unknown>>;
+}

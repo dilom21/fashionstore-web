@@ -227,8 +227,8 @@ describe('adminAuthGuard (panel original con sesión empresarial)', () => {
 });
 
 /**
- * CU08: el ENCARGADO_SUCURSAL con sesión empresarial solo puede abrir las
- * pantallas ya adaptadas (CU13 y CU14). No se habilita todo `/admin/**`.
+ * CU08/CU16: el ENCARGADO_SUCURSAL con sesión empresarial solo puede abrir las
+ * pantallas adaptadas. CU16 añade únicamente `/admin/reportes`.
  */
 describe('adminAuthGuard (ENCARGADO_SUCURSAL empresarial, CU08)', () => {
   function encargado(): any {
@@ -264,7 +264,6 @@ describe('adminAuthGuard (ENCARGADO_SUCURSAL empresarial, CU08)', () => {
       '/admin/seguridad/bitacora',
       '/admin/inventario/sucursales-ciudades',
       '/admin/catalogo/productos',
-      '/admin/reportes',
     ];
 
     for (const ruta of rutas) {
@@ -272,6 +271,12 @@ describe('adminAuthGuard (ENCARGADO_SUCURSAL empresarial, CU08)', () => {
         '/saas/sesion',
       );
     }
+  });
+
+  it('abre únicamente reportes además de CU08 (CU16)', () => {
+    expect(url(ejecutar(encargado(), legacyMock(), '/admin/reportes'))).toBe(
+      null,
+    );
   });
 
   it('el CAJERO no accede a las consultas de CU08', () => {

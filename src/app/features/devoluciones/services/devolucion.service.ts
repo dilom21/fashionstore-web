@@ -12,6 +12,9 @@ import {
   DisponibilidadItem,
   DisponibilidadVenta,
   RegistrarDevolucionRequest,
+  NotaCu15,
+  SolicitudCu15,
+  ElegibilidadCu15,
 } from '../models/devolucion.model';
 
 /**
@@ -37,6 +40,33 @@ import {
 export class DevolucionService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+
+  /** CU15 SaaS: no reutiliza los endpoints CU25 ni su token personal. */
+  solicitarCu15(payload: SolicitudCu15): Observable<NotaCu15> {
+    return this.http.post<NotaCu15>(`${this.apiUrl}/tenant/devoluciones`, payload);
+  }
+
+  consultarElegibilidadCu15(ventaId: number): Observable<ElegibilidadCu15> {
+    return this.http.get<ElegibilidadCu15>(`${this.apiUrl}/tenant/devoluciones/venta/${ventaId}/lineas`);
+  }
+
+  obtenerNotaCu15(operacionId: number): Observable<NotaCu15> {
+    return this.http.get<NotaCu15>(`${this.apiUrl}/tenant/devoluciones/${operacionId}/nota`);
+  }
+
+  notaCu15PdfUrl(operacionId: number): string {
+    return `${this.apiUrl}/tenant/devoluciones/${operacionId}/nota.pdf`;
+  }
+
+  inspeccionarCu15(operacionId: number, condicion: 'APTO' | 'NO_APTO' | 'CUARENTENA', restockAutorizado: boolean): Observable<NotaCu15> {
+    return this.http.post<NotaCu15>(`${this.apiUrl}/tenant/devoluciones/${operacionId}/inspeccionar`, {
+      condicion, restock_autorizado: restockAutorizado,
+    });
+  }
+
+  confirmarDiferenciaCu15(operacionId: number, comprobante: string, medio: string): Observable<Record<string, unknown>> {
+    return this.http.post<Record<string, unknown>>(`${this.apiUrl}/tenant/devoluciones/${operacionId}/diferencia/confirmar`, { comprobante, medio });
+  }
 
   /** GET /devoluciones (paginado, orden del backend: más reciente primero). */
   listarDevoluciones(

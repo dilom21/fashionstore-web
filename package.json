@@ -5,6 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:saas": "ng build --configuration saas-local",
+    "start:saas": "ng serve --configuration saas-local",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:fashionstore-web": "node dist/fashionstore-web/server/server.mjs"

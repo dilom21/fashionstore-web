@@ -29,7 +29,7 @@ import {
 } from '../models/reportes-common.model';
 import { ReporteVentasResponse } from '../models/ventas-reporte.model';
 
-/** Archivo descargable devuelto por `GET /reportes/exportar/{tipo}`. */
+/** Archivo descargable devuelto por `GET /tenant/reportes/exportar/{tipo}`. */
 export interface ReporteExportado {
   blob: Blob;
   nombre: string;
@@ -74,12 +74,14 @@ export class ReportesService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
 
-  /** GET /reportes/dashboard. */
+  private readonly reportesUrl = `${this.apiUrl}/tenant/reportes`;
+
+  /** GET /tenant/reportes/dashboard. */
   consultarDashboard(
     filtros: ReportesFiltros = {},
   ): Observable<DashboardResponse> {
     return this.http
-      .get<DashboardResponse>(`${this.apiUrl}/reportes/dashboard`, {
+      .get<DashboardResponse>(`${this.reportesUrl}/dashboard`, {
         params: this.params(filtros, true),
       })
       .pipe(
@@ -148,7 +150,7 @@ export class ReportesService {
     filtros: ReportesFiltros = {},
   ): Observable<ReporteVentasResponse> {
     return this.http
-      .get<ReporteVentasResponse>(`${this.apiUrl}/reportes/ventas`, {
+      .get<ReporteVentasResponse>(`${this.reportesUrl}/ventas`, {
         params: this.params(filtros, true),
       })
       .pipe(
@@ -188,7 +190,7 @@ export class ReportesService {
     filtros: ReportesFiltros = {},
   ): Observable<ReporteProductosResponse> {
     return this.http
-      .get<ReporteProductosResponse>(`${this.apiUrl}/reportes/productos`, {
+      .get<ReporteProductosResponse>(`${this.reportesUrl}/productos`, {
         params: this.params(filtros, true),
       })
       .pipe(
@@ -220,7 +222,7 @@ export class ReportesService {
     filtros: ReportesFiltros = {},
   ): Observable<ReporteInventarioResponse> {
     return this.http
-      .get<ReporteInventarioResponse>(`${this.apiUrl}/reportes/inventario`, {
+      .get<ReporteInventarioResponse>(`${this.reportesUrl}/inventario`, {
         params: this.params(filtros, false),
       })
       .pipe(
@@ -253,7 +255,7 @@ export class ReportesService {
     filtros: ReportesFiltros = {},
   ): Observable<ReporteReservasResponse> {
     return this.http
-      .get<ReporteReservasResponse>(`${this.apiUrl}/reportes/reservas`, {
+      .get<ReporteReservasResponse>(`${this.reportesUrl}/reservas`, {
         params: this.params(filtros, true),
       })
       .pipe(
@@ -285,7 +287,7 @@ export class ReportesService {
   ): Observable<ReporteDevolucionesResponse> {
     return this.http
       .get<ReporteDevolucionesResponse>(
-        `${this.apiUrl}/reportes/devoluciones`,
+        `${this.reportesUrl}/devoluciones`,
         { params: this.params(filtros, true) },
       )
       .pipe(
@@ -323,7 +325,7 @@ export class ReportesService {
     filtros: ReportesFiltros = {},
   ): Observable<ReportePagosResponse> {
     return this.http
-      .get<ReportePagosResponse>(`${this.apiUrl}/reportes/pagos`, {
+      .get<ReportePagosResponse>(`${this.reportesUrl}/pagos`, {
         params: this.params(filtros, true),
       })
       .pipe(
@@ -357,7 +359,7 @@ export class ReportesService {
   ): Observable<ReporteComprasResponse> {
     return this.http
       .get<ReporteComprasResponse>(
-        `${this.apiUrl}/reportes/compras-proveedores`,
+        `${this.reportesUrl}/compras-proveedores`,
         { params: this.params(filtros, false) },
       )
       .pipe(
@@ -395,7 +397,7 @@ export class ReportesService {
   ): Observable<ReporteClientesCarritosResponse> {
     return this.http
       .get<ReporteClientesCarritosResponse>(
-        `${this.apiUrl}/reportes/clientes-carritos`,
+        `${this.reportesUrl}/clientes-carritos`,
         { params: this.params(filtros, false) },
       )
       .pipe(
@@ -427,7 +429,7 @@ export class ReportesService {
     filtros: ReportesFiltros = {},
   ): Observable<ReporteAuditoriaResponse> {
     return this.http
-      .get<ReporteAuditoriaResponse>(`${this.apiUrl}/reportes/auditoria`, {
+      .get<ReporteAuditoriaResponse>(`${this.reportesUrl}/auditoria`, {
         params: this.params(filtros, false),
       })
       .pipe(
@@ -462,7 +464,7 @@ export class ReportesService {
       .delete('tamano_pagina');
 
     return this.http
-      .get(`${this.apiUrl}/reportes/exportar/${tipo}`, {
+      .get(`${this.reportesUrl}/exportar/${tipo}`, {
         params,
         observe: 'response',
         responseType: 'blob',

@@ -24,6 +24,7 @@ const RUTAS_LOGIN_SIN_TOKEN = new Set([
  * un usuario de personal antiguo.
  */
 const PREFIJOS_API_SAAS = ['/auth/tenant', '/tenant'];
+const TOKEN_TENANT = 'fashionstore_saas_tenant_access_token';
 
 /** true si la ruta de la API pertenece al contexto empresarial (SaaS). */
 function esRutaSaas(ruta: string): boolean {
@@ -67,6 +68,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Contexto empresarial (SaaS): solo el JWT tenant. Nunca el legacy.
   if (esRutaSaas(ruta)) {
+    // Los servicios del dashboard original usan HttpClient directamente. Les
+    // damos el JWT empresarial sin mezclarlo con el token legacy; el backend
+    // sigue siendo la autoridad final para rol, empresa y permiso.
+    if (!req.headers.has('Authorization')) {
+      const token =
+        typeof sessionStorage !== 'undefined'
+          ? sessionStorage.getItem(TOKEN_TENANT)
+          : null;
+      if (token) {
+        return next(
+          req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }),
+        );
+      }
+    }
     return next(req);
   }
 

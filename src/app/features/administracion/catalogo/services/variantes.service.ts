@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -37,9 +37,9 @@ export class VariantesService {
       params = params.set('estado', String(filtros.estado));
     }
     return this.http.get<Variante[]>(
-      `${this.apiUrl}/productos/${productoId}/variantes`,
+      `${this.apiUrl}/tenant/catalogo/productos/${productoId}/variantes`,
       { params },
-    );
+    ).pipe(map((variantes) => variantes.map((v) => this.normalizar(v))));
   }
 
   /** POST /productos/{producto_id}/variantes. */
@@ -48,9 +48,9 @@ export class VariantesService {
     payload: VarianteCreatePayload,
   ): Observable<Variante> {
     return this.http.post<Variante>(
-      `${this.apiUrl}/productos/${productoId}/variantes`,
+      `${this.apiUrl}/tenant/catalogo/productos/${productoId}/variantes`,
       payload,
-    );
+    ).pipe(map((v) => this.normalizar(v)));
   }
 
   /** PATCH /variantes/{variante_id} (solo campos modificados). */
@@ -59,9 +59,9 @@ export class VariantesService {
     payload: VarianteUpdatePayload,
   ): Observable<Variante> {
     return this.http.patch<Variante>(
-      `${this.apiUrl}/variantes/${varianteId}`,
+      `${this.apiUrl}/tenant/catalogo/variantes/${varianteId}`,
       payload,
-    );
+    ).pipe(map((v) => this.normalizar(v)));
   }
 
   /** PATCH /variantes/{variante_id}/estado. */
@@ -71,8 +71,13 @@ export class VariantesService {
   ): Observable<Variante> {
     const payload: VarianteEstadoPayload = { estado };
     return this.http.patch<Variante>(
-      `${this.apiUrl}/variantes/${varianteId}/estado`,
+      `${this.apiUrl}/tenant/catalogo/variantes/${varianteId}/estado`,
       payload,
-    );
+    ).pipe(map((v) => this.normalizar(v)));
+  }
+
+  private normalizar(variante: Variante): Variante {
+    // Los IDs llegan del backend; nunca se deducen desde talla/color.
+    return variante;
   }
 }

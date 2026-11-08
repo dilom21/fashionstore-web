@@ -9,6 +9,8 @@
  */
 export const environment = {
   apiUrl: 'http://127.0.0.1:8000',
+  saasMode: false,
+  saasNombreEntorno: 'legacy',
   //apiUrl: 'https://fashionstore-api-qv8n.onrender.com/',
   /**
    * Identificador público (slug) de la EMPRESA que representa esta tienda.

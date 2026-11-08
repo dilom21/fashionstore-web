@@ -22,6 +22,7 @@ export type DecisionAcceso = boolean | UrlTree | Observable<boolean | UrlTree>;
 export const RUTAS_PANEL_ENCARGADO_SAAS: ReadonlySet<string> = new Set([
   '/admin/inventario/consultar',
   '/admin/inventario/movimientos',
+  '/admin/reportes',
 ]);
 
 /**

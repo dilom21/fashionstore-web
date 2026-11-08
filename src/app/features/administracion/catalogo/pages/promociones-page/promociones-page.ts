@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+﻿import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
@@ -31,7 +31,7 @@ type FiltroEstado = 'todos' | 'activos' | 'inactivos';
 /** Valores posibles del filtro de tipo de descuento. */
 type FiltroTipo = 'todos' | TipoDescuento;
 
-/** Confirmación de habilitar/deshabilitar una promoción. */
+/** Confirmaci├│n de habilitar/deshabilitar una promoci├│n. */
 interface ConfirmacionPromocion {
   promocion: Promocion;
   habilitar: boolean;
@@ -40,14 +40,14 @@ interface ConfirmacionPromocion {
 /**
  * Gestionar promociones (CU10) - /admin/catalogo/promociones.
  *
- * CRUD lógico de promociones con búsqueda y filtros de estado y tipo de
- * descuento. La vigencia (Próxima/Vigente/Vencida/Deshabilitada) es un cálculo
+ * CRUD l├│gico de promociones con b├║squeda y filtros de estado y tipo de
+ * descuento. La vigencia (Pr├│xima/Vigente/Vencida/Deshabilitada) es un c├ílculo
  * exclusivamente visual: nunca modifica el estado en el backend.
  *
- * La asociación de productos se realiza en un diálogo con un único
+ * La asociaci├│n de productos se realiza en un di├ílogo con un ├║nico
  * PUT /promociones/{id}/productos.
  *
- * No existe DELETE físico: el estado se cambia con PATCH /promociones/{id}/estado.
+ * No existe DELETE f├¡sico: el estado se cambia con PATCH /promociones/{id}/estado.
  * Los errores 400/404/409/422 muestran el `detail` real del backend.
  */
 @Component({
@@ -75,7 +75,7 @@ export class PromocionesPage {
   readonly procesandoEstado = signal(false);
   readonly cargandoDetalle = signal(false);
 
-  /** Total de productos asociados por promoción (desde el endpoint /productos). */
+  /** Total de productos asociados por promoci├│n (desde el endpoint /productos). */
   readonly totalesProductos = signal<ReadonlyMap<number, number>>(new Map());
 
   readonly filtros = new FormGroup({
@@ -87,7 +87,7 @@ export class PromocionesPage {
     tipoDescuento: new FormControl<FiltroTipo>('todos', { nonNullable: true }),
   });
 
-  // ===== Diálogos =====
+  // ===== Di├ílogos =====
   readonly dialogoFormAbierto = signal(false);
   readonly promocionEnForm = signal<Promocion | null>(null);
   readonly detallePromocion = signal<Promocion | null>(null);
@@ -159,7 +159,7 @@ export class PromocionesPage {
   /**
    * El listado GET /promociones no incluye el total de productos; se obtiene de
    * GET /promociones/{id}/productos en paralelo. Si un detalle falla, la
-   * promoción queda sin total (se muestra "—").
+   * promoci├│n queda sin total (se muestra "ÔÇö").
    */
   private cargarTotalesProductos(promociones: Promocion[]): void {
     if (promociones.length === 0) {
@@ -195,10 +195,10 @@ export class PromocionesPage {
     if (this.tieneFiltros()) {
       return 'No hay promociones que coincidan con los filtros aplicados.';
     }
-    return 'Todavía no hay promociones registradas.';
+    return 'Todav├¡a no hay promociones registradas.';
   }
 
-  // ===== Presentación =====
+  // ===== Presentaci├│n =====
 
   vigenciaDe(promocion: Promocion): VigenciaPromocion {
     return calcularVigencia(promocion);
@@ -223,7 +223,7 @@ export class PromocionesPage {
     return formatearFechaHora(valor);
   }
 
-  // ===== Alta y edición =====
+  // ===== Alta y edici├│n =====
 
   abrirNueva(): void {
     this.promocionEnForm.set(null);
@@ -245,8 +245,8 @@ export class PromocionesPage {
     this.cerrarForm();
     this.exito.set(
       editando === null
-        ? `Promoción "${promocion.nombre}" creada correctamente.`
-        : `Promoción "${promocion.nombre}" actualizada correctamente.`,
+        ? `Promoci├│n "${promocion.nombre}" creada correctamente.`
+        : `Promoci├│n "${promocion.nombre}" actualizada correctamente.`,
     );
     this.cargarPromociones();
   }
@@ -296,7 +296,7 @@ export class PromocionesPage {
       return siguiente;
     });
     this.exito.set(
-      `Promoción "${promocion.nombre}": ${total} producto(s) asociado(s).`,
+      `Promoci├│n "${promocion.nombre}": ${total} producto(s) asociado(s).`,
     );
   }
 
@@ -332,7 +332,7 @@ export class PromocionesPage {
         next: (actualizada) => {
           this.procesandoEstado.set(false);
           this.exito.set(
-            `Se ${habilitar ? 'habilitó' : 'deshabilitó'} la promoción "${actualizada.nombre}".`,
+            `Se ${habilitar ? 'habilit├│' : 'deshabilit├│'} la promoci├│n "${actualizada.nombre}".`,
           );
           this.cargarPromociones();
         },

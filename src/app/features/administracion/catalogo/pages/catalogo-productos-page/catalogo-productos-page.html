@@ -400,7 +400,7 @@
           <h2 class="cat__panel-title">Tallas</h2>
           <p class="cat__panel-sub">Tallas disponibles para las variantes.</p>
         </div>
-        <button type="button" class="cat__btn-new" (click)="abrirNuevaTalla()">
+         <button type="button" class="cat__btn-new" disabled title="Las tallas son un diccionario global de solo lectura en CU06">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
@@ -484,15 +484,14 @@
                     </td>
                     <td data-label="Acciones" class="cat__acciones-cell">
                       <div class="cat__actions">
-                        <button type="button" class="cat__action cat__action--edit" (click)="abrirEditarTalla(talla)">
+                        <button type="button" class="cat__action cat__action--edit" disabled>
                           Editar
                         </button>
                         @if (talla.estado) {
                           <button
                             type="button"
                             class="cat__action cat__action--off"
-                            [disabled]="procesandoEstadoTalla()"
-                            (click)="solicitarCambioEstadoTalla(talla)"
+                            disabled
                           >
                             Deshabilitar
                           </button>
@@ -500,8 +499,7 @@
                           <button
                             type="button"
                             class="cat__action cat__action--on"
-                            [disabled]="procesandoEstadoTalla()"
-                            (click)="solicitarCambioEstadoTalla(talla)"
+                            disabled
                           >
                             Habilitar
                           </button>
@@ -524,7 +522,7 @@
           <h2 class="cat__panel-title">Colores</h2>
           <p class="cat__panel-sub">Colores disponibles para variantes y recursos.</p>
         </div>
-        <button type="button" class="cat__btn-new" (click)="abrirNuevoColor()">
+        <button type="button" class="cat__btn-new" disabled title="Los colores son un diccionario global de solo lectura en CU06">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M12 5v14M5 12h14"></path>
           </svg>
@@ -608,15 +606,14 @@
                     </td>
                     <td data-label="Acciones" class="cat__acciones-cell">
                       <div class="cat__actions">
-                        <button type="button" class="cat__action cat__action--edit" (click)="abrirEditarColor(color)">
+                        <button type="button" class="cat__action cat__action--edit" disabled>
                           Editar
                         </button>
                         @if (color.estado) {
                           <button
                             type="button"
                             class="cat__action cat__action--off"
-                            [disabled]="procesandoEstadoColor()"
-                            (click)="solicitarCambioEstadoColor(color)"
+                            disabled
                           >
                             Deshabilitar
                           </button>
@@ -624,8 +621,7 @@
                           <button
                             type="button"
                             class="cat__action cat__action--on"
-                            [disabled]="procesandoEstadoColor()"
-                            (click)="solicitarCambioEstadoColor(color)"
+                            disabled
                           >
                             Habilitar
                           </button>

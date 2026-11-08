@@ -1,7 +1,7 @@
-<div class="pr">
+﻿<div class="pr">
   <header class="pr__head">
     <div>
-      <span class="pr__eyebrow">Catálogo · Promociones</span>
+      <span class="pr__eyebrow">Cat├ílogo ┬À Promociones</span>
       <h1 class="pr__title">Gestionar promociones</h1>
       <p class="pr__subtitle">
         Administra las promociones de la marca, su tipo y valor de descuento, su
@@ -13,13 +13,13 @@
   <div class="pr__panel-head">
     <div>
       <h2 class="pr__panel-title">Promociones</h2>
-      <p class="pr__panel-sub">Promociones según los filtros aplicados.</p>
+      <p class="pr__panel-sub">Promociones seg├║n los filtros aplicados.</p>
     </div>
     <button type="button" class="pr__btn-new" (click)="abrirNueva()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M12 5v14M5 12h14"></path>
       </svg>
-      Nueva promoción
+      Nueva promoci├│n
     </button>
   </div>
 
@@ -34,7 +34,7 @@
       <input
         type="search"
         formControlName="buscar"
-        placeholder="Buscar por nombre…"
+        placeholder="Buscar por nombreÔÇª"
         aria-label="Buscar promociones"
       />
       <button type="submit" class="pr__search-btn" aria-label="Buscar">
@@ -91,7 +91,7 @@
     @if (cargando()) {
       <div class="pr__loading" role="status">
         <span class="pr__spinner" aria-hidden="true"></span>
-        <span>Cargando promociones…</span>
+        <span>Cargando promocionesÔÇª</span>
       </div>
     } @else if (promociones().length === 0) {
       <div class="pr__empty">
@@ -141,7 +141,7 @@
                   }
                 </td>
                 <td data-label="Productos asociados" class="pr__conteo">
-                  {{ contarProductos(promocion.id) ?? '—' }}
+                  {{ contarProductos(promocion.id) ?? 'ÔÇö' }}
                 </td>
                 <td data-label="Acciones" class="pr__acciones-cell">
                   <div class="pr__actions">
@@ -196,7 +196,7 @@
           </tbody>
         </table>
       </div>
-      <p class="pr__count">{{ promociones().length }} promoción(es)</p>
+      <p class="pr__count">{{ promociones().length }} promoci├│n(es)</p>
     }
   </section>
 </div>
@@ -226,11 +226,11 @@
 
 @if (confirmacion(); as pendiente) {
   <app-confirm-dialog
-    [titulo]="pendiente.habilitar ? 'Habilitar promoción' : 'Deshabilitar promoción'"
+    [titulo]="pendiente.habilitar ? 'Habilitar promoci├│n' : 'Deshabilitar promoci├│n'"
     [mensaje]="
       pendiente.habilitar
-        ? '¿Deseas habilitar la promoción ' + pendiente.promocion.nombre + '?'
-        : '¿Deseas deshabilitar la promoción ' + pendiente.promocion.nombre + '? Se conservarán sus productos asociados.'
+        ? '┬┐Deseas habilitar la promoci├│n ' + pendiente.promocion.nombre + '?'
+        : '┬┐Deseas deshabilitar la promoci├│n ' + pendiente.promocion.nombre + '? Se conservar├ín sus productos asociados.'
     "
     [confirmarLabel]="pendiente.habilitar ? 'Habilitar' : 'Deshabilitar'"
     [peligro]="!pendiente.habilitar"

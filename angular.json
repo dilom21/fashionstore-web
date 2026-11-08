@@ -57,6 +57,18 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "saas-local": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.saas-local.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "outputPath": "dist/fashionstore-web-saas-local"
             }
           },
           "defaultConfiguration": "production"
@@ -69,6 +81,13 @@
             },
             "development": {
               "buildTarget": "fashionstore-web:build:development"
+            },
+            "saas-local": {
+              "buildTarget": "fashionstore-web:build:saas-local",
+              "allowedHosts": [
+                "localhost",
+                "127.0.0.1"
+              ]
             }
           },
           "defaultConfiguration": "development"

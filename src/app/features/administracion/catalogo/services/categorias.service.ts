@@ -1,6 +1,6 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../../../environments/environment';
 import {
@@ -46,31 +46,25 @@ export class CategoriasService {
   listarCategoriasAdmin(
     filtros: CategoriaListarFiltros = {},
   ): Observable<Categoria[]> {
-    let params = new HttpParams();
-
-    const buscar = filtros.buscar?.trim();
-    if (buscar) {
-      params = params.set('buscar', buscar);
-    }
-    if (filtros.estado !== undefined && filtros.estado !== null) {
-      params = params.set('estado', String(filtros.estado));
-    }
-
-    return this.http.get<Categoria[]>(`${this.apiUrl}/categorias/admin`, {
-      params,
-    });
+    return this.http.get<Categoria[]>(`${this.apiUrl}/tenant/catalogo/categorias`).pipe(
+      map((categorias) => categorias.filter((categoria) => {
+        const texto = filtros.buscar?.trim().toLocaleLowerCase();
+        return (!texto || categoria.nombre.toLocaleLowerCase().includes(texto)) &&
+          (filtros.estado === undefined || categoria.estado === filtros.estado);
+      })),
+    );
   }
 
   /** GET /categorias/admin/{categoria_id}. */
   obtenerCategoriaAdmin(categoriaId: number): Observable<Categoria> {
     return this.http.get<Categoria>(
-      `${this.apiUrl}/categorias/admin/${categoriaId}`,
+      `${this.apiUrl}/tenant/catalogo/categorias/${categoriaId}`,
     );
   }
 
   /** POST /categorias. */
   crearCategoria(payload: CategoriaCreatePayload): Observable<Categoria> {
-    return this.http.post<Categoria>(`${this.apiUrl}/categorias`, payload);
+    return this.http.post<Categoria>(`${this.apiUrl}/tenant/catalogo/categorias`, payload);
   }
 
   /** PATCH /categorias/{categoria_id} (solo campos modificados). */
@@ -79,7 +73,7 @@ export class CategoriasService {
     payload: CategoriaUpdatePayload,
   ): Observable<Categoria> {
     return this.http.patch<Categoria>(
-      `${this.apiUrl}/categorias/${categoriaId}`,
+      `${this.apiUrl}/tenant/catalogo/categorias/${categoriaId}`,
       payload,
     );
   }
@@ -91,7 +85,7 @@ export class CategoriasService {
   ): Observable<Categoria> {
     const payload: CategoriaEstadoPayload = { estado };
     return this.http.patch<Categoria>(
-      `${this.apiUrl}/categorias/${categoriaId}/estado`,
+      `${this.apiUrl}/tenant/catalogo/categorias/${categoriaId}/estado`,
       payload,
     );
   }
