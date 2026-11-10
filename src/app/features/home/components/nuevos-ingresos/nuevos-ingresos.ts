@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { Producto } from '../../../administracion/catalogo/models/producto.model';
+import { ProductoPublico } from '../../../catalogo/models/catalogo-publico.model';
 import { CatalogoPublicoStore } from '../../../catalogo/services/catalogo-publico.store';
 import { ProductCard } from '../../../../shared/components/product-card/product-card';
 
@@ -21,9 +21,9 @@ const MAX_NUEVOS = 6;
  * "Nuevos ingresos": carrusel horizontal con estética propia.
  *
  * Reutiliza la misma carga de catálogo público que `ProductosDestacados`
- * (una sola llamada GET /productos gracias a `CatalogoPublicoStore`). Es una
- * selección visual de presentación: la base de datos no tiene un flag `nuevo`,
- * por lo que se muestran los últimos productos del listado.
+ * (una sola llamada al listado público gracias a `CatalogoPublicoStore`). Es
+ * una selección visual de presentación: la base de datos no tiene un flag
+ * `nuevo`, por lo que se muestran los últimos productos del listado.
  */
 @Component({
   selector: 'app-nuevos-ingresos',
@@ -36,12 +36,12 @@ export class NuevosIngresos {
   private readonly catalogo = inject(CatalogoPublicoStore);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly productos = signal<Producto[]>([]);
+  readonly productos = signal<ProductoPublico[]>([]);
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
 
   /** Punto de integración CU15: reemite el producto elegido. */
-  readonly agregar = output<Producto>();
+  readonly agregar = output<ProductoPublico>();
 
   readonly track = viewChild<ElementRef<HTMLElement>>('track');
 
@@ -53,7 +53,7 @@ export class NuevosIngresos {
     this.cargar();
   }
 
-  onAgregar(producto: Producto): void {
+  onAgregar(producto: ProductoPublico): void {
     this.agregar.emit(producto);
   }
 

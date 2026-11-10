@@ -159,17 +159,32 @@ describe('CU17 - navegación, menú y roles (/admin/reservas)', () => {
     const fixture = TestBed.createComponent(AdministracionShell);
     const items = fixture.componentInstance.navItems();
 
-    // Dos grupos operativos: Reservas (CU18) y Ventas y Pagos (CU20).
-    expect(items.map((item) => item.id)).toEqual(['reservas', 'ventas']);
+    // Los grupos operativos incluyen preparación/consulta PWA y CU20 offline,
+    // pero no abren módulos administrativos del inventario al CAJERO.
+    expect(items.map((item) => item.id)).toEqual([
+      'inventario',
+      'reservas',
+      'ventas',
+    ]);
     expect(items[0].children?.map((hijo) => hijo.label)).toEqual([
-      'Atender reservas',
+      'Preparar datos offline',
+      'Catálogo offline',
     ]);
     expect(items[1].children?.map((hijo) => hijo.label)).toEqual([
+      'Atender reservas',
+    ]);
+    expect(items[2].children?.map((hijo) => hijo.label)).toEqual([
       'Registrar venta presencial',
+      'Venta de contado offline',
+      'Operaciones offline pendientes',
     ]);
     expect(rutasDeMenu(items)).toEqual([
+      '/offline/preparar',
+      '/offline/catalogo',
       '/personal/reservas/atencion',
       '/personal/ventas/presencial',
+      '/offline/ventas/nueva',
+      '/offline/operaciones',
     ]);
     expect(rutasDeMenu(items)).not.toContain('/admin/ventas');
   });

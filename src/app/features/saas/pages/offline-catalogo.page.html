@@ -1,7 +1,12 @@
-<main class="saas-layout"><section class="saas-panel offline-catalogo">
-  <header class="saas-brandbar"><strong>FashionStore · Copia local</strong><a routerLink="/saas/offline" class="saas-back">Preparar/actualizar</a></header>
-  <header class="saas-head"><div><p class="saas-eyebrow">CU18 · consulta sin conexión</p><h1>Catálogo descargado</h1><p>Lectura local de IndexedDB. No se realizan solicitudes HTTP ni reservas, ventas o pagos.</p></div></header>
-  <div class="offline-warning" role="status">Copia local: descargada {{ fecha() }} · <strong>existencias no confirmadas y potencialmente desactualizadas</strong>.</div>
-  <div class="offline-tools"><label>Buscar <input type="search" (input)="actualizarTexto($event)" placeholder="Nombre, descripción o categoría"></label><label><input type="checkbox" (change)="actualizarStock($event)"> Solo con stock conocido</label></div>
-  @if (cargando()) { <p role="status">Leyendo la copia local…</p> } @else if (error()) { <p class="saas-error" role="alert">{{ error() }}</p> } @else { <p class="saas-muted">{{ items().length }} producto(s) · Snapshot {{ snapshot()?.version_datos }}</p><section class="offline-grid">@for (item of items(); track item.id) { <article class="offline-card"><h2>{{ item.nombre }}</h2><p>{{ item.categoria_nombre || 'Categoría no disponible en esta descarga' }}</p><p>{{ item.descripcion || 'Descripción no disponible en esta descarga.' }}</p><strong>Bs {{ item.precio }}</strong><p>{{ item.varianteCount }} variante(s) · {{ item.stockConocido === null ? 'Stock no disponible en esta descarga' : item.stockConocido + ' unidades conocidas' }}</p><a [routerLink]="['/saas/catalogo-offline', item.id]">Ver detalle offline</a></article> }</section> }
+<main class="off"><section class="off__panel">
+  <header class="off__head"><div><p class="off__muted">CU18 · Sin solicitudes HTTP</p><h1>Catálogo offline</h1></div><a class="off__button off__button--secondary" routerLink="/offline/preparar">Preparar datos</a></header>
+  <div class="off__row"><label class="off__field"><span>Buscar en la copia local</span><input type="search" [value]="buscar()" (input)="buscar.set($any($event.target).value)" (keyup.enter)="cargar()" /></label><button class="off__button" type="button" (click)="cargar()">Buscar</button></div>
+  @if (cargando()) { <p>Consultando IndexedDB…</p> }
+  @if (error()) { <p class="off__error" role="alert">{{ error() }}</p> }
+  @if (data(); as catalogo) {
+    @if (!catalogo.snapshot) { <p class="off__notice">No existe una instantánea para esta empresa y usuario.</p> }
+    @else { <p class="off__muted">Copia de {{ catalogo.snapshot.generado_en }}. Stock conocido solo como referencia.</p> }
+    <div class="off__grid">@for (producto of catalogo.productos; track producto.id) { <article class="off__card"><h2>{{ producto.nombre }}</h2><p>{{ producto.categoria_nombre }} · {{ producto.variantes }} variantes</p><p>Precio referencial: {{ producto.precio }}</p><p>Stock conocido: {{ producto.stockConocido === null ? 'No disponible' : producto.stockConocido }}</p><a class="off__button" [routerLink]="['/offline/catalogo', producto.producto_id]">Ver detalle local</a></article> } @empty { <p>No hay productos en la copia local.</p> }</div>
+  }
+  <nav class="off__nav">@if (api.contexto() === 'cliente' && api.rol() === 'CLIENTE') { <a class="off__button off__button--secondary" routerLink="/offline/reservas/nueva">Solicitud de reserva offline</a> } @if (api.contexto() === 'personal' && (api.esCajero() || api.esAdministrador())) { <a class="off__button off__button--secondary" routerLink="/offline/ventas/nueva">Venta de contado offline</a> }<a class="off__button off__button--secondary" routerLink="/offline/operaciones">Pendientes</a></nav>
 </section></main>

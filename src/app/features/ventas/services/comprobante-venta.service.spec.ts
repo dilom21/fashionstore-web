@@ -6,8 +6,13 @@ import {
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../../environments/environment';
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { ComprobanteVenta } from '../models/comprobante-venta.model';
-import { ComprobanteVentaService } from './comprobante-venta.service';
+import {
+  ComprobanteVentaService,
+  construirRutaComprobante,
+  construirRutaComprobanteCliente,
+} from './comprobante-venta.service';
 
 const API = environment.apiUrl.replace(/\/+$/, '');
 const URL = `${API}/ventas/535/comprobante`;
@@ -72,7 +77,11 @@ describe('ComprobanteVentaService (CU23)', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: SAAS_MODE, useValue: false },
+      ],
     });
     service = TestBed.inject(ComprobanteVentaService);
     http = TestBed.inject(HttpTestingController);
@@ -162,5 +171,113 @@ describe('ComprobanteVentaService (CU23)', () => {
       expect(mensaje).toContain('no es válido');
     }
     http.expectNone(URL);
+  });
+});
+
+describe('ComprobanteVentaService (SaaS, saasMode=true)', () => {
+  let service: ComprobanteVentaService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: SAAS_MODE, useValue: true },
+      ],
+    });
+    service = TestBed.inject(ComprobanteVentaService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('obtenerComprobante usa GET /tenant/ventas/{id}/comprobante', () => {
+    let respuesta: ComprobanteVenta | undefined;
+    service.obtenerComprobante(689).subscribe((valor) => (respuesta = valor));
+
+    const peticion = http.expectOne(
+      `${API}/tenant/ventas/689/comprobante`,
+    );
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush({ ...RESPUESTA_CRUDA, venta_id: 689 });
+
+    expect(respuesta?.venta_id).toBe(689);
+    expect(respuesta?.estado_venta).toBe('COMPLETADA');
+    expect(respuesta?.total).toBe(149.9);
+  });
+
+  it('en SaaS nunca consulta la ruta legacy', () => {
+    service.obtenerComprobante(689).subscribe();
+    http
+      .expectOne(`${API}/tenant/ventas/689/comprobante`)
+      .flush({ ...RESPUESTA_CRUDA, venta_id: 689 });
+
+    http.expectNone(`${API}/ventas/689/comprobante`);
+  });
+
+  it('obtenerComprobanteCliente usa GET /tenant/ventas/historial/{id}/comprobante', () => {
+    let respuesta: ComprobanteVenta | undefined;
+    service.obtenerComprobanteCliente(689).subscribe((v) => (respuesta = v));
+
+    const peticion = http.expectOne(
+      `${API}/tenant/ventas/historial/689/comprobante`,
+    );
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush({ ...RESPUESTA_CRUDA, venta_id: 689 });
+
+    expect(respuesta?.venta_id).toBe(689);
+    expect(respuesta?.estado_venta).toBe('COMPLETADA');
+  });
+
+  it('el comprobante del cliente no usa la ruta de personal ni la legacy', () => {
+    service.obtenerComprobanteCliente(689).subscribe();
+    http
+      .expectOne(`${API}/tenant/ventas/historial/689/comprobante`)
+      .flush({ ...RESPUESTA_CRUDA, venta_id: 689 });
+
+    http.expectNone(`${API}/tenant/ventas/689/comprobante`);
+    http.expectNone(`${API}/ventas/689/comprobante`);
+  });
+
+  it('los constructores de ruta respetan el contrato de cada modo', () => {
+    expect(construirRutaComprobante(API, true, 689)).toBe(
+      `${API}/tenant/ventas/689/comprobante`,
+    );
+    expect(construirRutaComprobante(API, false, 689)).toBe(
+      `${API}/ventas/689/comprobante`,
+    );
+    expect(construirRutaComprobanteCliente(API, true, 689)).toBe(
+      `${API}/tenant/ventas/historial/689/comprobante`,
+    );
+    expect(construirRutaComprobanteCliente(API, false, 689)).toBe(
+      `${API}/ventas/689/comprobante`,
+    );
+  });
+});
+
+describe('ComprobanteVentaService (cliente, legacy)', () => {
+  let service: ComprobanteVentaService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: SAAS_MODE, useValue: false },
+      ],
+    });
+    service = TestBed.inject(ComprobanteVentaService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('obtenerComprobanteCliente conserva GET /ventas/{id}/comprobante', () => {
+    service.obtenerComprobanteCliente(535).subscribe();
+    const peticion = http.expectOne(`${API}/ventas/535/comprobante`);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(RESPUESTA_CRUDA);
   });
 });

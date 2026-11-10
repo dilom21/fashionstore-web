@@ -4,6 +4,11 @@ import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 import { personalAuthGuard } from './core/guards/personal-auth.guard';
 import { personalSaasAuthGuard } from './core/guards/personal-saas-auth.guard';
 import { tenantAdminAuthGuard } from './core/guards/tenant-admin-auth.guard';
+import {
+  offlineReservaGuard,
+  offlineTenantAuthGuard,
+  offlineVentaGuard,
+} from './core/guards/offline-tenant.guard';
 
 /**
  * Rutas públicas y de autenticación:
@@ -48,6 +53,67 @@ export const routes: Routes = [
         (m) => m.TenantSesionPage,
       ),
   },
+  // ===== PWA CU17-CU20: shell cacheable y datos exclusivamente locales =====
+  {
+    path: 'offline/preparar',
+    title: 'Preparar datos offline · FashionStore',
+    canActivate: [offlineTenantAuthGuard],
+    loadComponent: () =>
+      import('./features/saas/pages/offline-preparation.page').then(
+        (m) => m.OfflinePreparationPage,
+      ),
+  },
+  {
+    path: 'offline/catalogo',
+    title: 'Catálogo offline · FashionStore',
+    canActivate: [offlineTenantAuthGuard],
+    loadComponent: () =>
+      import('./features/saas/pages/offline-catalogo.page').then(
+        (m) => m.OfflineCatalogoPage,
+      ),
+  },
+  {
+    path: 'offline/catalogo/:id',
+    title: 'Detalle offline · FashionStore',
+    canActivate: [offlineTenantAuthGuard],
+    loadComponent: () =>
+      import('./features/saas/pages/offline-catalogo-detalle.page').then(
+        (m) => m.OfflineCatalogoDetallePage,
+      ),
+  },
+  {
+    path: 'offline/reservas/nueva',
+    title: 'Reserva offline · FashionStore',
+    canActivate: [offlineReservaGuard],
+    data: { tipo: 'RESERVA' },
+    loadComponent: () =>
+      import('./features/saas/pages/offline-operacion.page').then(
+        (m) => m.OfflineOperacionPage,
+      ),
+  },
+  {
+    path: 'offline/ventas/nueva',
+    title: 'Venta de contado offline · FashionStore',
+    canActivate: [offlineVentaGuard],
+    data: { tipo: 'VENTA_CONTADO' },
+    loadComponent: () =>
+      import('./features/saas/pages/offline-operacion.page').then(
+        (m) => m.OfflineOperacionPage,
+      ),
+  },
+  {
+    path: 'offline/operaciones',
+    title: 'Operaciones offline · FashionStore',
+    canActivate: [offlineTenantAuthGuard],
+    loadComponent: () =>
+      import('./features/saas/pages/offline-operaciones.page').then(
+        (m) => m.OfflineOperacionesPage,
+      ),
+  },
+  // Alias compatibles con las rutas publicadas por Josias.
+  { path: 'saas/offline', redirectTo: 'offline/preparar', pathMatch: 'full' },
+  { path: 'saas/catalogo-offline', redirectTo: 'offline/catalogo', pathMatch: 'full' },
+  { path: 'saas/catalogo-offline/:id', redirectTo: 'offline/catalogo/:id' },
   {
     path: 'saas/offline',
     title: 'Preparación offline · FashionStore',

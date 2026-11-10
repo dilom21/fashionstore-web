@@ -1,15 +1,35 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { OfflineCatalogoItem, OfflineCatalogoReaderService } from '../offline/offline-catalogo-reader.service';
-import { OfflineSnapshot } from '../offline/offline.models';
 
-@Component({ standalone: true, imports: [RouterLink], templateUrl: './offline-catalogo.page.html', styleUrl: './saas-pages.css' })
+import {
+  OfflineCatalogoData,
+  OfflineCatalogoReaderService,
+} from '../offline/offline-catalogo-reader.service';
+import { TenantApiService } from '../services/tenant-api.service';
+
+@Component({
+  selector: 'app-offline-catalogo',
+  imports: [RouterLink],
+  templateUrl: './offline-catalogo.page.html',
+  styleUrl: './offline-pages.css',
+})
 export class OfflineCatalogoPage implements OnInit {
   private readonly reader = inject(OfflineCatalogoReaderService);
-  readonly items = signal<OfflineCatalogoItem[]>([]); readonly snapshot = signal<OfflineSnapshot | undefined>(undefined); readonly error = signal<string | null>(null); readonly buscar = signal(''); readonly conStock = signal(false); readonly cargando = signal(true);
-  async ngOnInit(): Promise<void> { await this.cargar(); }
-  async cargar(): Promise<void> { this.cargando.set(true); this.error.set(null); try { const data = await this.reader.leer({ buscar: this.buscar(), conStock: this.conStock() }); this.snapshot.set(data.snapshot); this.items.set(data.productos); if (!data.snapshot) this.error.set('No hay una descarga local autorizada. Conéctate y prepara el uso sin conexión desde CU17.'); } catch (e) { this.error.set(e instanceof Error ? e.message : 'No se pudo leer la copia local.'); } finally { this.cargando.set(false); } }
-  actualizarTexto(event: Event): void { this.buscar.set((event.target as HTMLInputElement).value); void this.cargar(); }
-  actualizarStock(event: Event): void { this.conStock.set((event.target as HTMLInputElement).checked); void this.cargar(); }
-  fecha(): string { const value = this.snapshot()?.download_completed_at; return value ? new Date(value).toLocaleString() : 'No disponible'; }
+  readonly api = inject(TenantApiService);
+  readonly data = signal<OfflineCatalogoData | null>(null);
+  readonly error = signal<string | null>(null);
+  readonly cargando = signal(true);
+  readonly buscar = signal('');
+
+  ngOnInit(): void { void this.cargar(); }
+
+  async cargar(): Promise<void> {
+    this.cargando.set(true);
+    try {
+      this.data.set(await this.reader.leer({ buscar: this.buscar() }));
+      this.error.set(null);
+    } catch (error) {
+      this.error.set(error instanceof Error ? error.message : 'No se pudo leer la copia local.');
+    } finally { this.cargando.set(false); }
+  }
 }

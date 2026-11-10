@@ -13,6 +13,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { AdminIcon } from '../../../administracion/components/admin-icon/admin-icon';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { ComprobanteVentaView } from '../../components/comprobante-venta-view/comprobante-venta-view';
 import {
   ComprobanteVenta,
@@ -48,6 +50,8 @@ export class ComprobantePersonalPage implements OnInit {
   private readonly router = inject(Router);
   private readonly comprobanteService = inject(ComprobanteVentaService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly comprobante = signal<ComprobanteVenta | null>(null);
@@ -108,9 +112,13 @@ export class ComprobantePersonalPage implements OnInit {
     void this.router.navigate(['/personal/ventas/presencial']);
   }
 
-  /** Sesión expirada: se reutiliza el mecanismo existente. */
+  /** Sesión expirada: se limpia la sesión correspondiente al modo. */
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigate(['/auth/personal/login'], {
       queryParams: { returnUrl: this.router.url },
     });

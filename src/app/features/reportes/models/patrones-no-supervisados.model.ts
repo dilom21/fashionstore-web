@@ -39,7 +39,7 @@ export interface PatronesResponse {
   procedencia_datos: 'REALES_TENANT';
   features: string[];
   observaciones: number;
-  metricas_evaluacion: { silhouette: number | null; inertia: number | null; clusters_entrenamiento: number | null };
+  metricas_evaluacion: Record<string, number | null>;
   clusters: ClusterPatrones[];
   productos: ProductoPatron[];
   advertencias: string[];

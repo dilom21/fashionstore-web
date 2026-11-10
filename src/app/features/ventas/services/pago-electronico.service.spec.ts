@@ -6,7 +6,11 @@ import {
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../../environments/environment';
-import { PagoElectronicoService } from './pago-electronico.service';
+import { SAAS_MODE } from '../../../core/config/app-mode';
+import {
+  PagoElectronicoService,
+  construirBasePagoStripe,
+} from './pago-electronico.service';
 
 const API = environment.apiUrl.replace(/\/+$/, '');
 
@@ -111,5 +115,56 @@ describe('PagoElectronicoService (CU22)', () => {
 
     expect(respuesta.pago_id).toBeNull();
     expect(respuesta.estado_pago).toBeNull();
+  });
+});
+
+describe('PagoElectronicoService (SaaS, saasMode=true)', () => {
+  let service: PagoElectronicoService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: SAAS_MODE, useValue: true },
+      ],
+    });
+    service = TestBed.inject(PagoElectronicoService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('crearIntencion usa POST /tenant/pagos/stripe/intencion con SOLO venta_id', () => {
+    service.crearIntencion(692).subscribe();
+
+    const peticion = http.expectOne(`${API}/tenant/pagos/stripe/intencion`);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body).toEqual({ venta_id: 692 });
+    peticion.flush({ ...INTENCION_CRUDA, venta_id: 692 });
+  });
+
+  it('consultarEstado usa GET /tenant/pagos/stripe/ventas/{id}/estado', () => {
+    service.consultarEstado(692).subscribe();
+
+    const peticion = http.expectOne(
+      `${API}/tenant/pagos/stripe/ventas/692/estado`,
+    );
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush({
+      venta_id: 692,
+      estado_venta: 'COMPLETADA',
+      pago_id: 339,
+      estado_pago: 'APROBADO',
+      payment_intent_id: 'pi_3TestABC',
+    });
+  });
+
+  it('construirBasePagoStripe respeta el modo', () => {
+    expect(construirBasePagoStripe(API, true)).toBe(
+      `${API}/tenant/pagos/stripe`,
+    );
+    expect(construirBasePagoStripe(API, false)).toBe(`${API}/pagos/stripe`);
   });
 });

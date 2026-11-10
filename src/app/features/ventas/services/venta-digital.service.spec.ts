@@ -6,8 +6,12 @@ import {
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../../environments/environment';
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { VentaDigitalResponse } from '../models/venta-digital.model';
-import { VentaDigitalService } from './venta-digital.service';
+import {
+  VentaDigitalService,
+  construirRutaVentaDigital,
+} from './venta-digital.service';
 
 const API = environment.apiUrl.replace(/\/+$/, '');
 
@@ -97,5 +101,46 @@ describe('VentaDigitalService (CU19)', () => {
     expect(respuesta?.items).toEqual([]);
     expect(respuesta?.sucursal_nombre).toBe('Sucursal Centro');
     expect(respuesta?.cantidad_total_unidades).toBe(2);
+  });
+});
+
+describe('VentaDigitalService (SaaS, saasMode=true)', () => {
+  let service: VentaDigitalService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: SAAS_MODE, useValue: true },
+      ],
+    });
+    service = TestBed.inject(VentaDigitalService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('realizarCompra usa POST /tenant/ventas/digital con canal WEB', () => {
+    service.realizarCompra(1333).subscribe();
+
+    const peticion = http.expectOne(`${API}/tenant/ventas/digital`);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body).toEqual({
+      carrito_id: 1333,
+      canal: 'WEB',
+    });
+    expect('cliente_id' in peticion.request.body).toBe(false);
+    peticion.flush({ ...RESPUESTA_CRUDA, venta_id: 692, carrito_id: 1333 });
+  });
+
+  it('construirRutaVentaDigital respeta el modo', () => {
+    expect(construirRutaVentaDigital(API, true)).toBe(
+      `${API}/tenant/ventas/digital`,
+    );
+    expect(construirRutaVentaDigital(API, false)).toBe(
+      `${API}/ventas/digital`,
+    );
   });
 });

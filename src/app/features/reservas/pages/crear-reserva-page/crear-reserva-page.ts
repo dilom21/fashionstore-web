@@ -9,7 +9,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { switchMap, tap } from 'rxjs';
 
+import { obtenerEmpresaSlugPublica } from '../../../../core/config/empresa-publica';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import {
@@ -18,23 +21,28 @@ import {
 } from '../../../carrito/models/carrito.model';
 import { CarritoService } from '../../../carrito/services/carrito.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import {
+  PrevalidacionReserva,
+  ReservaAtencionSeleccion,
+} from '../../models/reserva.model';
 import { ReservasService } from '../../services/reservas.service';
 import {
-  combinarFechaHoraAtencion,
   esFechaHoraFutura,
   formatearFechaSeleccion,
 } from '../../utils/reserva-fecha.util';
 import { traducirErrorReserva } from '../../utils/reserva-error.util';
 
 /**
- * Crear reserva de prendas (CU16) - /reservas/nueva/:carrito_id.
+ * Crear reserva de prendas (CU11/CU16) - /reservas/nueva/:carrito_id.
  *
  * La reserva utiliza el CARRITO COMPLETO: aquí no se eligen prendas, no se
  * cambian cantidades ni se elimina nada (para eso está CU15).
  *
- * La sucursal la determina el carrito y NO se puede cambiar. Se envía solo
- * `carrito_id`, `fecha_atencion` y `observacion`: nunca `cliente_id`,
- * `sucursal_id`, prendas ni cantidades.
+ * En modo SaaS el botón de confirmación:
+ *  1. prevalidar  (POST /tenant/reservas/prevalidar) — informativa, NO crea;
+ *  2. crear       (POST /tenant/reservas) — solo aquí se confirma la reserva.
+ * En modo legacy se conserva la creación directa del primer parcial.
  */
 @Component({
   selector: 'app-crear-reserva-page',
@@ -46,10 +54,13 @@ export class CrearReservaPage implements OnInit {
   private readonly carritoService = inject(CarritoService);
   private readonly reservasService = inject(ReservasService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly saasMode = inject(SAAS_MODE);
 
   readonly carritoId = signal<number | null>(null);
   readonly carrito = signal<CarritoDetalle | null>(null);
@@ -58,6 +69,9 @@ export class CrearReservaPage implements OnInit {
   readonly errorFecha = signal<string | null>(null);
   readonly volverAlCarrito = signal(false);
   readonly guardando = signal(false);
+  readonly prevalidando = signal(false);
+  /** Resultado informativo de la prevalidación (nunca equivale a la reserva). */
+  readonly prevalidacion = signal<PrevalidacionReserva | null>(null);
 
   /** Campos del formulario: fecha + hora concretas (sin rangos). */
   readonly fecha = signal('');
@@ -76,6 +90,20 @@ export class CrearReservaPage implements OnInit {
   );
 
   /**
+   * Coherencia tienda/sesión: no se crea una reserva con la sesión de OTRA
+   * empresa distinta a la tienda pública configurada.
+   */
+  readonly empresaIncoherente = computed(() => {
+    if (!this.saasMode || this.tenantApi.contexto() !== 'cliente') {
+      return false;
+    }
+    const catalogo = obtenerEmpresaSlugPublica();
+    const sesion =
+      this.tenantApi.identidad()?.empresa_slug?.trim().toLowerCase() ?? null;
+    return catalogo === null || sesion === null || sesion !== catalogo;
+  });
+
+  /**
    * Error de carga del carrito (solo mientras no hay carrito). Los errores del
    * POST se muestran junto al resumen sin ocultar el formulario.
    */
@@ -86,9 +114,11 @@ export class CrearReservaPage implements OnInit {
   readonly puedeConfirmar = computed(
     () =>
       this.carrito() !== null &&
+      !this.empresaIncoherente() &&
       this.fecha().length > 0 &&
       this.hora().length > 0 &&
       !this.guardando() &&
+      !this.prevalidando() &&
       !this.cargando(),
   );
 
@@ -141,9 +171,14 @@ export class CrearReservaPage implements OnInit {
     if (carritoId === null || this.carrito() === null || this.guardando()) {
       return;
     }
+    if (this.empresaIncoherente()) {
+      this.error.set(
+        'Tu sesión pertenece a otra empresa. Inicia sesión en esta tienda para reservar.',
+      );
+      return;
+    }
 
-    const fechaAtencion = combinarFechaHoraAtencion(this.fecha(), this.hora());
-    if (fechaAtencion === null) {
+    if (this.fecha().length === 0 || this.hora().length === 0) {
       this.errorFecha.set('Selecciona la fecha y la hora de atención.');
       return;
     }
@@ -155,35 +190,67 @@ export class CrearReservaPage implements OnInit {
     this.errorFecha.set(null);
     this.error.set(null);
     this.volverAlCarrito.set(false);
-    this.guardando.set(true);
+    this.prevalidacion.set(null);
 
     const observacion = this.observacion().trim();
+    const seleccion: ReservaAtencionSeleccion = {
+      carrito_id: carritoId,
+      fecha: this.fecha(),
+      hora: this.hora(),
+      observacion: observacion.length > 0 ? observacion : null,
+    };
+
+    this.guardando.set(true);
+
+    if (this.saasMode) {
+      // 1) Prevalidación informativa (NO crea). 2) Creación real.
+      this.prevalidando.set(true);
+      this.reservasService
+        .prevalidarReserva(seleccion)
+        .pipe(
+          tap((prevalidacion) => {
+            this.prevalidando.set(false);
+            this.prevalidacion.set(prevalidacion);
+          }),
+          switchMap(() => this.reservasService.crearReserva(seleccion)),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: (reserva) => this.onReservaCreada(reserva.reserva_id),
+          error: (error: unknown) => this.onErrorCreacion(error),
+        });
+      return;
+    }
+
+    // Legacy: creación directa (sin endpoint de prevalidación).
     this.reservasService
-      .crearReserva({
-        carrito_id: carritoId,
-        fecha_atencion: fechaAtencion,
-        observacion: observacion.length > 0 ? observacion : null,
-      })
+      .crearReserva(seleccion)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (reserva) => {
-          this.guardando.set(false);
-          this.toast.mostrar('Reserva creada correctamente.', 'ok');
-          // El backend ya marcó el carrito como CONVERTIDO: se refresca el badge.
-          this.carritoService.refrescarContador();
-          void this.router.navigate(['/reservas', reserva.reserva_id]);
-        },
-        error: (error: unknown) => {
-          this.guardando.set(false);
-          const traducido = traducirErrorReserva(error);
-          if (traducido.sesionExpirada) {
-            this.cerrarSesion();
-            return;
-          }
-          this.volverAlCarrito.set(traducido.volverAlCarrito);
-          this.error.set(traducido.mensaje);
-        },
+        next: (reserva) => this.onReservaCreada(reserva.reserva_id),
+        error: (error: unknown) => this.onErrorCreacion(error),
       });
+  }
+
+  private onReservaCreada(reservaId: number): void {
+    this.prevalidando.set(false);
+    this.guardando.set(false);
+    // Solo aquí (respuesta real del POST de creación) se anuncia el éxito.
+    this.toast.mostrar('Reserva creada correctamente.', 'ok');
+    this.carritoService.refrescarContador();
+    void this.router.navigate(['/reservas', reservaId]);
+  }
+
+  private onErrorCreacion(error: unknown): void {
+    this.prevalidando.set(false);
+    this.guardando.set(false);
+    const traducido = traducirErrorReserva(error);
+    if (traducido.sesionExpirada) {
+      this.cerrarSesion();
+      return;
+    }
+    this.volverAlCarrito.set(traducido.volverAlCarrito);
+    this.error.set(traducido.mensaje);
   }
 
   volverAlCarritoActual(): void {
@@ -200,11 +267,13 @@ export class CrearReservaPage implements OnInit {
   onFecha(evento: Event): void {
     this.fecha.set((evento.target as HTMLInputElement).value);
     this.errorFecha.set(null);
+    this.prevalidacion.set(null);
   }
 
   onHora(evento: Event): void {
     this.hora.set((evento.target as HTMLInputElement).value);
     this.errorFecha.set(null);
+    this.prevalidacion.set(null);
   }
 
   onObservacion(evento: Event): void {
@@ -217,7 +286,11 @@ export class CrearReservaPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     this.carritoService.limpiar();
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },

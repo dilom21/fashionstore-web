@@ -172,9 +172,17 @@ describe('AdministracionShell con sesión empresarial', () => {
   it('un CAJERO empresarial no recibe los módulos administrativos', async () => {
     await setup('CAJERO');
 
-    const ids = fixture.componentInstance.navItems().map((item) => item.id);
+    const items = fixture.componentInstance.navItems();
+    const ids = items.map((item) => item.id);
+    const rutas = items.flatMap((item) =>
+      item.children?.map((child) => child.route).filter(Boolean) ?? [],
+    );
 
-    expect(ids).toEqual(['reservas', 'ventas']);
+    expect(ids).toEqual(['inventario', 'reservas', 'ventas']);
+    expect(rutas).toContain('/offline/preparar');
+    expect(rutas).toContain('/offline/catalogo');
+    expect(rutas).toContain('/offline/ventas/nueva');
+    expect(rutas).toContain('/offline/operaciones');
     expect(enlaces()).not.toContain('/saas/empresa');
     expect(enlaces()).not.toContain('/admin/usuarios');
   });
@@ -198,19 +206,27 @@ describe('AdministracionShell con sesión empresarial', () => {
     expect(texto()).not.toContain('Sesión empresarial');
   });
 
-  it('el ENCARGADO_SUCURSAL empresarial solo ve las pantallas de CU08', async () => {
+  it('el ENCARGADO_SUCURSAL empresarial ve CU08, CU12 y CU13 adaptados', async () => {
     await setup('ENCARGADO_SUCURSAL');
 
     const items = fixture.componentInstance.navItems();
 
-    expect(items.map((item) => item.id)).toEqual(['inventario']);
+    expect(items.map((item) => item.id)).toEqual([
+      'inventario',
+      'reservas',
+      'ventas',
+    ]);
     expect(items[0].children?.map((hijo) => hijo.route)).toEqual([
       '/admin/inventario/consultar',
       '/admin/inventario/movimientos',
     ]);
+    // CU12/CU13 ya adaptados al modo empresarial.
+    const rutas = items.flatMap((item) => item.children ?? []).map((hijo) => hijo.route);
+    expect(rutas).toContain('/admin/reservas');
+    expect(rutas).toContain('/personal/reservas/atencion');
+    expect(rutas).toContain('/personal/ventas/presencial');
     expect(texto()).toContain('Inventario');
     expect(enlaces()).not.toContain('/admin/usuarios');
-    expect(enlaces()).not.toContain('/admin/reportes');
     expect(enlaces()).not.toContain('/saas/empresa');
   });
 });

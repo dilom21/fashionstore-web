@@ -12,6 +12,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import { ComprobanteVentaView } from '../../components/comprobante-venta-view/comprobante-venta-view';
 import {
@@ -48,6 +50,8 @@ export class ComprobanteClientePage implements OnInit {
   private readonly router = inject(Router);
   private readonly comprobanteService = inject(ComprobanteVentaService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly comprobante = signal<ComprobanteVenta | null>(null);
@@ -83,7 +87,7 @@ export class ComprobanteClientePage implements OnInit {
     this.error.set(null);
 
     this.comprobanteService
-      .obtenerComprobante(id)
+      .obtenerComprobanteCliente(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (comprobante) => {
@@ -110,7 +114,11 @@ export class ComprobanteClientePage implements OnInit {
 
   /** Sesión expirada: se reutiliza el mecanismo existente del sitio. */
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

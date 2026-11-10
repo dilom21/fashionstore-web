@@ -9,10 +9,16 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ToastService } from '../../../../core/services/toast.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { AdminIcon } from '../../../administracion/components/admin-icon/admin-icon';
 import { Producto } from '../../../administracion/catalogo/models/producto.model';
 import { ProductosService } from '../../../administracion/catalogo/services/productos.service';
+import {
+  InventarioItem,
+} from '../../../administracion/inventario/models/inventario.model';
+import { InventarioService } from '../../../administracion/inventario/services/inventario.service';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import { PagoPresencialDialog } from '../../components/pago-presencial-dialog/pago-presencial-dialog';
 import {
   PagoPresencialResponse,
@@ -55,10 +61,16 @@ interface LineaVenta {
 })
 export class VentaPresencialPage {
   private readonly productosService = inject(ProductosService);
+  private readonly inventarioService = inject(InventarioService);
   private readonly ventaPresencialService = inject(VentaPresencialService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+
+  /** Candidatos completos de la búsqueda SaaS (se filtran por producto). */
+  private candidatosInventario: PosVarianteDisponible[] = [];
 
   readonly termino = signal('');
   readonly buscando = signal(false);
@@ -151,6 +163,12 @@ export class VentaPresencialPage {
     this.busquedaRealizada.set(false);
     this.productoSeleccionado.set(null);
     this.candidatos.set([]);
+    this.candidatosInventario = [];
+
+    if (this.saasMode) {
+      this.buscarInventarioSaas(texto);
+      return;
+    }
 
     this.productosService
       .listarProductosPublicos({ buscar: texto })
@@ -173,10 +191,57 @@ export class VentaPresencialPage {
       });
   }
 
+  /**
+   * SaaS: la fuente autorizada es `GET /tenant/inventario` (stock real por
+   * sucursal). No se usan los endpoints públicos legacy (bloqueados).
+   */
+  private buscarInventarioSaas(texto: string): void {
+    this.inventarioService
+      .obtenerInventario({
+        producto: texto,
+        disponibilidad: 'CON_STOCK',
+        limit: 100,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (respuesta) => {
+          this.buscando.set(false);
+          this.busquedaRealizada.set(true);
+          const items = respuesta.items ?? [];
+          this.candidatosInventario = items
+            .map((item) => this.candidatoDesdeInventario(item))
+            .filter((candidato) => candidato.stock_disponible > 0);
+          this.productos.set(this.productosDesdeInventario(items));
+          this.candidatos.set([]);
+        },
+        error: () => {
+          this.buscando.set(false);
+          this.busquedaRealizada.set(true);
+          this.productos.set([]);
+          this.candidatos.set([]);
+          this.toast.mostrar(
+            'No pudimos consultar el inventario. Intenta nuevamente.',
+            'error',
+          );
+        },
+      });
+  }
+
   seleccionarProducto(producto: Producto): void {
     this.productoSeleccionado.set(producto);
-    this.cargandoVariantes.set(true);
     this.filtroVariantes.set('');
+
+    if (this.saasMode) {
+      this.cargandoVariantes.set(false);
+      this.candidatos.set(
+        this.candidatosInventario.filter(
+          (candidato) => candidato.producto_id === producto.id,
+        ),
+      );
+      return;
+    }
+
+    this.cargandoVariantes.set(true);
     this.candidatos.set([]);
 
     this.productosService
@@ -204,6 +269,49 @@ export class VentaPresencialPage {
     this.filtroVariantes.set(valor);
   }
 
+  /** Mapea una fila de inventario tenant al candidato vendible del POS. */
+  private candidatoDesdeInventario(
+    item: InventarioItem,
+  ): PosVarianteDisponible {
+    return {
+      inventario_id: item.inventario_id,
+      producto_id: item.producto_id,
+      producto_nombre: item.producto_nombre,
+      // El contrato de inventario no publica imagen: no se inventa.
+      imagen_principal: null,
+      variante_producto_id: item.variante_producto_id,
+      sku: item.sku,
+      talla_nombre: item.talla_nombre,
+      color_nombre: item.color_nombre,
+      temporada_nombre: item.temporada_nombre,
+      precio: Number(item.precio),
+      sucursal_id: item.sucursal_id,
+      sucursal_nombre: item.sucursal_nombre,
+      stock_disponible: Math.max(0, Number(item.stock_disponible) || 0),
+    };
+  }
+
+  /** Productos distintos de la búsqueda de inventario (panel de búsqueda). */
+  private productosDesdeInventario(items: InventarioItem[]): Producto[] {
+    const mapa = new Map<number, Producto>();
+    for (const item of items) {
+      if (mapa.has(item.producto_id)) {
+        continue;
+      }
+      mapa.set(item.producto_id, {
+        id: item.producto_id,
+        nombre: item.producto_nombre,
+        descripcion: null,
+        precio: Number(item.precio),
+        estado: true,
+        categoria_id: item.categoria_id,
+        categoria: { id: item.categoria_id, nombre: item.categoria_nombre },
+        imagen_principal_url: null,
+      });
+    }
+    return [...mapa.values()];
+  }
+
   /**
    * Sucursal permitida al cargar disponibilidad: la fijada por la selección o,
    * para CAJERO/ENCARGADO, la de su empleado. El ADMINISTRADOR puede ver todas
@@ -214,10 +322,24 @@ export class VentaPresencialPage {
     if (bloqueada !== null) {
       return bloqueada;
     }
-    if (this.authService.esAdministrador()) {
+    if (this.esAdministradorActual()) {
       return null;
     }
-    return this.authService.sucursalId();
+    return this.sucursalEmpleadoActual();
+  }
+
+  /** Rol del empleado según el modo (empresarial o legacy). */
+  private esAdministradorActual(): boolean {
+    return this.saasMode
+      ? this.tenantApi.esAdministrador()
+      : this.authService.esAdministrador();
+  }
+
+  /** Sucursal del empleado según el modo (empresarial o legacy). */
+  private sucursalEmpleadoActual(): number | null {
+    return this.saasMode
+      ? (this.tenantApi.identidad()?.sucursal_id ?? null)
+      : this.authService.sucursalId();
   }
 
   // ===== Selección (estado SOLO local) =====
@@ -322,6 +444,7 @@ export class VentaPresencialPage {
     // La nueva venta no hereda el pago anterior (CU21).
     this.pago.set(null);
     this.mostrarPago.set(false);
+    this.candidatosInventario = [];
   }
 
   // ===== CU21 - Pago presencial =====
@@ -360,6 +483,10 @@ export class VentaPresencialPage {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
   }
 }

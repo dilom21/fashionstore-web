@@ -44,11 +44,11 @@ import {
   UMBRAL_STOCK_BAJO_POR_DEFECTO,
 } from '../../models/reportes-common.model';
 import { ReporteVentasResponse } from '../../models/ventas-reporte.model';
+import { ReporteGenerativoResponse } from '../../models/generativo-reporte.model';
+import { PatronesResponse } from '../../models/patrones-no-supervisados.model';
+import { PrediccionResponse } from '../../models/prediccion-reporte.model';
 import { ReportesService } from '../../services/reportes.service';
 import { TenantApiService } from '../../../saas/services/tenant-api.service';
-import { ReporteGenerativoResponse } from '../../models/generativo-reporte.model';
-import { PrediccionResponse } from '../../models/prediccion-reporte.model';
-import { PatronesResponse } from '../../models/patrones-no-supervisados.model';
 import type { ReporteExportado } from '../../services/reportes.service';
 import {
   barras,
@@ -177,7 +177,7 @@ export class ReportesPage implements OnInit {
 
   readonly sucursales = signal<{ id: number; nombre: string }[]>([]);
 
-  // ===== CU23 - Reporte generativo (datos siempre vienen del backend) =====
+  // ===== Segundo parcial: CU23, CU24 y CU25 =====
   readonly consultaGenerativa = signal('');
   readonly generativoCargando = signal(false);
   readonly generativoError = signal<string | null>(null);
@@ -189,35 +189,44 @@ export class ReportesPage implements OnInit {
     () => this.tenantApi.identidad()?.permite_reportes_ia === true,
   );
 
-  // ===== CU24 - respuesta siempre proveniente de la API =====
   readonly productoPrediccion = signal<number | null>(null);
   readonly horizontePrediccion = signal<7 | 30>(7);
   readonly prediccionCargando = signal(false);
   readonly prediccionError = signal<string | null>(null);
   readonly prediccion = signal<PrediccionResponse | null>(null);
 
-  // ===== CU25 - Patrones no supervisados =====
   readonly periodoPatrones = signal<30 | 90>(30);
   readonly patronesCargando = signal(false);
   readonly patronesError = signal<string | null>(null);
   readonly patrones = signal<PatronesResponse | null>(null);
 
-  analizarPatrones(): void {
-    if (this.patronesCargando() || !this.puedeGenerar()) return;
-    this.patronesCargando.set(true);
-    this.patronesError.set(null);
-    this.reportes.analizarPatrones({
-      periodo_dias: this.periodoPatrones(),
-      sucursal_id: this.sucursalId(),
-      max_productos: 100,
-    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (respuesta) => { this.patrones.set(respuesta); this.patronesCargando.set(false); },
-      error: (error: { status?: number; error?: { detail?: { estado?: string } } }) => {
-        this.patronesCargando.set(false);
-        const estado = error.error?.detail?.estado;
-        this.patronesError.set(error.status === 401 ? 'Tu sesión empresarial no es válida.' : error.status === 403 ? 'El plan o rol no habilita esta analítica.' : estado === 'SIN_DATOS' || error.status === 422 ? 'No hay suficientes productos observables para agrupar.' : error.status === 503 ? 'El modelo no está disponible. No se mostraron datos ficticios.' : 'No fue posible calcular los patrones.');
-      },
-    });
+  generarReporteGenerativo(): void {
+    const consulta = this.consultaGenerativa().trim();
+    if (!consulta || consulta.length > 500 || this.generativoCargando()) return;
+    this.generativoCargando.set(true);
+    this.generativoError.set(null);
+    this.generativo.set(null);
+    this.reportes
+      .generarReporteGenerativo(consulta)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (respuesta) => {
+          this.generativo.set(respuesta);
+          this.generativoCargando.set(false);
+        },
+        error: (error: { status?: number }) => {
+          this.generativoCargando.set(false);
+          this.generativoError.set(
+            error.status === 403
+              ? 'El plan o rol no habilita reportes generativos.'
+              : error.status === 422
+                ? 'Describe un reporte soportado con período, sucursal o top N.'
+                : error.status === 502 || error.status === 503
+                  ? 'El servicio de IA no está disponible. No se mostraron datos ficticios.'
+                  : 'No fue posible generar el reporte.',
+          );
+        },
+      });
   }
 
   predecirDemanda(): void {
@@ -225,13 +234,68 @@ export class ReportesPage implements OnInit {
     if (!productoId || this.prediccionCargando() || !this.puedeGenerar()) return;
     this.prediccionCargando.set(true);
     this.prediccionError.set(null);
-    this.reportes.predecirDemanda({ producto_id: productoId, sucursal_id: this.sucursalId(), horizonte_dias: this.horizontePrediccion() })
-      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (respuesta) => { this.prediccion.set(respuesta); this.prediccionCargando.set(false); },
-        error: (error: { status?: number; error?: { detail?: { estado?: string } } }) => {
+    this.prediccion.set(null);
+    this.reportes
+      .predecirDemanda({
+        producto_id: productoId,
+        sucursal_id: this.sucursalId(),
+        horizonte_dias: this.horizontePrediccion(),
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (respuesta) => {
+          this.prediccion.set(respuesta);
+          this.prediccionCargando.set(false);
+        },
+        error: (error: {
+          status?: number;
+          error?: { detail?: { estado?: string } };
+        }) => {
           this.prediccionCargando.set(false);
           const estado = error.error?.detail?.estado;
-          this.prediccionError.set(error.status === 401 ? 'Tu sesión empresarial no es válida.' : error.status === 403 ? 'El plan o rol no habilita predicciones.' : estado === 'SIN_DATOS' ? 'No hay ventas completadas para ese producto y sucursal.' : estado === 'NO_DISPONIBLE' ? 'No hay suficiente histórico para estimar.' : error.status === 422 ? 'Revisa producto, sucursal y horizonte.' : 'La predicción no está disponible. No se mostraron datos ficticios.');
+          this.prediccionError.set(
+            error.status === 403
+              ? 'El plan o rol no habilita predicciones.'
+              : estado === 'SIN_DATOS'
+                ? 'No hay ventas completadas para ese producto y sucursal.'
+                : estado === 'NO_DISPONIBLE'
+                  ? 'No hay suficiente histórico para estimar.'
+                  : error.status === 422
+                    ? 'Revisa producto, sucursal y horizonte.'
+                    : 'La predicción no está disponible. No se mostraron datos ficticios.',
+          );
+        },
+      });
+  }
+
+  analizarPatrones(): void {
+    if (this.patronesCargando() || !this.puedeGenerar()) return;
+    this.patronesCargando.set(true);
+    this.patronesError.set(null);
+    this.patrones.set(null);
+    this.reportes
+      .analizarPatrones({
+        periodo_dias: this.periodoPatrones(),
+        sucursal_id: this.sucursalId(),
+        max_productos: 100,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (respuesta) => {
+          this.patrones.set(respuesta);
+          this.patronesCargando.set(false);
+        },
+        error: (error: { status?: number }) => {
+          this.patronesCargando.set(false);
+          this.patronesError.set(
+            error.status === 403
+              ? 'El plan o rol no habilita esta analítica.'
+              : error.status === 422
+                ? 'No hay suficientes productos observables para agrupar.'
+                : error.status === 503
+                  ? 'El modelo no está disponible. No se mostraron datos ficticios.'
+                  : 'No fue posible calcular los patrones.',
+          );
         },
       });
   }
@@ -247,34 +311,6 @@ export class ReportesPage implements OnInit {
   readonly estadoActivo = computed(() => this.estadoDe(this.tab()));
   readonly cargandoActivo = computed(() => this.estadoActivo().cargando);
   readonly errorActivo = computed(() => this.estadoActivo().error);
-
-  generarReporteGenerativo(): void {
-    const consulta = this.consultaGenerativa().trim();
-    if (!consulta || this.generativoCargando()) return;
-    this.generativoCargando.set(true);
-    this.generativoError.set(null);
-    this.reportes
-      .generarReporteGenerativo(consulta)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (respuesta) => {
-          this.generativo.set(respuesta);
-          this.generativoCargando.set(false);
-        },
-        error: (error: { status?: number }) => {
-          this.generativoCargando.set(false);
-          this.generativoError.set(
-            error.status === 403
-              ? 'El plan de esta empresa no habilita reportes generativos.'
-              : error.status === 422
-                ? 'Describe un reporte soportado con período, sucursal o top N.'
-                : error.status === 502 || error.status === 503
-                  ? 'El servicio de IA no está disponible. No se mostraron datos ficticios.'
-                  : 'No fue posible generar el reporte. Intenta nuevamente.',
-          );
-        },
-      });
-  }
 
   readonly alcanceTexto = computed(() => {
     const alcance = this.metadatosActivos()?.alcance ?? null;

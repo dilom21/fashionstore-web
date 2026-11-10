@@ -22,7 +22,9 @@ import type {
 
 import { StripeClientService } from '../../../../core/services/stripe-client.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import {
   ESTADO_VENTA_CANCELADA,
@@ -74,6 +76,8 @@ export class PagoElectronicoPage implements OnInit {
   private readonly pagoService = inject(PagoElectronicoService);
   private readonly stripeClient = inject(StripeClientService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -562,7 +566,11 @@ export class PagoElectronicoPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

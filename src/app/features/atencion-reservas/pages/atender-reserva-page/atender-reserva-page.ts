@@ -18,6 +18,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ToastService } from '../../../../core/services/toast.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import { AdminIcon } from '../../../administracion/components/admin-icon/admin-icon';
 import {
@@ -25,6 +26,7 @@ import {
   formatearFechaHora,
 } from '../../../reservas/utils/reserva-fecha.util';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import { PagoPresencialDialog } from '../../../ventas/components/pago-presencial-dialog/pago-presencial-dialog';
 import {
   PagoPresencialResponse,
@@ -82,6 +84,8 @@ export class AtenderReservaPage implements OnInit {
   private readonly atencionService = inject(AtencionReservasService);
   private readonly ventaPresencialService = inject(VentaPresencialService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -651,7 +655,11 @@ export class AtenderReservaPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigateByUrl('/auth/personal/login');
   }
 }

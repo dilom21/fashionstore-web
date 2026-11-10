@@ -8,15 +8,15 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { Producto } from '../../../features/administracion/catalogo/models/producto.model';
+import { ProductoPublico } from '../../../features/catalogo/models/catalogo-publico.model';
 import { ProductoMedia } from '../../../features/catalogo/components/producto-media/producto-media';
 
 /**
  * Tarjeta de producto de la landing.
  *
- * Consume el producto real del catálogo público (nombre, categoría, precio e
- * imagen principal), usa `app-producto-media` para el fallback de imagen y
- * navega al detalle público mediante RouterLink.
+ * Consume el producto real del catálogo público (nombre, categoría, precio
+ * efectivo e imagen principal), usa `app-producto-media` para el fallback de
+ * imagen y navega al detalle público mediante RouterLink.
  */
 @Component({
   selector: 'app-product-card',
@@ -26,7 +26,7 @@ import { ProductoMedia } from '../../../features/catalogo/components/producto-me
   templateUrl: './product-card.html',
 })
 export class ProductCard {
-  readonly producto = input.required<Producto>();
+  readonly producto = input.required<ProductoPublico>();
 
   /**
    * Punto de integración CU15.
@@ -37,7 +37,7 @@ export class ProductCard {
    * no se llama a ningún endpoint de carrito y no se incrementa ningún
    * contador.
    */
-  readonly agregar = output<Producto>();
+  readonly agregar = output<ProductoPublico>();
 
   /** Estado puramente visual local; no persiste ni afecta al carrito. */
   readonly favorito = signal(false);

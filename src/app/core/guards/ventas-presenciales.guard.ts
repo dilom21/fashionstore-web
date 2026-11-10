@@ -23,17 +23,19 @@ import { evaluarAccesoPanelEmpresarial } from './sesion-panel-saas';
  *
  * Es protección de frontend/UX: el backend vuelve a validar rol (403).
  */
-export const ventasPresencialesGuard: CanActivateFn = ():
+export const ventasPresencialesGuard: CanActivateFn = (
+  _route,
+  state,
+):
   | boolean
   | UrlTree
   | Observable<boolean | UrlTree> => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Sesión EMPRESARIAL (SaaS): el ADMINISTRADOR de la empresa puede recorrer
-  // la interfaz original de CU20. Los endpoints legacy siguen bloqueados por el
-  // backend (401) mientras el módulo no esté adaptado al multitenant.
-  const accesoEmpresarial = evaluarAccesoPanelEmpresarial();
+  // Sesión EMPRESARIAL (SaaS): ADMINISTRADOR, ENCARGADO_SUCURSAL y CAJERO
+  // acceden a la interfaz ya adaptada (endpoints /tenant/ventas y /tenant/pagos).
+  const accesoEmpresarial = evaluarAccesoPanelEmpresarial(state?.url);
   if (accesoEmpresarial !== null) {
     return accesoEmpresarial;
   }

@@ -107,3 +107,13 @@ export interface ReservasSucursalResumen {
   confirmadas: number;
   canceladas: number;
 }
+
+/**
+ * Estadísticas del endpoint SaaS `GET /tenant/reservas-sucursal/estadisticas`.
+ * No existe en el contrato legacy (allí se agregan con `total` por estado).
+ */
+export interface ReservaSucursalEstadisticas {
+  por_estado: Record<string, number>;
+  total_reservas: number;
+  total_unidades: number;
+}

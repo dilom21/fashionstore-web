@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { environment } from '../../../../environments/environment';
 import {
   MetodoPagoPresencial,
@@ -24,6 +25,13 @@ import {
 export class PagoPresencialService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
+
+  private get baseUrl(): string {
+    return this.saasMode
+      ? `${this.apiUrl}/tenant/pagos`
+      : `${this.apiUrl}/pagos`;
+  }
 
   /** POST /pagos/presencial (contrato real del backend). */
   registrarPresencial(
@@ -36,7 +44,7 @@ export class PagoPresencialService {
     };
     return this.http
       .post<PagoPresencialResponse>(
-        `${this.apiUrl}/pagos/presencial`,
+        `${this.baseUrl}/presencial`,
         payload,
       )
       .pipe(map((pago) => this.normalizar(pago)));

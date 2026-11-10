@@ -6,7 +6,13 @@
       "name": "app-shell",
       "installMode": "prefetch",
       "resources": {
-        "files": ["/favicon.ico", "/manifest.webmanifest", "/*.css", "/*.js", "/*.json"]
+        "files": [
+          "/favicon.ico",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js",
+          "/*.json"
+        ]
       }
     },
     {
@@ -26,6 +32,13 @@
     "!/plataforma",
     "!/plataforma/**",
     "!/admin",
-    "!/admin/**"
+    "!/admin/**",
+    "!/personal/**",
+    "!/carritos/**",
+    "!/reservas/**",
+    "!/checkout/**",
+    "!/pagos/**",
+    "!/ventas/**",
+    "!/offline/**"
   ]
 }

@@ -10,10 +10,10 @@ export const serverRoutes: ServerRoute[] = [
     path: 'admin/**',
     renderMode: RenderMode.Server,
   },
-  // SaaS privado: no prerenderizar navegaci�n autenticada.
+  // PWA local: el shell se sirve en cliente y no prerenderiza datos privados.
+  { path: 'offline/**', renderMode: RenderMode.Client },
   { path: 'saas/ingresar', renderMode: RenderMode.Server },
   { path: 'saas/**', renderMode: RenderMode.Client },
-  { path: 'saas/catalogo-offline/:id', renderMode: RenderMode.Client },
   {
     path: 'auth/personal/login',
     renderMode: RenderMode.Server,

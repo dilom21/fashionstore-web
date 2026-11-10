@@ -44,6 +44,9 @@ export class TenantSesionPage {
   readonly puedeConsultarInventario = computed(
     () => this.api.esAdministrador() || this.api.esEncargadoSucursal(),
   );
+  readonly puedeVenderOffline = computed(
+    () => this.api.esAdministrador() || this.api.esCajero(),
+  );
 
   /** Mensaje por rol: qué está disponible y qué sigue pendiente. */
   readonly aviso = computed(() => {

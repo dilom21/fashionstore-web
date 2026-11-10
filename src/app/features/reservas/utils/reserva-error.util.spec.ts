@@ -38,6 +38,23 @@ describe('traducirErrorReserva (CU16)', () => {
     expect(resultado.mensaje.toLowerCase()).toContain('fecha');
   });
 
+  it('503 informa que el servicio de reservas no está disponible', () => {
+    const resultado = traducirErrorReserva(errorHttp(503));
+    expect(resultado.sesionExpirada).toBe(false);
+    expect(resultado.mensaje.toLowerCase()).toContain('no está disponible');
+  });
+
+  it('conserva el detalle humano del backend para diagnóstico', () => {
+    const error = new HttpErrorResponse({
+      status: 409,
+      statusText: 'Conflict',
+      error: { detail: 'Reserva inconsistente' },
+    });
+    const resultado = traducirErrorReserva(error);
+    expect(resultado.mensaje).toBe('Reserva inconsistente');
+    expect(resultado.detalleOriginal).toBe('Reserva inconsistente');
+  });
+
   it('errores de red y desconocidos devuelven un mensaje amigable', () => {
     expect(traducirErrorReserva(errorHttp(0)).mensaje.length).toBeGreaterThan(
       10,

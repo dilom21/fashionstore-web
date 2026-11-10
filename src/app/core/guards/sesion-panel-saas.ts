@@ -12,9 +12,12 @@ import {
 export type DecisionAcceso = boolean | UrlTree | Observable<boolean | UrlTree>;
 
 /**
- * Rutas del panel del primer parcial que YA están adaptadas al modo empresarial
- * y que, por tanto, el ENCARGADO_SUCURSAL puede abrir: CU13 - Consultar
- * inventario y CU14 - Movimientos de inventario (ambas de CU08).
+ * Rutas del panel que YA están adaptadas al modo empresarial y que el
+ * ENCARGADO_SUCURSAL puede abrir:
+ *  - CU08: CU13 Consultar inventario y CU14 Movimientos.
+ *  - CU28: Dashboard y reportes.
+ *  - CU12: Gestión de reservas de sucursal.
+ *  - CU12/CU13 operativos: atención de reservas y venta presencial.
  *
  * Es una lista BLANCA: el resto de `/admin/**` sigue cerrado para su rol. La
  * autorización definitiva la aplica el backend en cada endpoint (403) y RLS.
@@ -25,16 +28,51 @@ export const RUTAS_PANEL_ENCARGADO_SAAS: ReadonlySet<string> = new Set([
   '/admin/reportes',
 ]);
 
+/** Rutas operativas SaaS abiertas a ADMINISTRADOR, ENCARGADO_SUCURSAL y CAJERO. */
+export const RUTAS_OPERATIVAS_SAAS: ReadonlySet<string> = new Set([
+  '/personal/reservas/atencion',
+  '/personal/ventas/presencial',
+]);
+
+/** Normaliza una URL a su ruta (sin query string ni fragmento). */
+function rutaDeUrl(url: string): string {
+  return url.split('?')[0].split('#')[0];
+}
+
+/** true si la ruta es la base o una subruta suya. */
+function coincideRuta(ruta: string, base: string): boolean {
+  return ruta === base || ruta.startsWith(`${base}/`);
+}
+
 /**
- * true si la URL de destino (sin query string ni fragmento) está habilitada
- * para el ENCARGADO_SUCURSAL con sesión empresarial.
+ * true si la URL de destino está habilitada para el ENCARGADO_SUCURSAL con
+ * sesión empresarial.
  */
 export function esRutaHabilitadaEncargado(url: string | undefined): boolean {
   if (url === undefined) {
     return false;
   }
-  const ruta = url.split('?')[0].split('#')[0];
-  return RUTAS_PANEL_ENCARGADO_SAAS.has(ruta);
+  const ruta = rutaDeUrl(url);
+  if (RUTAS_PANEL_ENCARGADO_SAAS.has(ruta)) {
+    return true;
+  }
+  if (coincideRuta(ruta, '/admin/reservas')) {
+    return true;
+  }
+  return [...RUTAS_OPERATIVAS_SAAS].some((base) =>
+    coincideRuta(ruta, base),
+  );
+}
+
+/** true si la URL es una ruta operativa que el CAJERO puede abrir en SaaS. */
+export function esRutaOperativaCajero(url: string | undefined): boolean {
+  if (url === undefined) {
+    return false;
+  }
+  const ruta = rutaDeUrl(url);
+  return [...RUTAS_OPERATIVAS_SAAS].some((base) =>
+    coincideRuta(ruta, base),
+  );
 }
 
 /**
@@ -48,11 +86,8 @@ export function esRutaHabilitadaEncargado(url: string | undefined): boolean {
  *
  * - ADMINISTRADOR empresarial: permite el acceso (el backend sigue siendo la
  *   autoridad final en cada endpoint).
- * - ENCARGADO_SUCURSAL empresarial: solo las rutas ya adaptadas de CU08
- *   (`RUTAS_PANEL_ENCARGADO_SAAS`); cualquier otra lo devuelve a la pantalla
- *   neutral de sesión.
- * - CAJERO empresarial: a la pantalla neutral de sesión; sus módulos todavía no
- *   están adaptados y no recibe acceso administrativo.
+ * - ENCARGADO_SUCURSAL empresarial: CU08, CU12 (gestión/atención), CU13 y CU28.
+ * - CAJERO empresarial: únicamente las rutas operativas de CU12 atención y CU13.
  * - Contexto 'cliente': de vuelta a la tienda.
  * - Sin identidad en memoria pero con JWT empresarial (p. ej. F5): restaura la
  *   sesión con GET /auth/tenant/me antes de decidir.
@@ -61,7 +96,7 @@ export function esRutaHabilitadaEncargado(url: string | undefined): boolean {
  * continuar con su lógica del primer parcial (sesión legacy intacta).
  *
  * `url` es la URL que se está activando (`RouterStateSnapshot.url`). Cuando no
- * se informa, el ENCARGADO_SUCURSAL no recibe ninguna ruta del panel.
+ * se informa, el ENCARGADO_SUCURSAL/CAJERO no reciben ninguna ruta del panel.
  */
 export function decidirAccesoPanelEmpresarial(
   api: TenantApiService,
@@ -79,8 +114,12 @@ export function decidirAccesoPanelEmpresarial(
     if (api.esAdministrador()) {
       return true;
     }
-    // ENCARGADO_SUCURSAL: únicamente las pantallas de CU08 ya adaptadas.
+    // ENCARGADO_SUCURSAL: pantallas ya adaptadas (CU08, CU12, CU13, CU28).
     if (api.esEncargadoSucursal() && esRutaHabilitadaEncargado(url)) {
+      return true;
+    }
+    // CAJERO: solo las operativas de CU12 atención y CU13.
+    if (api.esCajero() && esRutaOperativaCajero(url)) {
       return true;
     }
     return router.parseUrl(SESION_SAAS_NEUTRAL);

@@ -3,14 +3,17 @@ import {
   afterNextRender,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   OnDestroy,
   PLATFORM_ID,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { ThemeService } from '../../../../core/services/theme.service';
 import { ToastHost } from '../../../../shared/components/toast-host/toast-host';
 import { CarritoService } from '../../../carrito/services/carrito.service';
@@ -52,6 +55,7 @@ export class Navbar implements OnDestroy {
   readonly authService = inject(AuthService);
   readonly tenantApi = inject(TenantApiService);
   readonly carritoService = inject(CarritoService);
+  readonly saasMode = inject(SAAS_MODE);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -98,6 +102,37 @@ export class Navbar implements OnDestroy {
   );
 
   /**
+   * true si el usuario puede ver el contador de SU carrito: cliente legacy del
+   * primer parcial o cliente empresarial (SaaS). El backend sigue siendo la
+   * autoridad de qué carritos existen.
+   */
+  readonly puedeVerCarrito = computed(
+    () => this.authService.esCliente() || this.clienteSaas(),
+  );
+
+  /**
+   * true si el menú "Mi cuenta" debe ofrecer "Mis reservas".
+   *
+   * - SaaS: cliente empresarial confirmado (`/auth/tenant/me` contexto cliente).
+   * - Legacy: cliente del primer parcial.
+   * El personal (administrativo o cajero) nunca ve rutas de cliente.
+   */
+  readonly puedeVerReservas = computed(() =>
+    this.saasMode ? this.clienteSaas() : this.authService.esCliente(),
+  );
+
+  /**
+   * true si el menú debe ofrecer "Mis compras".
+   *
+   * CU24 ya está adaptado al modo SaaS: el cliente empresarial consulta su
+   * historial en `/ventas/historial` (endpoint tenant). En legacy se conserva
+   * la navegación del primer parcial.
+   */
+  readonly puedeVerCompras = computed(() =>
+    this.saasMode ? this.clienteSaas() : this.authService.esCliente(),
+  );
+
+  /**
    * Texto de la zona de cuenta cuando hay sesión iniciada.
    * Tras un login legacy reciente se dispone del nombre (ClienteAuth) -> "Hola, Juan".
    * Tras restaurar con /auth/me solo hay UsuarioAuth -> "Mi cuenta".
@@ -127,6 +162,9 @@ export class Navbar implements OnDestroy {
   private outsideHandler: ((event: PointerEvent) => void) | null = null;
   private lastFocused: HTMLElement | null = null;
 
+  /** Último estado de "cliente autenticado" para refrescar el contador una vez. */
+  private ultimoEstadoCliente: boolean | null = null;
+
   constructor() {
     // Listener global para cerrar buscador / menú de cuenta / menú móvil con
     // Escape, y para cerrar el menú de cuenta al hacer clic fuera. Solo browser.
@@ -154,13 +192,22 @@ export class Navbar implements OnDestroy {
       };
       document.addEventListener('keydown', this.keyHandler);
       document.addEventListener('pointerdown', this.outsideHandler);
+    });
 
-      // El badge de la bolsa refleja el nº de carritos activos del cliente.
-      // Solo se consulta con la sesión legacy de cliente: el login SaaS no
-      // dispara consultas de carrito ni actualiza el contador (CU15 sigue sin
-      // adaptarse al modo empresarial).
-      if (this.authService.esCliente()) {
-        this.carritoService.refrescarContador();
+    // El badge de la bolsa refleja el nº de carritos activos del cliente.
+    // Se refresca UNA vez cuando aparece una sesión de cliente (legacy o
+    // empresarial) —también tras restaurar la sesión en segundo plano— y no
+    // se repite mientras la sesión siga activa.
+    effect(() => {
+      const esCliente =
+        this.authService.esCliente() || this.clienteSaas();
+      if (esCliente && this.ultimoEstadoCliente !== true) {
+        this.ultimoEstadoCliente = true;
+        if (isPlatformBrowser(this.platformId)) {
+          untracked(() => this.carritoService.refrescarContador());
+        }
+      } else if (!esCliente) {
+        this.ultimoEstadoCliente = false;
       }
     });
   }

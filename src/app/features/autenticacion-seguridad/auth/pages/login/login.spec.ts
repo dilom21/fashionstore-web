@@ -408,7 +408,6 @@ describe('Login (cliente SaaS)', () => {
 
   it('no redirige a áreas legacy protegidas ni a dominios externos', async () => {
     const candidatos = [
-      '/carritos',
       '/reservas',
       '/checkout',
       '/pagos',
@@ -446,8 +445,9 @@ describe('Login (cliente SaaS)', () => {
     expect(destinoInternoSeguro('//evil.example.com')).toBeNull();
     expect(destinoInternoSeguro('https://evil.example.com')).toBeNull();
     expect(destinoInternoSeguro('/\\evil.example.com')).toBeNull();
-    expect(destinoInternoSeguro('/carritos')).toBeNull();
-    expect(destinoInternoSeguro('/carritos/15')).toBeNull();
+    // CU15 (carrito) ya está adaptado al modo empresarial: es un destino válido.
+    expect(destinoInternoSeguro('/carritos')).toBe('/carritos');
+    expect(destinoInternoSeguro('/carritos/15')).toBe('/carritos/15');
     expect(destinoInternoSeguro('/reservas/8')).toBeNull();
     expect(destinoInternoSeguro('/admin/usuarios')).toBeNull();
     expect(destinoInternoSeguro('/saas/empresa')).toBeNull();

@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { Producto } from '../../../administracion/catalogo/models/producto.model';
+import { ProductoPublico } from '../../../catalogo/models/catalogo-publico.model';
 import { CatalogoPublicoStore } from '../../../catalogo/services/catalogo-publico.store';
 import { ProductCard } from '../../../../shared/components/product-card/product-card';
 
@@ -21,7 +21,7 @@ const MAX_DESTACADOS = 6;
  * Carrusel horizontal de productos de la landing (scroll-snap + botones).
  *
  * Consume productos reales del catálogo público (CU09) a través de
- * `CatalogoPublicoStore`, que comparte una única llamada GET /productos con
+ * `CatalogoPublicoStore`, que comparte una única llamada al listado público con
  * el resto de secciones. "Destacados" es solo una selección visual de
  * presentación: la base de datos no tiene un flag `destacado`.
  */
@@ -36,7 +36,7 @@ export class ProductosDestacados {
   private readonly catalogo = inject(CatalogoPublicoStore);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly productos = signal<Producto[]>([]);
+  readonly productos = signal<ProductoPublico[]>([]);
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
 
@@ -44,7 +44,7 @@ export class ProductosDestacados {
    * Punto de integración CU15: reemite el producto elegido en una tarjeta.
    * La landing no crea carrito ni persiste nada.
    */
-  readonly agregar = output<Producto>();
+  readonly agregar = output<ProductoPublico>();
 
   readonly track = viewChild<ElementRef<HTMLElement>>('track');
 
@@ -56,7 +56,7 @@ export class ProductosDestacados {
     this.cargar();
   }
 
-  onAgregar(producto: Producto): void {
+  onAgregar(producto: ProductoPublico): void {
     this.agregar.emit(producto);
   }
 

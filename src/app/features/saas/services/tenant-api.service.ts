@@ -36,6 +36,8 @@ export type ContextoTenant = 'personal' | 'cliente';
  */
 export const TENANT_TOKEN_STORAGE_KEY =
   'fashionstore_saas_tenant_access_token';
+export const OFFLINE_IDENTITY_STORAGE_KEY =
+  'fashionstore_offline_identity_v1';
 
 export interface TenantLogin {
   correo: string;
@@ -327,6 +329,28 @@ export class TenantApiService {
     });
   }
 
+  /** Transporte CU21 preparado; ninguna pantalla lo invoca automáticamente. */
+  registrarOperacionOffline<T>(
+    payload: unknown,
+    operacionUuid: string,
+  ): Observable<T> {
+    return this.http.post<T>(
+      `${this.base}/tenant/offline/operaciones`,
+      payload,
+      {
+        headers: this.headers().set('Idempotency-Key', operacionUuid),
+      },
+    );
+  }
+
+  /** Recupera un resultado idempotente por UUID cuando CU21 sea habilitado. */
+  consultarOperacionOffline<T>(operacionUuid: string): Observable<T> {
+    return this.http.get<T>(
+      `${this.base}/tenant/offline/operaciones/${encodeURIComponent(operacionUuid)}`,
+      { headers: this.headers() },
+    );
+  }
+
   crearSucursal(datos: {
     ciudad_id: number;
     nombre: string;
@@ -366,6 +390,7 @@ export class TenantApiService {
 
   cerrarSesion(): void {
     this.storage?.removeItem(this.storageKey);
+    this.storage?.removeItem(OFFLINE_IDENTITY_STORAGE_KEY);
     this.actualizarIdentidad(null);
   }
 

@@ -12,8 +12,6 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, map } from 'rxjs';
 
-import { Producto, ProductoListarFiltros } from '../../../administracion/catalogo/models/producto.model';
-import { ProductosService } from '../../../administracion/catalogo/services/productos.service';
 import { SucursalCompraService } from '../../../carrito/services/sucursal-compra.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import { FiltrosCatalogo } from '../../components/filtros-catalogo/filtros-catalogo';
@@ -22,6 +20,10 @@ import {
   CatalogoFiltros,
   CatalogoFiltrosSeleccion,
 } from '../../models/catalogo-filtros.model';
+import {
+  ProductoPublico,
+  PublicoListarFiltros,
+} from '../../models/catalogo-publico.model';
 import { CatalogoService } from '../../services/catalogo.service';
 import { traducirErrorPublico } from '../../utils/catalogo-error.util';
 
@@ -51,7 +53,6 @@ const SELECCION_INICIAL: CatalogoFiltrosSeleccion = {
   templateUrl: './catalogo-page.html',
 })
 export class CatalogoPage {
-  private readonly productosService = inject(ProductosService);
   private readonly catalogoService = inject(CatalogoService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -61,7 +62,7 @@ export class CatalogoPage {
   /** Sucursal de compra elegida por el cliente (contexto CU15, no filtra). */
   readonly sucursalCompra = inject(SucursalCompraService);
 
-  readonly productos = signal<Producto[]>([]);
+  readonly productos = signal<ProductoPublico[]>([]);
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
 
@@ -244,8 +245,8 @@ export class CatalogoPage {
     this.error.set(null);
     this.sincronizarUrl();
 
-    this.productosService
-      .listarProductosPublicos(this.construirFiltros())
+    this.catalogoService
+      .listarProductos(this.construirFiltros())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (productos) => {
@@ -262,7 +263,7 @@ export class CatalogoPage {
       });
   }
 
-  private construirFiltros(): ProductoListarFiltros {
+  private construirFiltros(): PublicoListarFiltros {
     const valores = this.filtrosForm.getRawValue();
     return {
       buscar: valores.buscar.trim() || undefined,

@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import { CarritoService } from '../../../carrito/services/carrito.service';
 import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { Navbar } from './navbar';
 
 @Component({ selector: 'app-catalogo-stub', template: '' })
@@ -189,7 +190,11 @@ describe('Navbar — sesión de cliente SaaS', () => {
   let api: any;
   let carrito: any;
 
-  async function setup(opciones: { auth: any; api: any }): Promise<void> {
+  async function setup(opciones: {
+    auth: any;
+    api: any;
+    saasMode?: boolean;
+  }): Promise<void> {
     auth = opciones.auth;
     api = opciones.api;
     carrito = carritoMock();
@@ -203,6 +208,7 @@ describe('Navbar — sesión de cliente SaaS', () => {
         ]),
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: SAAS_MODE, useValue: opciones.saasMode ?? true },
         { provide: AuthService, useValue: auth },
         { provide: TenantApiService, useValue: api },
         { provide: CarritoService, useValue: carrito },
@@ -230,23 +236,69 @@ describe('Navbar — sesión de cliente SaaS', () => {
     expect(fixture.nativeElement.textContent).not.toContain('null');
   });
 
-  it('el menú de cuenta ofrece cerrar la sesión empresarial del cliente', async () => {
-    await setup({ auth: authMock({}), api: tenantMock('cliente') });
-
+  /** Abre el menú de cuenta y devuelve sus ítems. */
+  function abrirMenu(): HTMLElement[] {
     const boton = fixture.nativeElement.querySelector(
       '.nav__account',
     ) as HTMLButtonElement;
     boton.click();
     fixture.detectChanges();
-
-    const items = Array.from(
+    return Array.from(
       fixture.nativeElement.querySelectorAll('.nav__account-item'),
     ) as HTMLElement[];
+  }
+
+  it('el menú de cliente SaaS ofrece "Mis reservas", "Mis compras" y "Cerrar sesión"', async () => {
+    await setup({ auth: authMock({}), api: tenantMock('cliente') });
+
+    const items = abrirMenu();
 
     expect(items.some((i) => i.textContent?.includes('Cerrar sesión'))).toBe(
       true,
     );
-    // Las funcionalidades legacy (CU16/CU24) no se ofrecen bajo SaaS.
+    const reservas = items.find((i) =>
+      i.textContent?.includes('Mis reservas'),
+    ) as HTMLAnchorElement | undefined;
+    expect(reservas).toBeTruthy();
+    expect(reservas?.getAttribute('href')).toBe('/reservas');
+
+    // CU24 ya está adaptado: el cliente SaaS consulta su historial tenant.
+    const compras = items.find((i) =>
+      i.textContent?.includes('Mis compras'),
+    ) as HTMLAnchorElement | undefined;
+    expect(compras).toBeTruthy();
+    expect(compras?.getAttribute('href')).toBe('/ventas/historial');
+  });
+
+  it('en modo legacy conserva "Mis reservas" y "Mis compras" del cliente', async () => {
+    await setup({
+      auth: authMock({ cliente: true }),
+      api: tenantMock(null),
+      saasMode: false,
+    });
+
+    const items = abrirMenu();
+
+    const reservas = items.find((i) =>
+      i.textContent?.includes('Mis reservas'),
+    ) as HTMLAnchorElement | undefined;
+    const compras = items.find((i) =>
+      i.textContent?.includes('Mis compras'),
+    ) as HTMLAnchorElement | undefined;
+
+    expect(reservas?.getAttribute('href')).toBe('/reservas');
+    expect(compras?.getAttribute('href')).toBe('/ventas/historial');
+  });
+
+  it('el personal no ve rutas de cliente en el menú', async () => {
+    await setup({
+      auth: authMock({ personal: true }),
+      api: tenantMock(null),
+      saasMode: true,
+    });
+
+    const items = abrirMenu();
+
     expect(items.some((i) => i.textContent?.includes('Mis reservas'))).toBe(
       false,
     );
@@ -280,11 +332,11 @@ describe('Navbar — sesión de cliente SaaS', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/');
   });
 
-  it('el login SaaS no consulta el carrito ni actualiza su contador', async () => {
+  it('una sesión de cliente SaaS refresca el contador del carrito una sola vez', async () => {
     await setup({ auth: authMock({}), api: tenantMock('cliente') });
 
-    expect(carrito.refrescarContador).not.toHaveBeenCalled();
-    expect(carrito.totalCarritosActivos).not.toHaveBeenCalled();
+    expect(carrito.refrescarContador).toHaveBeenCalledTimes(1);
+    // El doble devuelve 0 carritos activos: no se muestra badge.
     expect(fixture.nativeElement.querySelector('.nav__cart-badge')).toBeNull();
   });
 

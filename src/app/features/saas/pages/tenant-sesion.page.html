@@ -82,5 +82,13 @@
         </a>
       </p>
     }
+    <p class="saas-inline">
+      <a class="saas-primary" routerLink="/offline/preparar">Preparar datos offline</a>
+      <a class="saas-primary" routerLink="/offline/catalogo">Catálogo offline</a>
+      <a class="saas-primary" routerLink="/offline/operaciones">Operaciones pendientes</a>
+      @if (puedeVenderOffline()) {
+        <a class="saas-primary" routerLink="/offline/ventas/nueva">Venta de contado offline</a>
+      }
+    </p>
   </section>
 </main>

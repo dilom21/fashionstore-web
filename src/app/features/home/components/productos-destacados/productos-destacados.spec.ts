@@ -2,19 +2,19 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
-import { Producto } from '../../../administracion/catalogo/models/producto.model';
+import { ProductoPublico } from '../../../catalogo/models/catalogo-publico.model';
 import { CatalogoPublicoStore } from '../../../catalogo/services/catalogo-publico.store';
 import { ProductosDestacados } from './productos-destacados';
 
-const crearProducto = (id: number): Producto => ({
+const crearProducto = (id: number): ProductoPublico => ({
   id,
   nombre: `Producto ${id}`,
   descripcion: null,
-  precio: 100 + id,
-  estado: true,
-  categoria_id: 1,
   categoria: { id: 1, nombre: 'Camisas' },
   imagen_principal_url: `https://cdn.example.com/${id}.jpg`,
+  precio: 100 + id,
+  precio_definitivo: 100 + id,
+  precio_calculo_pendiente: false,
 });
 
 const PRODUCTOS = Array.from({ length: 9 }, (_, indice) =>
@@ -50,7 +50,7 @@ describe('ProductosDestacados', () => {
   });
 
   it('emite el producto elegido en "+ Agregar" (punto de integración CU15)', () => {
-    const emitidos: Producto[] = [];
+    const emitidos: ProductoPublico[] = [];
     fixture.componentInstance.agregar.subscribe((producto) =>
       emitidos.push(producto),
     );

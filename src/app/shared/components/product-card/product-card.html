@@ -42,7 +42,15 @@
 
     <div class="pcard__meta">
       <span class="pcard__price">
-        Bs {{ producto().precio | number: '1.2-2' }}
+        Bs {{ producto().precio_definitivo | number: '1.2-2' }}
+        @if (
+          !producto().precio_calculo_pendiente &&
+          producto().precio_definitivo < producto().precio
+        ) {
+          <s class="pcard__price--before">
+            Bs {{ producto().precio | number: '1.2-2' }}
+          </s>
+        }
       </span>
     </div>
 

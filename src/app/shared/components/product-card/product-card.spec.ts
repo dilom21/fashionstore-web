@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { Producto } from '../../../features/administracion/catalogo/models/producto.model';
+import { ProductoPublico } from '../../../features/catalogo/models/catalogo-publico.model';
 import { ProductCard } from './product-card';
 
-const PRODUCTO: Producto = {
+const PRODUCTO: ProductoPublico = {
   id: 7,
   nombre: 'Polo Premium Piqué',
   descripcion: 'Polo de algodón',
-  precio: 149.9,
-  estado: true,
-  categoria_id: 3,
   categoria: { id: 3, nombre: 'Polos' },
   imagen_principal_url: 'https://cdn.example.com/polo.jpg',
+  precio: 149.9,
+  precio_definitivo: 149.9,
+  precio_calculo_pendiente: false,
 };
 
 describe('ProductCard', () => {
@@ -51,7 +51,7 @@ describe('ProductCard', () => {
   });
 
   it('emite el producto en "+ Agregar" sin crear carrito', () => {
-    const emitidos: Producto[] = [];
+    const emitidos: ProductoPublico[] = [];
     fixture.componentInstance.agregar.subscribe((producto) =>
       emitidos.push(producto),
     );

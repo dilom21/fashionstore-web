@@ -38,14 +38,16 @@ const RUTAS_ENCARGADO_SUCURSAL = new Set([
 
 /**
  * Rutas del panel visibles para ENCARGADO_SUCURSAL cuando la sesión es
- * EMPRESARIAL: solo las pantallas de CU08 ya adaptadas al multitenant
- * (CU13 - Consultar inventario y CU14 - Movimientos de inventario). El resto de
- * módulos siguen usando endpoints del sistema anterior, así que no se ofrecen
- * (y `adminAuthGuard` tampoco las abre para su rol).
+ * EMPRESARIAL: CU08 (inventario), CU12 (gestión y atención de reservas) y
+ * CU13 (venta presencial). El resto de módulos siguen usando endpoints del
+ * sistema anterior y no se ofrecen.
  */
 const RUTAS_ENCARGADO_SAAS = new Set([
   '/admin/inventario/consultar',
   '/admin/inventario/movimientos',
+  '/admin/reservas',
+  '/personal/reservas/atencion',
+  '/personal/ventas/presencial',
 ]);
 
 /**
@@ -57,6 +59,10 @@ const RUTAS_ENCARGADO_SAAS = new Set([
 const RUTAS_CAJERO = new Set([
   '/personal/reservas/atencion',
   '/personal/ventas/presencial',
+  '/offline/preparar',
+  '/offline/catalogo',
+  '/offline/ventas/nueva',
+  '/offline/operaciones',
 ]);
 
 /**

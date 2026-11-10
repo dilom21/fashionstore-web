@@ -51,6 +51,25 @@ export function traducirErrorPublico(
     };
   }
 
+  // 422: la petición no es válida según FastAPI (parámetros fuera de contrato).
+  if (codigo === 422) {
+    return {
+      mensaje:
+        detalle ??
+        'La solicitud no es válida. Revisa los filtros e intenta nuevamente.',
+      codigo,
+    };
+  }
+
+  // 503: el catálogo público no está disponible (p. ej. SaaS deshabilitado).
+  if (codigo === 503) {
+    return {
+      mensaje:
+        'El catálogo no está disponible en este momento. Intenta nuevamente más tarde.',
+      codigo,
+    };
+  }
+
   if (detalle !== null) {
     return { mensaje: detalle, codigo };
   }

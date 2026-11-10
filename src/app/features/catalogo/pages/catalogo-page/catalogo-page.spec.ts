@@ -10,8 +10,7 @@ import {
 } from '@angular/router';
 import { Subject, of } from 'rxjs';
 
-import { Producto } from '../../../administracion/catalogo/models/producto.model';
-import { ProductosService } from '../../../administracion/catalogo/services/productos.service';
+import { ProductoPublico } from '../../models/catalogo-publico.model';
 import { CatalogoFiltros } from '../../models/catalogo-filtros.model';
 import { CatalogoService } from '../../services/catalogo.service';
 import { CatalogoPage } from './catalogo-page';
@@ -42,7 +41,7 @@ function configurar(opciones: {
   queryParams?: Record<string, string>;
 }) {
   const filtros$ = new Subject<CatalogoFiltros>();
-  const listar = vi.fn(() => of([] as Producto[]));
+  const listar = vi.fn(() => of([] as ProductoPublico[]));
   const obtenerFiltros = vi.fn(() => filtros$);
   const activatedRoute = {
     snapshot: {
@@ -57,10 +56,9 @@ function configurar(opciones: {
       provideHttpClient(),
       provideHttpClientTesting(),
       {
-        provide: ProductosService,
-        useValue: { listarProductosPublicos: listar },
+        provide: CatalogoService,
+        useValue: { listarProductos: listar, obtenerFiltros },
       },
-      { provide: CatalogoService, useValue: { obtenerFiltros } },
       { provide: ActivatedRoute, useValue: activatedRoute },
       { provide: PLATFORM_ID, useValue: opciones.plataforma ?? 'browser' },
     ],
