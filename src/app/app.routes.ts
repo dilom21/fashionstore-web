@@ -125,21 +125,8 @@ export const routes: Routes = [
   },
   {
     path: 'saas/offline-operaciones',
-    title: 'Operaciones locales · FashionStore',
-    canActivate: [personalSaasAuthGuard],
-    loadComponent: () => import('./features/saas/pages/offline-operations.page').then((m) => m.OfflineOperationsPage),
-  },
-  {
-    path: 'saas/catalogo-offline',
-    title: 'Catálogo offline · FashionStore',
-    canActivate: [personalSaasAuthGuard],
-    loadComponent: () => import('./features/saas/pages/offline-catalogo.page').then((m) => m.OfflineCatalogoPage),
-  },
-  {
-    path: 'saas/catalogo-offline/:id',
-    title: 'Detalle offline · FashionStore',
-    canActivate: [personalSaasAuthGuard],
-    loadComponent: () => import('./features/saas/pages/offline-catalogo-detalle.page').then((m) => m.OfflineCatalogoDetallePage),
+    redirectTo: 'offline/operaciones',
+    pathMatch: 'full',
   },
   {
     path: '',
