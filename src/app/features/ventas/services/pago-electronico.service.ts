@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { environment } from '../../../../environments/environment';
 import {
   CrearIntencionPagoRequest,
@@ -9,15 +10,27 @@ import {
   IntencionPagoResponse,
 } from '../models/pago-electronico.model';
 
+/** Ruta base de Stripe: tenant en SaaS, legacy en el primer parcial. */
+export function construirBasePagoStripe(
+  apiUrl: string,
+  saasMode: boolean,
+): string {
+  const base = apiUrl.replace(/\/+$/, '');
+  return saasMode
+    ? `${base}/tenant/pagos/stripe`
+    : `${base}/pagos/stripe`;
+}
+
 /**
  * Servicio HTTP de pago electrónico (CU22).
  *
  * Única responsabilidad: hablar con los dos endpoints que Angular puede
- * consumir. NUNCA llama al webhook (`POST /pagos/stripe/webhook`): ese es
- * Stripe -> backend.
+ * consumir. NUNCA llama al webhook: ese es Stripe -> backend.
  *
- *   POST /pagos/stripe/intencion
- *   GET  /pagos/stripe/ventas/{venta_id}/estado
+ *   SaaS:   POST /tenant/pagos/stripe/intencion
+ *           GET  /tenant/pagos/stripe/ventas/{venta_id}/estado
+ *   Legacy: POST /pagos/stripe/intencion
+ *           GET  /pagos/stripe/ventas/{venta_id}/estado
  *
  * El cuerpo de la intención contiene SOLO `venta_id`. El monto, la moneda, el
  * cliente y el estado los deriva el backend de la venta y del JWT.
@@ -26,6 +39,11 @@ import {
 export class PagoElectronicoService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
+
+  private get baseUrl(): string {
+    return construirBasePagoStripe(this.apiUrl, this.saasMode);
+  }
 
   /** Crea o reutiliza el PaymentIntent de la venta PENDIENTE. */
   crearIntencion(ventaId: number): Observable<IntencionPagoResponse> {
@@ -34,7 +52,7 @@ export class PagoElectronicoService {
     };
     return this.http
       .post<IntencionPagoResponse>(
-        `${this.apiUrl}/pagos/stripe/intencion`,
+        `${this.baseUrl}/intencion`,
         payload,
       )
       .pipe(map((intencion) => this.normalizar(intencion)));
@@ -43,7 +61,7 @@ export class PagoElectronicoService {
   /** Consulta el estado real de la venta y de su pago electrónico. */
   consultarEstado(ventaId: number): Observable<EstadoPagoVentaResponse> {
     return this.http.get<EstadoPagoVentaResponse>(
-      `${this.apiUrl}/pagos/stripe/ventas/${Number(ventaId)}/estado`,
+      `${this.baseUrl}/ventas/${Number(ventaId)}/estado`,
     );
   }
 

@@ -77,10 +77,10 @@
               @for (item of items(); track item.detalle_id) {
                 <li class="rdt__item">
                   <div class="rdt__media">
-                    @if (item.imagen_principal) {
+                    @if (item.imagen_principal_url) {
                       <img
                         class="rdt__img"
-                        [src]="item.imagen_principal"
+                        [src]="item.imagen_principal_url"
                         [alt]="item.producto_nombre"
                         loading="lazy"
                       />

@@ -62,8 +62,97 @@ export function combinarFechaHoraAtencion(
 }
 
 /**
+ * Construye el datetime AWARE que exige el backend SaaS.
+ *
+ * `POST /tenant/reservas` rechaza (422) una fecha sin zona horaria. Se toma la
+ * fecha/hora LOCAL del formulario y se convierte al instante UTC equivalente
+ * (`toISOString()`), conservando la intención del usuario.
+ */
+export function combinarFechaHoraAtencionSaas(
+  fecha: string,
+  hora: string,
+): string | null {
+  const fechaPartes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha.trim());
+  const horaPartes = /^(\d{2}):(\d{2})$/.exec(hora.trim());
+  if (fechaPartes === null || horaPartes === null) {
+    return null;
+  }
+  const anio = Number(fechaPartes[1]);
+  const mes = Number(fechaPartes[2]);
+  const dia = Number(fechaPartes[3]);
+  const horas = Number(horaPartes[1]);
+  const minutos = Number(horaPartes[2]);
+  if (horas > 23 || minutos > 59) {
+    return null;
+  }
+  const fechaLocal = new Date(anio, mes - 1, dia, horas, minutos, 0, 0);
+  if (
+    Number.isNaN(fechaLocal.getTime()) ||
+    fechaLocal.getFullYear() !== anio ||
+    fechaLocal.getMonth() !== mes - 1 ||
+    fechaLocal.getDate() !== dia
+  ) {
+    // Rechaza fechas imposibles (p. ej. 2026-02-31) que Date normalizaría.
+    return null;
+  }
+  return fechaLocal.toISOString();
+}
+
+/** Formatea un ISO en la zona horaria LOCAL del navegador: "dd/MM/yyyy HH:mm". */
+export function formatearFechaHoraLocal(iso: string | null): string {
+  if (iso === null || iso.trim().length === 0) {
+    return '—';
+  }
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) {
+    return formatearFechaHora(iso);
+  }
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const anio = fecha.getFullYear();
+  const hora = String(fecha.getHours()).padStart(2, '0');
+  const minuto = String(fecha.getMinutes()).padStart(2, '0');
+  return `${dia}/${mes}/${anio} ${hora}:${minuto}`;
+}
+
+/** Formatea un ISO en la zona horaria LOCAL del navegador: "dd/MM/yyyy". */
+export function formatearFechaLocal(iso: string | null): string {
+  if (iso === null || iso.trim().length === 0) {
+    return '—';
+  }
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) {
+    return formatearFecha(iso);
+  }
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}/${fecha.getFullYear()}`;
+}
+
+/**
+ * Formatea la fecha/hora de una reserva según el contrato:
+ * - SaaS: datetime aware → se muestra en la zona local del navegador.
+ * - Legacy: se mantiene la lectura literal del primer parcial.
+ */
+export function formatearFechaHoraReserva(
+  iso: string | null,
+  saasMode: boolean,
+): string {
+  return saasMode ? formatearFechaHoraLocal(iso) : formatearFechaHora(iso);
+}
+
+/** Formatea la fecha de una reserva según el contrato (ver arriba). */
+export function formatearFechaReserva(
+  iso: string | null,
+  saasMode: boolean,
+): string {
+  return saasMode ? formatearFechaLocal(iso) : formatearFecha(iso);
+}
+
+/**
  * true si la fecha/hora elegida es posterior a "ahora".
  *
+ * Se interpreta la fecha/hora del formulario en la zona LOCAL del navegador.
  * Es solo validación de UX: el backend sigue siendo la autoridad.
  */
 export function esFechaHoraFutura(fecha: string, hora: string): boolean {
@@ -77,3 +166,5 @@ export function esFechaHoraFutura(fecha: string, hora: string): boolean {
   }
   return elegida.getTime() > Date.now();
 }
+
+

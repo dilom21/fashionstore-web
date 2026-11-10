@@ -20,7 +20,6 @@ import { ReservaDetallePage } from './reserva-detalle-page';
 const DETALLE: ReservaDetalle = {
   reserva_id: 55,
   carrito_id: 7,
-  cliente_id: 3,
   sucursal_id: 2,
   sucursal_nombre: 'Sucursal Centro',
   fecha_reserva: '2026-09-18T11:00:00+00:00',
@@ -33,7 +32,7 @@ const DETALLE: ReservaDetalle = {
       inventario_id: 9,
       producto_id: 8,
       producto_nombre: 'Camisa Oxford',
-      imagen_principal: null,
+      imagen_principal_url: null,
       variante_producto_id: 3,
       sku: 'OXF-M-NEG',
       talla_id: 2,
@@ -45,7 +44,8 @@ const DETALLE: ReservaDetalle = {
       cantidad: 2,
     },
   ],
-  cantidad_total_unidades: 2,
+  cantidad_lineas: 1,
+  cantidad_unidades: 2,
 };
 
 describe('ReservaDetallePage (CU16)', () => {
@@ -62,7 +62,7 @@ describe('ReservaDetallePage (CU16)', () => {
     const detalle: ReservaDetalle = { ...DETALLE, estado };
     reservasService = {
       obtenerReserva: vi.fn(() => of(detalle)),
-      cancelarReserva: vi.fn(() => of({ ...detalle, estado: 'CANCELADA' })),
+      cancelarReserva: vi.fn(() => of({ reserva_id: 55, estado: 'CANCELADA' })),
       esCancelable: (valor: string) =>
         ['PENDIENTE', 'CONFIRMADA'].includes(
           (valor ?? '').trim().toUpperCase(),

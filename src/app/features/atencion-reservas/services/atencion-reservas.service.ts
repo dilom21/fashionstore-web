@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { environment } from '../../../../environments/environment';
 import {
   AtencionReservaDetalle,
@@ -28,9 +29,12 @@ import {
 export class AtencionReservasService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
 
   private get baseUrl(): string {
-    return `${this.apiUrl}/atencion-reservas`;
+    return this.saasMode
+      ? `${this.apiUrl}/tenant/atencion-reservas`
+      : `${this.apiUrl}/atencion-reservas`;
   }
 
   /** GET /atencion-reservas (paginado: items/total/limit/offset). */

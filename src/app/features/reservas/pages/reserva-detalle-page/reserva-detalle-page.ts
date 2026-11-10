@@ -9,23 +9,30 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { SAAS_MODE } from '../../../../core/config/app-mode';
+import { obtenerEmpresaSlugPublica } from '../../../../core/config/empresa-publica';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
-import { ReservaDetalle, ReservaItem } from '../../models/reserva.model';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import {
+  EstadoReserva,
+  ReservaDetalle,
+  ReservaItem,
+} from '../../models/reserva.model';
 import { ReservasService } from '../../services/reservas.service';
 import { traducirErrorReserva } from '../../utils/reserva-error.util';
-import { formatearFechaHora } from '../../utils/reserva-fecha.util';
+import { formatearFechaHoraReserva } from '../../utils/reserva-fecha.util';
 
 /**
- * Detalle de una reserva (CU16) - /reservas/:reserva_id.
+ * Detalle de una reserva (CU11/CU16) - /reservas/:reserva_id.
  *
- * SOLO LECTURA: no se pueden editar prendas ni cantidades. La reserva usa el
- * carrito completo y la única acción disponible es cancelarla mientras el
- * backend lo permita (PENDIENTE o CONFIRMADA).
+ * SOLO LECTURA: no se pueden editar prendas ni cantidades. La única acción es
+ * cancelarla mientras el backend lo permita (PENDIENTE o CONFIRMADA).
  *
- * Cancelar NO reactiva el carrito: el backend lo mantiene CONVERTIDO.
+ * En SaaS el listado/detalle usan `/tenant/reservas` y el estado tras cancelar
+ * proviene de la respuesta real del backend.
  */
 @Component({
   selector: 'app-reserva-detalle-page',
@@ -36,10 +43,13 @@ import { formatearFechaHora } from '../../utils/reserva-fecha.util';
 export class ReservaDetallePage implements OnInit {
   private readonly reservasService = inject(ReservasService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+
+  readonly saasMode = inject(SAAS_MODE);
 
   readonly reservaId = signal<number | null>(null);
   readonly reserva = signal<ReservaDetalle | null>(null);
@@ -50,12 +60,21 @@ export class ReservaDetallePage implements OnInit {
   readonly cancelando = signal(false);
 
   readonly items = computed<ReservaItem[]>(() => this.reserva()?.items ?? []);
-  readonly unidades = computed(
-    () => this.reserva()?.cantidad_total_unidades ?? 0,
-  );
+  readonly unidades = computed(() => this.reserva()?.cantidad_unidades ?? 0);
   readonly puedeCancelar = computed(() => {
     const reserva = this.reserva();
     return reserva !== null && this.reservasService.esCancelable(reserva.estado);
+  });
+
+  /** Coherencia tienda/sesión (no se consultan reservas de otra empresa). */
+  readonly empresaIncoherente = computed(() => {
+    if (!this.saasMode || this.tenantApi.contexto() !== 'cliente') {
+      return false;
+    }
+    const catalogo = obtenerEmpresaSlugPublica();
+    const sesion =
+      this.tenantApi.identidad()?.empresa_slug?.trim().toLowerCase() ?? null;
+    return catalogo === null || sesion === null || sesion !== catalogo;
   });
 
   ngOnInit(): void {
@@ -69,6 +88,13 @@ export class ReservaDetallePage implements OnInit {
   }
 
   cargar(reservaId: number): void {
+    if (this.empresaIncoherente()) {
+      this.reserva.set(null);
+      this.error.set(
+        'Tu sesión pertenece a otra empresa. Inicia sesión en esta tienda para ver esta reserva.',
+      );
+      return;
+    }
     this.cargando.set(true);
     this.error.set(null);
     this.reservasService
@@ -88,11 +114,17 @@ export class ReservaDetallePage implements OnInit {
   }
 
   fechaReserva(): string {
-    return formatearFechaHora(this.reserva()?.fecha_reserva ?? null);
+    return formatearFechaHoraReserva(
+      this.reserva()?.fecha_reserva ?? null,
+      this.saasMode,
+    );
   }
 
   fechaAtencion(): string {
-    return formatearFechaHora(this.reserva()?.fecha_atencion ?? null);
+    return formatearFechaHoraReserva(
+      this.reserva()?.fecha_atencion ?? null,
+      this.saasMode,
+    );
   }
 
   claseEstado(): string {
@@ -123,10 +155,14 @@ export class ReservaDetallePage implements OnInit {
       .cancelarReserva(reservaId, null)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (detalle) => {
+        next: (resultado) => {
           this.cancelando.set(false);
-          // La vista se actualiza con la respuesta real del backend.
-          this.reserva.set(detalle);
+          // Se refleja el estado REAL devuelto por el backend (ya confirmado).
+          this.reserva.update((actual) =>
+            actual === null
+              ? actual
+              : { ...actual, estado: resultado.estado as EstadoReserva },
+          );
           this.toast.mostrar('Reserva cancelada.', 'ok');
         },
         error: (error: unknown) => {
@@ -161,7 +197,11 @@ export class ReservaDetallePage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

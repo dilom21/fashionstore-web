@@ -1,4 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   DestroyRef,
@@ -11,15 +12,28 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ToastService } from '../../../../core/services/toast.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import {
   CarritoDetalle,
   CarritoItem,
 } from '../../../carrito/models/carrito.model';
 import { CarritoService } from '../../../carrito/services/carrito.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
+import {
+  ESTADO_VENTA_PENDIENTE,
+  esVentaConfirmada,
+  normalizarEstado,
+} from '../../models/pago-electronico.model';
 import { VentaDigitalResponse } from '../../models/venta-digital.model';
+import { PagoElectronicoService } from '../../services/pago-electronico.service';
 import { VentaDigitalService } from '../../services/venta-digital.service';
+import {
+  guardarVentaPendiente,
+  limpiarVentaPendiente,
+  obtenerVentaPendiente,
+} from '../../utils/checkout-pendiente.storage';
 import { traducirErrorVentaDigital } from '../../utils/venta-digital-error.util';
 
 /**
@@ -41,7 +55,10 @@ import { traducirErrorVentaDigital } from '../../utils/venta-digital-error.util'
 export class CheckoutDigitalPage implements OnInit {
   private readonly carritoService = inject(CarritoService);
   private readonly ventaDigitalService = inject(VentaDigitalService);
+  private readonly pagoService = inject(PagoElectronicoService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -98,13 +115,20 @@ export class CheckoutDigitalPage implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (detalle) => {
-          this.cargando.set(false);
           if (!this.carritoService.estaActivo(detalle)) {
+            // El carrito pudo convertirse en venta en una visita anterior
+            // (p. ej. el cliente recargó el checkout). Antes de perder la
+            // navegación, se intenta retomar esa venta con el backend.
+            if (this.recuperarCheckoutPendiente(carritoId)) {
+              return;
+            }
+            this.cargando.set(false);
             this.irAlListadoDeCarritos(
               'Este carrito ya no está disponible para comprar.',
             );
             return;
           }
+          this.cargando.set(false);
           this.carrito.set(detalle);
         },
         error: (error: unknown) => {
@@ -136,6 +160,9 @@ export class CheckoutDigitalPage implements OnInit {
         next: (venta) => {
           this.procesando.set(false);
           this.ventaCreada.set(venta);
+          // Pista (no autorización) para poder retomar este checkout si el
+          // cliente recarga la página antes de pagar.
+          guardarVentaPendiente(carritoId, venta.venta_id);
           // El backend ya marcó el carrito como CONVERTIDO: se refresca el badge
           // y NO se vuelve a consultar el carrito convertido.
           this.carritoService.refrescarContador();
@@ -147,6 +174,14 @@ export class CheckoutDigitalPage implements OnInit {
           if (traducido.sesionExpirada) {
             this.cerrarSesion();
             return;
+          }
+          // Si otra pestaña ya convirtió el carrito, se retoma la venta
+          // conocida (siempre verificada contra el backend) en lugar de
+          // dejarla inaccesible.
+          if (traducido.yaPreparada) {
+            if (this.recuperarCheckoutPendiente(carritoId)) {
+              return;
+            }
           }
           this.volverAlCarrito.set(traducido.volverAlCarrito);
           this.error.set(traducido.mensaje);
@@ -183,6 +218,103 @@ export class CheckoutDigitalPage implements OnInit {
     void this.router.navigate(['/carritos']);
   }
 
+  /**
+   * Recupera un checkout interrumpido por una recarga.
+   *
+   * La venta guardada en el navegador es SOLO una pista: antes de navegar se
+   * consulta su estado real con `GET /pagos/stripe/ventas/{id}/estado`, que
+   * valida la propiedad desde el JWT. Un `venta_id` manipulado, de otro cliente
+   * o inexistente nunca permite continuar.
+   *
+   * @returns true si se inició la verificación (la navegación la decide la
+   *          respuesta del backend); false si no hay venta que recuperar.
+   */
+  private recuperarCheckoutPendiente(carritoId: number): boolean {
+    const ventaId = obtenerVentaPendiente(carritoId);
+    if (ventaId === null) {
+      return false;
+    }
+
+    this.cargando.set(true);
+    this.error.set(null);
+    this.pagoService
+      .consultarEstado(ventaId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (estado) => {
+          this.cargando.set(false);
+          this.continuarVentaVerificada(
+            carritoId,
+            ventaId,
+            estado.estado_venta,
+          );
+        },
+        error: (error: unknown) => {
+          this.cargando.set(false);
+          this.manejarErrorRecuperacion(carritoId, error);
+        },
+      });
+    return true;
+  }
+
+  /** Decide el destino según el estado real confirmado por el backend. */
+  private continuarVentaVerificada(
+    carritoId: number,
+    ventaId: number,
+    estadoVenta: string | null | undefined,
+  ): void {
+    const estado = normalizarEstado(estadoVenta);
+
+    // Pago ya procesado: el resultado correcto es el comprobante (CU23).
+    if (esVentaConfirmada(estado)) {
+      limpiarVentaPendiente(carritoId);
+      this.toast.mostrar('Tu compra ya fue completada.', 'ok');
+      void this.router.navigate(['/ventas', ventaId, 'comprobante']);
+      return;
+    }
+
+    // Venta aún PENDIENTE: se retoma el pago sin crear otra venta ni otra
+    // intención (la página de pago reutiliza la intención existente).
+    if (estado === ESTADO_VENTA_PENDIENTE) {
+      this.toast.mostrar('Retomamos tu compra pendiente.', 'info');
+      void this.router.navigate(['/pagos/stripe', ventaId]);
+      return;
+    }
+
+    // CANCELADA u otro estado no reanudable: no se ofrece pagar de nuevo.
+    limpiarVentaPendiente(carritoId);
+    this.volverAlCarrito.set(false);
+    this.error.set('Tu compra ya no está disponible para continuar.');
+  }
+
+  /** Errores al verificar la venta recordada (nunca se confía en la pista). */
+  private manejarErrorRecuperacion(
+    carritoId: number,
+    error: unknown,
+  ): void {
+    const status = error instanceof HttpErrorResponse ? error.status : -1;
+
+    if (status === 401) {
+      this.cerrarSesion();
+      return;
+    }
+
+    if (status === 403 || status === 404) {
+      // La venta no existe o no pertenece al cliente autenticado.
+      limpiarVentaPendiente(carritoId);
+      this.irAlListadoDeCarritos(
+        'No encontramos una compra pendiente asociada a tu cuenta.',
+      );
+      return;
+    }
+
+    // Red o servidor: se conserva la pista para reintentar al recargar.
+    this.volverAlCarrito.set(false);
+    this.error.set(
+      'No pudimos verificar tu compra pendiente. Recarga la página para reintentar.',
+    );
+  }
+
   private manejarError(error: unknown): void {
     const traducido = traducirErrorVentaDigital(error);
     if (traducido.sesionExpirada) {
@@ -202,7 +334,11 @@ export class CheckoutDigitalPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     this.carritoService.limpiar();
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },

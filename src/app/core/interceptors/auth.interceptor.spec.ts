@@ -72,6 +72,26 @@ describe('authInterceptor (JWT legacy vs JWT empresarial)', () => {
     peticion.flush([]);
   });
 
+  it('el carrito SaaS (/tenant/carritos) lleva solo el JWT empresarial', () => {
+    configurar(LEGACY);
+    sessionStorage.setItem('fashionstore_saas_tenant_access_token', TENANT);
+
+    try {
+      httpClient
+        .get(`${API}/tenant/carritos?limit=50&offset=0`)
+        .subscribe();
+      const peticion = http.expectOne(
+        `${API}/tenant/carritos?limit=50&offset=0`,
+      );
+      expect(peticion.request.headers.get('Authorization')).toBe(
+        `Bearer ${TENANT}`,
+      );
+      peticion.flush({ items: [], total_carritos_activos: 0 });
+    } finally {
+      sessionStorage.removeItem('fashionstore_saas_tenant_access_token');
+    }
+  });
+
   it('el login empresarial viaja sin ningún token previo', () => {
     configurar(LEGACY);
 

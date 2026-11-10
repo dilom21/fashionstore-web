@@ -132,7 +132,15 @@
           <span class="vm-eyebrow">{{ productoActual.categoria.nombre }}</span>
           <h1 class="pdet__title">{{ productoActual.nombre }}</h1>
           <p class="pdet__price">
-            Bs {{ productoActual.precio | number: '1.2-2' }}
+            Bs {{ productoActual.precio_definitivo | number: '1.2-2' }}
+            @if (
+              !productoActual.precio_calculo_pendiente &&
+              productoActual.precio_definitivo < productoActual.precio
+            ) {
+              <s class="pdet__price--before">
+                Bs {{ productoActual.precio | number: '1.2-2' }}
+              </s>
+            }
           </p>
 
           @if (productoActual.descripcion) {
@@ -226,11 +234,29 @@
                 aria-label="Sucursal de compra"
               >
                 <option value="">Elegir sucursal…</option>
-                @for (sucursal of filtros()?.sucursales ?? []; track sucursal.id) {
+                @for (sucursal of sucursalesSeleccionables(); track sucursal.id) {
                   <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
                 }
               </select>
             </div>
+
+            @if (saasMode) {
+              <div class="pdet__buy-row">
+                <span class="pdet__buy-label">Temporada</span>
+                <select
+                  class="pdet__buy-select"
+                  [value]="temporadaElegida() ?? ''"
+                  (change)="cambiarTemporada($event)"
+                  [disabled]="temporadasDisponibles().length === 0"
+                  aria-label="Temporada"
+                >
+                  <option value="">Elegir temporada…</option>
+                  @for (temporada of temporadasDisponibles(); track temporada) {
+                    <option [value]="temporada">{{ temporada }}</option>
+                  }
+                </select>
+              </div>
+            }
 
             <div class="pdet__buy-row">
               <span class="pdet__buy-label">Cantidad</span>
@@ -250,7 +276,9 @@
                 <button
                   type="button"
                   class="pdet__qty-btn"
-                  [disabled]="stockElegido() > 0 && cantidad() >= stockElegido()"
+                  [disabled]="
+                    stockSeleccionado() > 0 && cantidad() >= stockSeleccionado()
+                  "
                   aria-label="Aumentar cantidad"
                   (click)="cambiarCantidad(1)"
                 >
@@ -262,7 +290,7 @@
             <dl class="pdet__buy-totales">
               <div>
                 <dt>Precio unitario</dt>
-                <dd>Bs {{ productoActual.precio | number: '1.2-2' }}</dd>
+                <dd>Bs {{ productoActual.precio_definitivo | number: '1.2-2' }}</dd>
               </div>
               <div>
                 <dt>Total</dt>
@@ -270,19 +298,17 @@
               </div>
             </dl>
 
-            @if (sucursalCompra.sucursalId() === null) {
-              <p class="pdet__buy-hint">Elige una sucursal para comprar.</p>
-            } @else if (varianteElegida() === null) {
-              <p class="pdet__buy-hint">
-                Elige talla y color para ver la disponibilidad.
-              </p>
-            } @else if (stockElegido() <= 0) {
+            @if (mensajeEmpresa(); as avisoEmpresa) {
               <p class="pdet__buy-hint pdet__buy-hint--error">
-                Sin stock disponible
+                {{ avisoEmpresa }}
               </p>
-            } @else {
-              <p class="pdet__buy-hint pdet__buy-hint--ok">
-                {{ stockElegido() }} unidad(es) disponibles en esta sucursal.
+            } @else if (mensajeSeleccion(); as aviso) {
+              <p
+                class="pdet__buy-hint"
+                [class.pdet__buy-hint--error]="aviso.tipo === 'error'"
+                [class.pdet__buy-hint--ok]="aviso.tipo === 'ok'"
+              >
+                {{ aviso.texto }}
               </p>
             }
 
@@ -304,9 +330,12 @@
       </div>
 
       <app-disponibilidad-producto
-        [productoId]="productoActual.id"
+        [disponibilidad]="disponibilidad()"
         [productoNombre]="productoActual.nombre"
         [filtros]="filtros()"
+        [cargando]="cargandoDisponibilidad()"
+        [error]="errorDisponibilidad()"
+        (reintentar)="reintentarDisponibilidad()"
       />
     }
   </div>

@@ -9,6 +9,8 @@ import {
 import { Observable, Subject, of, throwError } from 'rxjs';
 
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { ComprobanteVenta } from '../../models/comprobante-venta.model';
 import { ComprobanteVentaService } from '../../services/comprobante-venta.service';
 import { ComprobantePersonalPage } from './comprobante-personal-page';
@@ -66,6 +68,7 @@ describe('ComprobantePersonalPage (CU23)', () => {
   let componente: ComprobantePersonalPage;
   let servicio: { obtenerComprobante: ReturnType<typeof vi.fn> };
   let auth: { cerrarSesion: ReturnType<typeof vi.fn> };
+  let tenant: { cerrarSesion: ReturnType<typeof vi.fn> };
   let navigateSpy: ReturnType<typeof vi.spyOn>;
 
   interface Opciones {
@@ -73,6 +76,7 @@ describe('ComprobantePersonalPage (CU23)', () => {
     observable?: Observable<ComprobanteVenta>;
     error?: unknown;
     respuesta?: ComprobanteVenta;
+    saasMode?: boolean;
   }
 
   async function setup(opciones: Opciones = {}): Promise<void> {
@@ -88,13 +92,16 @@ describe('ComprobantePersonalPage (CU23)', () => {
       }),
     };
     auth = { cerrarSesion: vi.fn() };
+    tenant = { cerrarSesion: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [ComprobantePersonalPage],
       providers: [
         provideRouter([]),
+        { provide: SAAS_MODE, useValue: opciones.saasMode ?? false },
         { provide: ComprobanteVentaService, useValue: servicio },
         { provide: AuthService, useValue: auth },
+        { provide: TenantApiService, useValue: tenant },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -232,6 +239,20 @@ describe('ComprobantePersonalPage (CU23)', () => {
     await setup({ error: new HttpErrorResponse({ status: 401 }) });
 
     expect(auth.cerrarSesion).toHaveBeenCalled();
+    expect(navigateSpy).toHaveBeenCalledWith(
+      ['/auth/personal/login'],
+      expect.objectContaining({ queryParams: expect.anything() }),
+    );
+  });
+
+  it('en SaaS el 401 cierra la sesión empresarial (no la legacy)', async () => {
+    await setup({
+      error: new HttpErrorResponse({ status: 401 }),
+      saasMode: true,
+    });
+
+    expect(tenant.cerrarSesion).toHaveBeenCalled();
+    expect(auth.cerrarSesion).not.toHaveBeenCalled();
     expect(navigateSpy).toHaveBeenCalledWith(
       ['/auth/personal/login'],
       expect.objectContaining({ queryParams: expect.anything() }),

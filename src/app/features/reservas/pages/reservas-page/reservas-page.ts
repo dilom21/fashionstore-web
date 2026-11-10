@@ -2,20 +2,24 @@ import {
   Component,
   DestroyRef,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 
+import { SAAS_MODE } from '../../../../core/config/app-mode';
+import { obtenerEmpresaSlugPublica } from '../../../../core/config/empresa-publica';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
 import { EstadoReserva, ReservaResumen } from '../../models/reserva.model';
 import { ReservasService } from '../../services/reservas.service';
 import { traducirErrorReserva } from '../../utils/reserva-error.util';
-import { formatearFechaHora } from '../../utils/reserva-fecha.util';
+import { formatearFechaHoraReserva } from '../../utils/reserva-fecha.util';
 
 /** Opciones del filtro por estado (los mismos estados del backend). */
 const ESTADOS_RESERVA: ReadonlyArray<{
@@ -30,11 +34,15 @@ const ESTADOS_RESERVA: ReadonlyArray<{
   { valor: 'VENCIDA', label: 'Vencida' },
 ];
 
+/** Tamaño de página del contrato SaaS. */
+const LIMITE_PAGINA = 20;
+
 /**
- * Mis reservas (CU16) - /reservas.
+ * Mis reservas (CU11/CU16) - /reservas.
  *
- * Lista las reservas del cliente autenticado (GET /reservas). El backend es la
- * autoridad: el frontend no inventa estados ni reactiva nada.
+ * Lista las reservas del cliente autenticado. En SaaS usa
+ * `GET /tenant/reservas?estado&limit&offset` (paginado); en legacy conserva
+ * `GET /reservas`.
  */
 @Component({
   selector: 'app-reservas-page',
@@ -45,14 +53,18 @@ const ESTADOS_RESERVA: ReadonlyArray<{
 export class ReservasPage implements OnInit {
   private readonly reservasService = inject(ReservasService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
+  readonly saasMode = inject(SAAS_MODE);
   readonly estados = ESTADOS_RESERVA;
+  readonly limite = LIMITE_PAGINA;
 
   readonly reservas = signal<ReservaResumen[]>([]);
   readonly total = signal(0);
+  readonly offset = signal(0);
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
   readonly estadoFiltro = signal<EstadoReserva | null>(null);
@@ -60,21 +72,48 @@ export class ReservasPage implements OnInit {
   readonly pendienteCancelar = signal<ReservaResumen | null>(null);
   readonly cancelando = signal(false);
 
+  readonly hayPaginaAnterior = computed(() => this.offset() > 0);
+  readonly hayPaginaSiguiente = computed(
+    () => this.offset() + this.limite < this.total(),
+  );
+  readonly mostrarPaginacion = computed(
+    () => this.saasMode && this.total() > this.limite,
+  );
+
+  /** Coherencia tienda/sesión (no se consultan reservas de otra empresa). */
+  readonly empresaIncoherente = computed(() => {
+    if (!this.saasMode || this.tenantApi.contexto() !== 'cliente') {
+      return false;
+    }
+    const catalogo = obtenerEmpresaSlugPublica();
+    const sesion =
+      this.tenantApi.identidad()?.empresa_slug?.trim().toLowerCase() ?? null;
+    return catalogo === null || sesion === null || sesion !== catalogo;
+  });
+
   ngOnInit(): void {
     this.cargar();
   }
 
   cargar(): void {
-    this.cargando.set(true);
     this.error.set(null);
+    if (this.empresaIncoherente()) {
+      this.reservas.set([]);
+      this.total.set(0);
+      this.error.set(
+        'Tu sesión pertenece a otra empresa. Inicia sesión en esta tienda para ver tus reservas.',
+      );
+      return;
+    }
+    this.cargando.set(true);
     this.reservasService
-      .listarReservas(this.estadoFiltro())
+      .listarReservas(this.estadoFiltro(), this.limite, this.offset())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (respuesta) => {
           this.cargando.set(false);
           this.reservas.set(respuesta.items ?? []);
-          this.total.set(respuesta.total_reservas ?? 0);
+          this.total.set(respuesta.total ?? 0);
         },
         error: (error: unknown) => {
           this.cargando.set(false);
@@ -93,6 +132,7 @@ export class ReservasPage implements OnInit {
   cambiarEstado(evento: Event): void {
     const valor = (evento.target as HTMLSelectElement).value;
     this.estadoFiltro.set(valor.length > 0 ? (valor as EstadoReserva) : null);
+    this.offset.set(0);
     this.cargar();
   }
 
@@ -105,6 +145,23 @@ export class ReservasPage implements OnInit {
       return;
     }
     this.estadoFiltro.set(null);
+    this.offset.set(0);
+    this.cargar();
+  }
+
+  paginaAnterior(): void {
+    if (!this.hayPaginaAnterior()) {
+      return;
+    }
+    this.offset.set(Math.max(0, this.offset() - this.limite));
+    this.cargar();
+  }
+
+  paginaSiguiente(): void {
+    if (!this.hayPaginaSiguiente()) {
+      return;
+    }
+    this.offset.set(this.offset() + this.limite);
     this.cargar();
   }
 
@@ -121,7 +178,7 @@ export class ReservasPage implements OnInit {
   }
 
   fechaAtencion(iso: string): string {
-    return formatearFechaHora(iso);
+    return formatearFechaHoraReserva(iso, this.saasMode);
   }
 
   solicitarCancelar(reserva: ReservaResumen): void {
@@ -138,7 +195,7 @@ export class ReservasPage implements OnInit {
   confirmarCancelar(): void {
     const pendiente = this.pendienteCancelar();
     this.pendienteCancelar.set(null);
-    if (pendiente === null) {
+    if (pendiente === null || this.cancelando()) {
       return;
     }
 
@@ -169,7 +226,11 @@ export class ReservasPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

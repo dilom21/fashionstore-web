@@ -14,7 +14,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import { CarritoDetalle } from '../../../carrito/models/carrito.model';
 import { CarritoService } from '../../../carrito/services/carrito.service';
-import { ReservaDetalle } from '../../models/reserva.model';
+import { ReservaCreada } from '../../models/reserva.model';
 import { ReservasService } from '../../services/reservas.service';
 import { CrearReservaPage } from './crear-reserva-page';
 
@@ -50,18 +50,10 @@ const CARRITO: CarritoDetalle = {
   subtotal_carrito: 299.8,
 };
 
-const RESERVA: ReservaDetalle = {
+const RESERVA: ReservaCreada = {
   reserva_id: 55,
   carrito_id: 7,
-  cliente_id: 3,
-  sucursal_id: 2,
-  sucursal_nombre: 'Sucursal Centro',
-  fecha_reserva: '2026-09-18T11:00:00+00:00',
-  fecha_atencion: '2026-09-20T10:00:00',
   estado: 'PENDIENTE',
-  observacion: null,
-  items: [],
-  cantidad_total_unidades: 2,
 };
 
 function crearMockCarrito(carrito: CarritoDetalle | null) {
@@ -186,7 +178,8 @@ describe('CrearReservaPage (CU16)', () => {
     const payload = reservasService.crearReserva.mock.calls[0][0];
     expect(payload).toEqual({
       carrito_id: 7,
-      fecha_atencion: `${fecha}T10:00:00`,
+      fecha,
+      hora: '10:00',
       observacion: 'Llego con un amigo',
     });
     // El cliente y la sucursal los resuelve el backend desde el JWT y el carrito.

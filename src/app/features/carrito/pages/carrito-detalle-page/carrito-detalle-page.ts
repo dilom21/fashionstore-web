@@ -13,7 +13,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
-import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import { CarritoDetalle, CarritoItem } from '../../models/carrito.model';
 import { CarritoService } from '../../services/carrito.service';
@@ -40,7 +39,6 @@ import { traducirErrorCarrito } from '../../utils/carrito-error.util';
 export class CarritoDetallePage implements OnInit {
   private readonly carritoService = inject(CarritoService);
   private readonly sucursalCompra = inject(SucursalCompraService);
-  private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -128,10 +126,23 @@ export class CarritoDetallePage implements OnInit {
       .eliminarDetalle(carritoId, pendiente.detalle_id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (detalle) => {
+        next: (resultado) => {
           this.eliminandoLinea.set(false);
-          const seguiaActivo = this.carritoService.estaActivo(detalle);
-          this.aplicarDetalle(detalle);
+
+          if (resultado.tipo === 'carrito-eliminado') {
+            this.toast.mostrar(
+              'Carrito eliminado porque ya no contiene productos.',
+              'info',
+            );
+            this.carritoService.refrescarContador();
+            void this.router.navigate(['/carritos']);
+            return;
+          }
+
+          const seguiaActivo = this.carritoService.estaActivo(
+            resultado.detalle,
+          );
+          this.aplicarDetalle(resultado.detalle);
           if (seguiaActivo) {
             this.toast.mostrar('Producto eliminado del carrito.', 'ok');
           }
@@ -245,8 +256,7 @@ export class CarritoDetallePage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
-    this.carritoService.limpiar();
+    this.carritoService.cerrarSesionCliente();
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

@@ -94,6 +94,10 @@ describe('CheckoutDigitalPage (CU19)', () => {
   let toast: any;
   let navigateSpy: any;
 
+  // La pista de venta pendiente vive en sessionStorage: se aísla cada prueba
+  // para que una prueba de éxito no afecte a la siguiente.
+  beforeEach(() => sessionStorage.clear());
+
   async function setup(
     carrito: CarritoDetalle | null = CARRITO,
     param = '7',

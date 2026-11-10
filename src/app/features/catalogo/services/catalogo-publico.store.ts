@@ -2,16 +2,16 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, shareReplay, throwError } from 'rxjs';
 
 import {
-  Producto,
-  ProductoListarFiltros,
-} from '../../administracion/catalogo/models/producto.model';
-import { ProductosService } from '../../administracion/catalogo/services/productos.service';
+  ProductoPublico,
+  PublicoListarFiltros,
+} from '../models/catalogo-publico.model';
+import { CatalogoService } from './catalogo.service';
 
 /**
  * Caché compartida de la carga pública del catálogo (CU09).
  *
- * Reutiliza `ProductosService` (CU07) para obtener GET /productos una sola vez
- * y comparte el resultado entre las secciones de la landing (productos
+ * Reutiliza `CatalogoService` para obtener el listado público una sola vez y
+ * compartir el resultado entre las secciones de la landing (productos
  * destacados, nuevos ingresos, etc.). No crea un cliente HTTP propio ni
  * duplica el contrato público.
  *
@@ -19,21 +19,23 @@ import { ProductosService } from '../../administracion/catalogo/services/product
  */
 @Injectable({ providedIn: 'root' })
 export class CatalogoPublicoStore {
-  private readonly productosService = inject(ProductosService);
-  private readonly peticiones = new Map<string, Observable<Producto[]>>();
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly peticiones = new Map<string, Observable<ProductoPublico[]>>();
 
   /**
-   * Productos públicos (GET /productos). La primera llamada para unos filtros
-   * crea la petición; las siguientes suscripciones la comparten.
+   * Productos públicos. La primera llamada para unos filtros crea la petición;
+   * las siguientes suscripciones la comparten.
    */
-  listarProductos(filtros: ProductoListarFiltros = {}): Observable<Producto[]> {
+  listarProductos(
+    filtros: PublicoListarFiltros = {},
+  ): Observable<ProductoPublico[]> {
     const clave = JSON.stringify(filtros);
     const existente = this.peticiones.get(clave);
     if (existente) {
       return existente;
     }
 
-    const peticion$ = this.productosService.listarProductosPublicos(filtros).pipe(
+    const peticion$ = this.catalogoService.listarProductos(filtros).pipe(
       shareReplay({ bufferSize: 1, refCount: false }),
       catchError((error: unknown) => {
         // Un error no se cachea: el siguiente intento vuelve a consultar.

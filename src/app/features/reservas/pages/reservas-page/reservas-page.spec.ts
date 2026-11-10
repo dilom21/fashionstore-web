@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { ToastService } from '../../../../core/services/toast.service';
@@ -17,7 +17,6 @@ function resumen(
   return {
     reserva_id: reservaId,
     carrito_id: 7,
-    cliente_id: 3,
     sucursal_id: 2,
     sucursal_nombre: 'Sucursal Centro',
     fecha_reserva: '2026-09-18T11:00:00+00:00',
@@ -32,9 +31,14 @@ function resumen(
 function crearMockReservas(lista: ReservaResumen[]) {
   return {
     listarReservas: vi.fn(() =>
-      of({ items: lista, total_reservas: lista.length }),
+      of({
+        items: lista,
+        total: lista.length,
+        limit: 20,
+        offset: 0,
+      }),
     ),
-    cancelarReserva: vi.fn(() => of({ ...resumen(1, 'CANCELADA') })),
+    cancelarReserva: vi.fn(() => of({ reserva_id: 1, estado: 'CANCELADA' })),
     obtenerReserva: vi.fn(),
     crearReserva: vi.fn(),
     esCancelable: (estado: string) =>
@@ -118,7 +122,19 @@ describe('ReservasPage (CU16)', () => {
     } as unknown as Event);
     expect(reservasService.listarReservas).toHaveBeenLastCalledWith(
       'CONFIRMADA',
+      20,
+      0,
     );
+  });
+
+  it('abre el detalle /reservas/{id} desde el listado', async () => {
+    await setup([resumen(55, 'PENDIENTE')]);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    componente.verReserva(resumen(55, 'PENDIENTE'));
+
+    expect(navigate).toHaveBeenCalledWith(['/reservas', 55]);
   });
 
   it('cancela una reserva con confirmación y recarga el listado', async () => {

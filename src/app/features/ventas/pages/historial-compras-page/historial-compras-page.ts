@@ -11,6 +11,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../saas/services/tenant-api.service';
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import {
   CanalHistorial,
@@ -64,6 +66,8 @@ import {
 export class HistorialComprasPage implements OnInit {
   private readonly historialService = inject(HistorialComprasService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -312,7 +316,11 @@ export class HistorialComprasPage implements OnInit {
 
   /** Sesión expirada: se reutiliza el mecanismo existente del sitio. */
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

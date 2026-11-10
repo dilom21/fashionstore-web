@@ -16,22 +16,25 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
+  Observable,
   catchError,
   debounceTime,
   distinctUntilChanged,
   forkJoin,
+  map,
   of,
 } from 'rxjs';
 
 import { ToastService } from '../../../../../core/services/toast.service';
+import { SAAS_MODE } from '../../../../../core/config/app-mode';
 import { ConfirmDialog } from '../../../../../shared/components/confirm-dialog/confirm-dialog';
 import { AdminIcon } from '../../../components/admin-icon/admin-icon';
 import { AuthService } from '../../../../autenticacion-seguridad/auth/services/auth.service';
+import { TenantApiService } from '../../../../saas/services/tenant-api.service';
 import {
   formatearFecha,
   formatearFechaHora,
 } from '../../../../reservas/utils/reserva-fecha.util';
-import { Sucursal } from '../../../inventario/models/sucursal.model';
 import { SucursalesService } from '../../../inventario/services/sucursales.service';
 import {
   EstadoReservaSucursal,
@@ -87,23 +90,32 @@ export class ReservasSucursalPage implements OnInit {
   private readonly reservasService = inject(ReservasSucursalService);
   private readonly sucursalesService = inject(SucursalesService);
   private readonly authService = inject(AuthService);
+  private readonly tenantApi = inject(TenantApiService);
+  private readonly saasMode = inject(SAAS_MODE);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   /** ADMINISTRADOR: elige sucursal. ENCARGADO: tarjeta informativa. */
-  readonly esAdministrador = computed(() => this.authService.esAdministrador());
+  readonly esAdministrador = computed(() =>
+    this.saasMode
+      ? this.tenantApi.esAdministrador()
+      : this.authService.esAdministrador(),
+  );
 
   /**
    * CU18: ADMINISTRADOR y ENCARGADO_SUCURSAL pueden pasar a atender la reserva
    * (el CAJERO no accede a CU17). La autorización real la aplica el backend.
    */
   readonly puedeAtender = computed(() =>
-    this.authService.puedeAtenderReservas(),
+    this.saasMode
+      ? this.tenantApi.esAdministrador() || this.tenantApi.esEncargadoSucursal()
+      : this.authService.puedeAtenderReservas(),
   );
 
   // ===== Sucursales =====
-  readonly sucursales = signal<Sucursal[]>([]);
+  // Solo se usa id/nombre en el filtro; no se inventan ciudad/dirección.
+  readonly sucursales = signal<Array<{ id: number; nombre: string }>>([]);
   readonly cargandoSucursales = signal(false);
   readonly sucursalAsignada = signal<string | null>(null);
 
@@ -254,6 +266,30 @@ export class ReservasSucursalPage implements OnInit {
     const base = this.filtrosBase();
     this.cargandoResumen.set(true);
 
+    if (this.saasMode) {
+      // SaaS: el backend agrega por estado en un único endpoint.
+      this.reservasService
+        .obtenerEstadisticas(base)
+        .pipe(
+          catchError(() => of(null)),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe((estadisticas) => {
+          this.cargandoResumen.set(false);
+          if (estadisticas === null) {
+            // No se inventan ceros: se conservan los últimos valores reales.
+            return;
+          }
+          this.resumen.set({
+            total: estadisticas.total_reservas ?? 0,
+            pendientes: estadisticas.por_estado?.['PENDIENTE'] ?? 0,
+            confirmadas: estadisticas.por_estado?.['CONFIRMADA'] ?? 0,
+            canceladas: estadisticas.por_estado?.['CANCELADA'] ?? 0,
+          });
+        });
+      return;
+    }
+
     forkJoin({
       total: this.contar(base),
       pendientes: this.contar(base, 'PENDIENTE'),
@@ -281,19 +317,41 @@ export class ReservasSucursalPage implements OnInit {
 
   private cargarSucursales(): void {
     this.cargandoSucursales.set(true);
-    this.sucursalesService
-      .listarSucursalesActivas()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (sucursales) => {
-          this.cargandoSucursales.set(false);
-          this.sucursales.set(sucursales ?? []);
-        },
-        error: () => {
-          this.cargandoSucursales.set(false);
-          this.sucursales.set([]);
-        },
-      });
+    const peticion$: Observable<Array<{ id: number; nombre: string }>> =
+      this.saasMode
+        ? this.tenantApi.sucursales().pipe(
+            map((sucursales) =>
+              (sucursales ?? []).map((sucursal) => ({
+                id: sucursal.id,
+                nombre: sucursal.nombre,
+              })),
+            ),
+          )
+        : this.sucursalesService.listarSucursalesActivas().pipe(
+            map((sucursales) =>
+              (sucursales ?? []).map((sucursal) => ({
+                id: sucursal.id,
+                nombre: sucursal.nombre,
+              })),
+            ),
+          );
+    peticion$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (sucursales) => {
+        this.cargandoSucursales.set(false);
+        this.sucursales.set(sucursales ?? []);
+      },
+      error: () => {
+        this.cargandoSucursales.set(false);
+        this.sucursales.set([]);
+      },
+    });
+  }
+
+  /** Sucursal del empleado según el modo (empresarial o legacy). */
+  private sucursalAsignadaId(): number | null {
+    return this.saasMode
+      ? (this.tenantApi.identidad()?.sucursal_id ?? null)
+      : this.authService.sucursalId();
   }
 
   /**
@@ -301,19 +359,32 @@ export class ReservasSucursalPage implements OnInit {
    * desde el propio listado. No se inventa alcance: el backend es la autoridad.
    */
   private resolverSucursalAsignada(): void {
-    const sucursalId = this.authService.sucursalId();
+    const sucursalId = this.sucursalAsignadaId();
     if (sucursalId === null) {
       return;
     }
-    this.sucursalesService
-      .obtenerSucursal(sucursalId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (sucursal) => this.sucursalAsignada.set(sucursal.nombre),
-        error: () => {
-          // Se completará con el listado de reservas.
-        },
-      });
+    const peticion$: Observable<{ nombre: string } | null> = this.saasMode
+      ? this.tenantApi.sucursales().pipe(
+          map(
+            (sucursales) =>
+              (sucursales ?? []).find(
+                (sucursal) => sucursal.id === sucursalId,
+              ) ?? null,
+          ),
+        )
+      : this.sucursalesService
+          .obtenerSucursal(sucursalId)
+          .pipe(map((sucursal) => ({ nombre: sucursal.nombre })));
+    peticion$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (sucursal) => {
+        if (sucursal !== null) {
+          this.sucursalAsignada.set(sucursal.nombre);
+        }
+      },
+      error: () => {
+        // Se completará con el listado de reservas.
+      },
+    });
   }
 
   private cargarDetalle(reservaId: number): void {
@@ -656,7 +727,11 @@ export class ReservasSucursalPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
+    if (this.saasMode) {
+      this.tenantApi.cerrarSesion();
+    } else {
+      this.authService.cerrarSesion();
+    }
     void this.router.navigateByUrl('/auth/personal/login');
   }
 }

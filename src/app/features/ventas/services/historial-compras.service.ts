@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, throwError } from 'rxjs';
 
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { environment } from '../../../../environments/environment';
 import {
   HistorialCompraDetalle,
@@ -11,39 +12,53 @@ import {
   HistorialComprasResponse,
 } from '../models/historial-compras.model';
 
+/** Ruta base del historial: tenant en SaaS, legacy en el primer parcial. */
+export function construirBaseHistorial(
+  apiUrl: string,
+  saasMode: boolean,
+): string {
+  const base = apiUrl.replace(/\/+$/, '');
+  return saasMode
+    ? `${base}/tenant/ventas/historial`
+    : `${base}/ventas/historial`;
+}
+
 /**
  * Servicio de historial de compras del cliente (CU24).
  *
  * Única responsabilidad: consultar el historial del CLIENTE autenticado.
  *
- *   obtenerHistorial(filtros) -> GET /ventas/historial
- *   obtenerDetalle(ventaId)   -> GET /ventas/historial/{venta_id}
+ *   SaaS:   GET /tenant/ventas/historial[/{venta_id}]
+ *   Legacy: GET /ventas/historial[/{venta_id}]
  *
  * El backend identifica al cliente desde el JWT (`get_current_cliente`): el
  * frontend NUNCA envía `cliente_id` ni ningún identificador de cliente.
  *
  * CU24 es una CONSULTA: no modifica ventas, no registra pagos, no genera
- * comprobantes ni PDF, no hace polling y no reintenta automáticamente. Usa el
- * HttpClient y el interceptor de autenticación existentes (sin token manager
- * propio).
+ * comprobantes ni PDF, no hace polling y no reintenta automáticamente.
  */
 @Injectable({ providedIn: 'root' })
 export class HistorialComprasService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
 
-  /** GET /ventas/historial (paginado, solo compras del cliente del JWT). */
+  private get baseUrl(): string {
+    return construirBaseHistorial(this.apiUrl, this.saasMode);
+  }
+
+  /** GET del historial (paginado, solo compras del cliente del JWT). */
   obtenerHistorial(
     filtros: HistorialComprasFiltros = {},
   ): Observable<HistorialComprasResponse> {
     return this.http
-      .get<HistorialComprasResponse>(`${this.apiUrl}/ventas/historial`, {
+      .get<HistorialComprasResponse>(this.baseUrl, {
         params: this.construirParams(filtros),
       })
       .pipe(map((respuesta) => this.normalizarRespuesta(respuesta)));
   }
 
-  /** GET /ventas/historial/{venta_id} (detalle de una compra propia). */
+  /** GET del detalle de una compra propia. */
   obtenerDetalle(ventaId: number): Observable<HistorialCompraDetalle> {
     const id = Number(ventaId);
     if (!Number.isInteger(id) || id <= 0) {
@@ -52,9 +67,7 @@ export class HistorialComprasService {
       );
     }
     return this.http
-      .get<HistorialCompraDetalle>(
-        `${this.apiUrl}/ventas/historial/${id}`,
-      )
+      .get<HistorialCompraDetalle>(`${this.baseUrl}/${id}`)
       .pipe(map((detalle) => this.normalizarDetalle(detalle)));
   }
 

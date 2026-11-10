@@ -4,5 +4,9 @@ export const environment = {
   saasMode: true,
   saasNombreEntorno: 'saas-local',
   empresaSlug: 'vanter-men',
-  stripePublishableKey: '',
+  /**
+   * Publishable key pública de Stripe Test Mode (misma que el modo legacy).
+   * Es una `pk_test_...` pública: nunca debe contener `sk_test_` ni `whsec_`.
+   */
+  stripePublishableKey: 'pk_test_51Tfgj0DdEv4wsBnrWOJvTeO3QJcd86s8zY7W4riOWjhxeEbqRAEsikJ0YZh6IskMfmF3LTiY1L5fHTMPvVLPzYe300Ri7JZOmT',
 };

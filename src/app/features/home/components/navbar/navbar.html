@@ -99,12 +99,10 @@
                 </svg>
                 Mi cuenta
               </button>
-              @if (authService.esCliente()) {
+              @if (puedeVerReservas()) {
                 <!--
-                  Enlaces de los módulos de CLIENTE del primer parcial
-                  (CU16 reservas y CU24 historial de compras). Solo se muestran
-                  con la sesión legacy, que es la única que esos servicios
-                  aceptan hoy: no se ofrecen como funcionando bajo SaaS.
+                  "Mis reservas" está adaptado al modo SaaS (CU11/CU16): el
+                  cliente empresarial puede listar, ver el detalle y cancelar.
                 -->
                 <a
                   class="nav__account-item"
@@ -119,7 +117,14 @@
                   </svg>
                   Mis reservas
                 </a>
+              }
 
+              @if (puedeVerCompras()) {
+                <!--
+                  "Mis compras" (CU24) solo se ofrece con el flujo legacy del
+                  primer parcial. En SaaS todavía no hay flujo funcional: no se
+                  enlaza al endpoint legacy bloqueado.
+                -->
                 <a
                   class="nav__account-item"
                   role="menuitem"
@@ -167,7 +172,7 @@
         class="nav__icon"
         routerLink="/carritos"
         [attr.aria-label]="
-          authService.esCliente() && carritoService.totalCarritosActivos() > 0
+          puedeVerCarrito() && carritoService.totalCarritosActivos() > 0
             ? 'Ver mis carritos (' + carritoService.totalCarritosActivos() + ')'
             : 'Ver mis carritos'
         "
@@ -177,7 +182,7 @@
             <path d="M5 8h14l-1.2 11.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 8z"></path>
             <path d="M9 8V6a3 3 0 016 0v2"></path>
           </svg>
-          @if (authService.esCliente() && carritoService.totalCarritosActivos() > 0) {
+          @if (puedeVerCarrito() && carritoService.totalCarritosActivos() > 0) {
             <span class="nav__cart-badge" aria-hidden="true">
               {{ carritoService.totalCarritosActivos() }}
             </span>

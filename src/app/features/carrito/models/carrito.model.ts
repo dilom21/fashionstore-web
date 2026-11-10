@@ -9,12 +9,49 @@
  * `cliente_id`, ni recalcula stock, ni decide expiraciones.
  */
 
-/** Cuerpo de POST /carritos/items. */
+/** Cuerpo de POST /carritos/items (contrato LEGACY del primer parcial). */
 export interface AgregarItemCarritoPayload {
   sucursal_id: number;
   inventario_id: number;
   cantidad: number;
 }
+
+/**
+ * Selección de alta de carrito unificada para el facade `CarritoService`.
+ *
+ * - `inventario`: contrato legacy (saasMode=false), exige `inventario_id`.
+ * - `variante`: contrato SaaS (saasMode=true), el backend resuelve el
+ *   inventario a partir de `variante_producto_id` + `temporada_id`.
+ *
+ * Angular NUNCA calcula ni envía un `inventario_id` en modo SaaS.
+ */
+export interface SeleccionCarritoLegacy {
+  modo: 'inventario';
+  sucursal_id: number;
+  inventario_id: number;
+  cantidad: number;
+}
+
+export interface SeleccionCarritoSaas {
+  modo: 'variante';
+  sucursal_id: number;
+  variante_producto_id: number;
+  temporada_id: number;
+  cantidad: number;
+}
+
+export type SeleccionCarrito = SeleccionCarritoLegacy | SeleccionCarritoSaas;
+
+/**
+ * Resultado de eliminar una línea.
+ *
+ * - `detalle`: el carrito sigue existiendo; se devuelve su estado actual.
+ * - `carrito-eliminado`: la última línea se eliminó y el backend marcó el
+ *   carrito como ELIMINADO (no se inventa un detalle vacío).
+ */
+export type ResultadoEliminarLinea =
+  | { tipo: 'detalle'; detalle: CarritoDetalle }
+  | { tipo: 'carrito-eliminado'; carrito_id: number };
 
 /** Cuerpo de PATCH /carritos/{carrito_id}/items/{detalle_id}. */
 export interface ActualizarCantidadPayload {

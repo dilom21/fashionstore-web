@@ -11,7 +11,6 @@ import { Router, RouterLink } from '@angular/router';
 
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
-import { AuthService } from '../../../autenticacion-seguridad/auth/services/auth.service';
 import { Navbar } from '../../../home/components/navbar/navbar';
 import { CarritoResumen } from '../../models/carrito.model';
 import { CarritoService } from '../../services/carrito.service';
@@ -33,7 +32,6 @@ import { traducirErrorCarrito } from '../../utils/carrito-error.util';
 export class CarritosPage implements OnInit {
   readonly carritoService = inject(CarritoService);
 
-  private readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -112,8 +110,7 @@ export class CarritosPage implements OnInit {
   }
 
   private cerrarSesion(): void {
-    this.authService.cerrarSesion();
-    this.carritoService.limpiar();
+    this.carritoService.cerrarSesionCliente();
     void this.router.navigate(['/login'], {
       queryParams: { returnUrl: this.router.url },
     });

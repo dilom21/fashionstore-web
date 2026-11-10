@@ -130,6 +130,31 @@
         }
       </div>
     }
+
+    @if (mostrarPaginacion()) {
+      <nav class="rsv__toolbar" aria-label="Paginación de reservas">
+        <button
+          type="button"
+          class="rsv__btn"
+          [disabled]="!hayPaginaAnterior()"
+          (click)="paginaAnterior()"
+        >
+          Anterior
+        </button>
+        <span class="rsv__count" role="status">
+          Mostrando {{ offset() + 1 }}–{{ offset() + reservas().length }} de
+          {{ total() }}
+        </span>
+        <button
+          type="button"
+          class="rsv__btn"
+          [disabled]="!hayPaginaSiguiente()"
+          (click)="paginaSiguiente()"
+        >
+          Siguiente
+        </button>
+      </nav>
+    }
   </div>
 </main>
 

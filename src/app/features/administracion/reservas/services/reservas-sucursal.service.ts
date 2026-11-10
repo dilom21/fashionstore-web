@@ -2,11 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { SAAS_MODE } from '../../../../core/config/app-mode';
 import { environment } from '../../../../../environments/environment';
 import {
   CancelarReservaSucursalPayload,
   EstadoReservaSucursal,
   ReservaSucursalDetalle,
+  ReservaSucursalEstadisticas,
   ReservaSucursalFiltros,
   ReservaSucursalListaResponse,
 } from '../models/reserva-sucursal.model';
@@ -31,9 +33,13 @@ const ESTADOS_CANCELABLES = new Set<string>(['PENDIENTE', 'CONFIRMADA']);
 export class ReservasSucursalService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
 
   private get baseUrl(): string {
-    return `${this.apiUrl}/reservas-sucursal`;
+    // SaaS: contrato tenant real. Legacy: se conserva el del primer parcial.
+    return this.saasMode
+      ? `${this.apiUrl}/tenant/reservas-sucursal`
+      : `${this.apiUrl}/reservas-sucursal`;
   }
 
   /** GET /reservas-sucursal (paginado: items/total/limit/offset). */
@@ -81,6 +87,30 @@ export class ReservasSucursalService {
   ): Observable<number> {
     return this.listarReservas({ ...filtros, limit: 1, offset: 0 }).pipe(
       map((respuesta) => respuesta.total),
+    );
+  }
+
+  /**
+   * GET /tenant/reservas-sucursal/estadisticas (SaaS).
+   * Devuelve el agregado real por estado y los totales de la empresa/sucursal.
+   * En legacy no existe: la pantalla usa `contarReservas` por estado.
+   */
+  obtenerEstadisticas(
+    filtros: ReservaSucursalFiltros = {},
+  ): Observable<ReservaSucursalEstadisticas> {
+    let params = new HttpParams();
+    if (filtros.sucursal_id !== undefined && filtros.sucursal_id !== null) {
+      params = params.set('sucursal_id', filtros.sucursal_id.toString());
+    }
+    if (filtros.fecha_desde) {
+      params = params.set('fecha_desde', filtros.fecha_desde);
+    }
+    if (filtros.fecha_hasta) {
+      params = params.set('fecha_hasta', filtros.fecha_hasta);
+    }
+    return this.http.get<ReservaSucursalEstadisticas>(
+      `${this.baseUrl}/estadisticas`,
+      { params },
     );
   }
 

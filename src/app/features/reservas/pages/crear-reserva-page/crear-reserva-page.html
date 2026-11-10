@@ -35,6 +35,13 @@
         </p>
       </header>
 
+      @if (empresaIncoherente()) {
+        <p class="crv__error" role="alert">
+          Tu sesión pertenece a otra empresa. Inicia sesión en esta tienda para
+          reservar.
+        </p>
+      }
+
       <div class="crv__layout">
         <div class="crv__main">
           <section class="crv__card" aria-label="Sucursal de atención">
@@ -178,6 +185,13 @@
             si decides adquirir las prendas.
           </p>
 
+          @if (prevalidacion(); as prevalidacionActual) {
+            <p class="crv__hint crv__hint--small" role="status">
+              Disponibilidad verificada preliminarmente ({{ prevalidacionActual.cantidad_unidades }}
+              unidad(es)). La prevalidación NO ha creado la reserva.
+            </p>
+          }
+
           @if (error(); as mensaje) {
             <p class="crv__error" role="alert">{{ mensaje }}</p>
           }
@@ -189,8 +203,10 @@
             [attr.aria-busy]="guardando()"
             (click)="confirmarReserva()"
           >
-            @if (guardando()) {
-              CONFIRMANDO…
+            @if (prevalidando()) {
+              VERIFICANDO DISPONIBILIDAD…
+            } @else if (guardando()) {
+              CONFIRMANDO RESERVA…
             } @else {
               CONFIRMAR RESERVA
             }

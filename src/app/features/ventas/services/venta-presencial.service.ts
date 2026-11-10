@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { environment } from '../../../../environments/environment';
 import {
   RegistrarVentaPresencialRequest,
@@ -25,6 +26,13 @@ import {
 export class VentaPresencialService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
+
+  private get baseUrl(): string {
+    return this.saasMode
+      ? `${this.apiUrl}/tenant/ventas`
+      : `${this.apiUrl}/ventas`;
+  }
 
   /**
    * Venta presencial directa (sin reserva).
@@ -68,9 +76,16 @@ export class VentaPresencialService {
   ): Observable<VentaPresencialResponse> {
     return this.http
       .post<VentaPresencialResponse>(
-        `${this.apiUrl}/ventas/presencial`,
+        `${this.baseUrl}/presencial`,
         payload,
       )
+      .pipe(map((venta) => this.normalizar(venta)));
+  }
+
+  /** GET /ventas/{venta_id} (tenant: /tenant/ventas/{venta_id}). */
+  obtenerVenta(ventaId: number): Observable<VentaPresencialResponse> {
+    return this.http
+      .get<VentaPresencialResponse>(`${this.baseUrl}/${ventaId}`)
       .pipe(map((venta) => this.normalizar(venta)));
   }
 

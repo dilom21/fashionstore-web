@@ -64,7 +64,6 @@ const PREFIJOS_NO_ADAPTADOS = [
   '/dashboard',
   '/saas',
   '/auth',
-  '/carritos',
   '/reservas',
   '/checkout',
   '/pagos',

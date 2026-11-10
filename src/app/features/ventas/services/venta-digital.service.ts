@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { environment } from '../../../../environments/environment';
 import {
   CrearVentaDigitalPayload,
@@ -9,22 +10,33 @@ import {
   VentaDigitalResponse,
 } from '../models/venta-digital.model';
 
+/** Ruta real de la venta digital: tenant en SaaS, legacy en el primer parcial. */
+export function construirRutaVentaDigital(
+  apiUrl: string,
+  saasMode: boolean,
+): string {
+  const base = apiUrl.replace(/\/+$/, '');
+  return saasMode ? `${base}/tenant/ventas/digital` : `${base}/ventas/digital`;
+}
+
 /**
  * Servicio de ventas digitales (CU19).
  *
  * Única responsabilidad: convertir el carrito ACTIVO del cliente en una venta
- * PENDIENTE mediante POST /ventas/digital. No procesa pagos (eso es CU22).
+ * PENDIENTE. No procesa pagos (eso es CU22).
  *
- * El cliente se resuelve desde el JWT (lo añade el interceptor): aquí nunca se
- * envía `cliente_id`, `sucursal_id`, precios, total ni estado.
+ * SaaS: POST /tenant/ventas/digital. Legacy: POST /ventas/digital.
+ * El cliente se resuelve desde el JWT: aquí nunca se envía `cliente_id`,
+ * `sucursal_id`, precios, total ni estado.
  */
 @Injectable({ providedIn: 'root' })
 export class VentaDigitalService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
+  private readonly saasMode = inject(SAAS_MODE);
 
   /**
-   * POST /ventas/digital con `{ carrito_id, canal: 'WEB' }`.
+   * POST de la compra digital con `{ carrito_id, canal: 'WEB' }`.
    *
    * El componente no decide el canal: en Web siempre es 'WEB'.
    */
@@ -34,7 +46,10 @@ export class VentaDigitalService {
       canal: 'WEB',
     };
     return this.http
-      .post<VentaDigitalResponse>(`${this.apiUrl}/ventas/digital`, payload)
+      .post<VentaDigitalResponse>(
+        construirRutaVentaDigital(this.apiUrl, this.saasMode),
+        payload,
+      )
       .pipe(map((venta) => this.normalizar(venta)));
   }
 
