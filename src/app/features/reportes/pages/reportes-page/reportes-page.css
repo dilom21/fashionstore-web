@@ -465,3 +465,41 @@
     align-items: flex-start;
   }
 }
+.rpt__generativo {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #dbe4ef;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rpt__generativo h2,
+.rpt__generativo h3 { margin: 0; color: #17324d; }
+.rpt__generativo-form { display: flex; gap: .75rem; align-items: end; }
+.rpt__generativo-input { flex: 1; }
+.rpt__generativo-result { display: grid; gap: .75rem; border-top: 1px solid #e6edf5; padding-top: 1rem; }
+.rpt__tabla-wrap { overflow-x: auto; }
+.rpt__tabla { width: 100%; border-collapse: collapse; }
+.rpt__tabla th, .rpt__tabla td { padding: .65rem; border-bottom: 1px solid #e6edf5; text-align: left; vertical-align: top; }
+.rpt__tabla th { color: #52677d; font-size: .78rem; text-transform: uppercase; }
+
+@media (max-width: 680px) {
+  .rpt__generativo-form { align-items: stretch; flex-direction: column; }
+}
+.rpt__prediccion { display: grid; gap: 1rem; margin: 1.5rem 0; padding: 1.25rem; border: 1px solid color-mix(in srgb, var(--rpt-acento, #c9a227) 45%, transparent); border-radius: 1rem; background: color-mix(in srgb, var(--rpt-superficie, #fff) 92%, #c9a227); }
+.rpt__prediccion-result { display: grid; gap: .35rem; }
+.rpt__prediccion-result strong { font-size: 2rem; color: var(--rpt-acento, #8f6d00); }
+.rpt__prediccion-result small { color: var(--rpt-texto-secundario, #666); }
+.rpt__patrones { display: grid; gap: 1rem; margin: 1.5rem 0; padding: 1.25rem; border: 1px solid #dbe4ef; border-radius: 14px; background: #fff; }
+.rpt__patrones h2 { margin: 0; color: #17324d; }
+.rpt__patrones-meta { display: flex; flex-wrap: wrap; gap: .75rem; color: #52677d; font-size: .85rem; }
+.rpt__cluster-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.rpt__cluster-card { display: grid; gap: .3rem; padding: .9rem; border: 1px solid #e6edf5; border-radius: .75rem; background: #f8fbff; }
+.rpt__cluster-card strong { color: #17324d; }
+.rpt__cluster-card b { color: #8f6d00; }
+.rpt__cluster-card small { color: #52677d; }
+.rpt__cluster-bar { height: .4rem; overflow: hidden; border-radius: 99px; background: #e6edf5; }
+.rpt__cluster-bar i { display: block; height: 100%; border-radius: inherit; background: #c9a227; }
+@media (max-width: 680px) { .rpt__cluster-grid { grid-template-columns: 1fr; } }

@@ -28,6 +28,9 @@ import {
   TipoReporte,
 } from '../models/reportes-common.model';
 import { ReporteVentasResponse } from '../models/ventas-reporte.model';
+import { ReporteGenerativoResponse } from '../models/generativo-reporte.model';
+import { PrediccionRequest, PrediccionResponse } from '../models/prediccion-reporte.model';
+import { PatronesRequest, PatronesResponse } from '../models/patrones-no-supervisados.model';
 
 /** Archivo descargable devuelto por `GET /tenant/reportes/exportar/{tipo}`. */
 export interface ReporteExportado {
@@ -479,6 +482,24 @@ export class ReportesService {
           ),
         })),
       );
+  }
+
+  /** POST /tenant/reportes/generativo. La IA nunca se invoca desde Angular. */
+  generarReporteGenerativo(consulta: string): Observable<ReporteGenerativoResponse> {
+    return this.http.post<ReporteGenerativoResponse>(
+      `${this.reportesUrl}/generativo`,
+      { consulta },
+    );
+  }
+
+  /** POST /tenant/reportes/predicciones. La empresa nunca sale del formulario. */
+  predecirDemanda(request: PrediccionRequest): Observable<PrediccionResponse> {
+    return this.http.post<PrediccionResponse>(`${this.reportesUrl}/predicciones`, request);
+  }
+
+  /** POST /tenant/reportes/patrones. El tenant lo determina el JWT. */
+  analizarPatrones(request: PatronesRequest): Observable<PatronesResponse> {
+    return this.http.post<PatronesResponse>(`${this.reportesUrl}/patrones`, request);
   }
 
   /** Query params inmutables: solo se envía lo definido. */

@@ -68,6 +68,108 @@
     </div>
   </header>
 
+  <section class="rpt__generativo" aria-labelledby="titulo-generativo">
+    <div>
+      <span class="rpt__eyebrow">CU23 · Reportes generativos</span>
+      <h2 id="titulo-generativo">Pregunta sobre los datos de tu empresa</h2>
+      <p class="rpt__card-hint">
+        {{ empresaGenerativa() }} · La IA interpreta la solicitud; las cifras
+        siempre se consultan con filtros autorizados del backend.
+      </p>
+    </div>
+    @if (puedeGenerar()) {
+      <div class="rpt__generativo-form">
+        <label class="rpt__field rpt__generativo-input">
+          <span class="rpt__label">Solicitud</span>
+          <input class="rpt__input" maxlength="500"
+            placeholder="Ej.: productos más vendidos este mes, top 10"
+            [value]="consultaGenerativa()"
+            (input)="consultaGenerativa.set($any($event.target).value)"
+            (keyup.enter)="generarReporteGenerativo()" />
+        </label>
+        <button type="button" class="rpt__aplicar"
+          [disabled]="generativoCargando() || !consultaGenerativa().trim()"
+          (click)="generarReporteGenerativo()">
+          {{ generativoCargando() ? 'Generando…' : 'Generar reporte' }}
+        </button>
+      </div>
+      @if (generativoError(); as error) {
+        <p class="rpt__exportar-error" role="alert">{{ error }}</p>
+      }
+      @if (generativo(); as reporte) {
+        <div class="rpt__generativo-result">
+          <div>
+            <h3>{{ reporte.titulo }}</h3>
+            <p>{{ reporte.resumen }}</p>
+            <small>Fuente autorizada: {{ reporte.fuente }} · {{ reporte.proveedor_ia }}</small>
+          </div>
+          @if (reporte.sin_resultados) {
+            <p class="rpt__vacio">No se encontraron resultados reales con esos filtros.</p>
+          } @else {
+            <div class="rpt__tabla-wrap">
+              <table class="rpt__tabla">
+                <thead><tr><th>Resultado</th><th>Valores</th></tr></thead>
+                <tbody>
+                  @for (fila of reporte.filas; track fila.etiqueta) {
+                    <tr><td>{{ fila.etiqueta }}</td><td>{{ fila.valores | json }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    } @else {
+      <p class="rpt__aviso">Los reportes generativos requieren un plan empresarial habilitado.</p>
+    }
+  </section>
+
+  <section class="rpt__patrones" aria-labelledby="titulo-patrones">
+    <div>
+      <span class="rpt__eyebrow">CU25 · Clustering no supervisado</span>
+      <h2 id="titulo-patrones">Patrones no supervisados</h2>
+      <p class="rpt__card-hint">Agrupa productos por rotación, ingresos, frecuencia de venta y stock disponible.</p>
+      <p class="rpt__aviso">Modelo entrenado con datos sintéticos; agrupaciones calculadas sobre datos autorizados del tenant cuando estén disponibles.</p>
+    </div>
+    @if (puedeGenerar()) {
+      <div class="rpt__generativo-form">
+        <label class="rpt__field"><span class="rpt__label">Período</span><select class="rpt__select" [value]="periodoPatrones()" (change)="periodoPatrones.set(+$any($event.target).value === 90 ? 90 : 30)"><option [value]="30">30 días</option><option [value]="90">90 días</option></select></label>
+        <button type="button" class="rpt__aplicar" [disabled]="patronesCargando()" (click)="analizarPatrones()">{{ patronesCargando() ? 'Agrupando…' : 'Calcular patrones' }}</button>
+      </div>
+      @if (patronesError(); as error) { <p class="rpt__exportar-error" role="alert">{{ error }}</p> }
+      @if (patrones(); as resultado) {
+        @if (resultado.estado === 'SIN_DATOS') { <p class="rpt__vacio">Sin datos autorizados suficientes para este período.</p> }
+        @else {
+          <div class="rpt__patrones-meta"><span>{{ resultado.observaciones }} productos · {{ resultado.modelo }} {{ resultado.version_modelo }}</span><span>Variables: {{ resultado.features.join(', ') }}</span><span>Silhouette sintética: {{ resultado.metricas_evaluacion.silhouette }}</span></div>
+          <div class="rpt__cluster-grid">
+            @for (cluster of resultado.clusters; track cluster.cluster_id) {
+              <article class="rpt__cluster-card"><strong>Grupo {{ cluster.cluster_id + 1 }}</strong><span>{{ cluster.etiqueta }}</span><b>{{ cluster.productos }} productos</b><small>Promedio: {{ cluster.unidades_promedio | number:'1.0-1' }} unidades · stock {{ cluster.stock_promedio | number:'1.0-1' }}</small><div class="rpt__cluster-bar"><i [style.width.%]="(cluster.productos / resultado.observaciones) * 100"></i></div></article>
+            }
+          </div>
+          <div class="rpt__tabla-wrap"><table class="rpt__tabla"><thead><tr><th>Producto</th><th>Grupo</th><th>Unidades</th><th>Ingresos</th><th>Stock</th></tr></thead><tbody>@for (producto of resultado.productos; track producto.producto_id) { <tr><td>{{ producto.producto_nombre }}</td><td>{{ producto.etiqueta }}</td><td>{{ producto.unidades_vendidas | number:'1.0-2' }}</td><td>{{ producto.ingresos | number:'1.0-2' }}</td><td>{{ producto.stock_disponible | number:'1.0-2' }}</td></tr> }</tbody></table></div>
+          @for (advertencia of resultado.advertencias; track advertencia) { <small>{{ advertencia }}</small> }
+        }
+      }
+    } @else { <p class="rpt__aviso">Los patrones requieren un plan empresarial habilitado.</p> }
+  </section>
+
+  <section class="rpt__prediccion" aria-labelledby="titulo-prediccion">
+    <div>
+      <span class="rpt__eyebrow">CU24 · Predicciones supervisadas</span>
+      <h2 id="titulo-prediccion">Demanda esperada en unidades</h2>
+      <p class="rpt__card-hint">Estimación de la API con ventas COMPLETADAS del tenant. El entrenamiento del modelo es sintético.</p>
+    </div>
+    @if (puedeGenerar()) {
+      <div class="rpt__generativo-form">
+        <label class="rpt__field"><span class="rpt__label">ID de producto</span><input class="rpt__input" type="number" min="1" [value]="productoPrediccion() ?? ''" (input)="productoPrediccion.set(+$any($event.target).value || null)" /></label>
+        <label class="rpt__field"><span class="rpt__label">Horizonte</span><select class="rpt__select" [value]="horizontePrediccion()" (change)="horizontePrediccion.set(+$any($event.target).value === 30 ? 30 : 7)"><option [value]="7">7 días</option><option [value]="30">30 días</option></select></label>
+        <button type="button" class="rpt__aplicar" [disabled]="prediccionCargando() || !productoPrediccion()" (click)="predecirDemanda()">{{ prediccionCargando() ? 'Calculando…' : 'Predecir demanda' }}</button>
+      </div>
+      @if (prediccionError(); as error) { <p class="rpt__exportar-error" role="alert">{{ error }}</p> }
+      @if (prediccion(); as p) { <div class="rpt__prediccion-result"><strong>{{ p.valor_predicho | number:'1.0-2' }} unidades</strong><span>Estimación · {{ p.producto_nombre }} · próximos {{ p.horizonte_dias }} días</span><small>Corte: {{ p.fecha_corte_datos }} · {{ p.modelo }} {{ p.version_modelo }} · entrenamiento {{ p.procedencia_entrenamiento }}</small><small>{{ p.aviso }}</small></div> }
+    } @else { <p class="rpt__aviso">Las predicciones requieren un plan empresarial habilitado.</p> }
+  </section>
+
   @if (errorExportar(); as error) {
     <p class="rpt__exportar-error" role="alert">{{ error }}</p>
   }
