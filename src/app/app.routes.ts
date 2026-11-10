@@ -49,6 +49,27 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'saas/offline',
+    title: 'Preparación offline · FashionStore',
+    canActivate: [personalSaasAuthGuard],
+    loadComponent: () =>
+      import('./features/saas/pages/offline-preparation.page').then(
+        (m) => m.OfflinePreparationPage,
+      ),
+  },
+  {
+    path: 'saas/catalogo-offline',
+    title: 'Catálogo offline · FashionStore',
+    canActivate: [personalSaasAuthGuard],
+    loadComponent: () => import('./features/saas/pages/offline-catalogo.page').then((m) => m.OfflineCatalogoPage),
+  },
+  {
+    path: 'saas/catalogo-offline/:id',
+    title: 'Detalle offline · FashionStore',
+    canActivate: [personalSaasAuthGuard],
+    loadComponent: () => import('./features/saas/pages/offline-catalogo-detalle.page').then((m) => m.OfflineCatalogoDetallePage),
+  },
+  {
     path: '',
     pathMatch: 'full',
     title: 'FashionStore | Moda online y portal empresarial',

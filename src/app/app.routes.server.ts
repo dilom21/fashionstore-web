@@ -10,6 +10,10 @@ export const serverRoutes: ServerRoute[] = [
     path: 'admin/**',
     renderMode: RenderMode.Server,
   },
+  // SaaS privado: no prerenderizar navegaci�n autenticada.
+  { path: 'saas/ingresar', renderMode: RenderMode.Server },
+  { path: 'saas/**', renderMode: RenderMode.Client },
+  { path: 'saas/catalogo-offline/:id', renderMode: RenderMode.Client },
   {
     path: 'auth/personal/login',
     renderMode: RenderMode.Server,
