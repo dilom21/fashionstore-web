@@ -1,0 +1,12 @@
+<main class="off"><section class="off__panel">
+  <header class="off__head"><div><p class="off__muted">CU18 · Sin solicitudes HTTP</p><h1>Catálogo offline</h1></div><a class="off__button off__button--secondary" routerLink="/offline/preparar">Preparar datos</a></header>
+  <div class="off__row"><label class="off__field"><span>Buscar en la copia local</span><input type="search" [value]="buscar()" (input)="buscar.set($any($event.target).value)" (keyup.enter)="cargar()" /></label><button class="off__button" type="button" (click)="cargar()">Buscar</button></div>
+  @if (cargando()) { <p>Consultando IndexedDB…</p> }
+  @if (error()) { <p class="off__error" role="alert">{{ error() }}</p> }
+  @if (data(); as catalogo) {
+    @if (!catalogo.snapshot) { <p class="off__notice">No existe una instantánea para esta empresa y usuario.</p> }
+    @else { <p class="off__muted">Copia de {{ catalogo.snapshot.generado_en }}. Stock conocido solo como referencia.</p> }
+    <div class="off__grid">@for (producto of catalogo.productos; track producto.id) { <article class="off__card"><h2>{{ producto.nombre }}</h2><p>{{ producto.categoria_nombre }} · {{ producto.variantes }} variantes</p><p>Precio referencial: {{ producto.precio }}</p><p>Stock conocido: {{ producto.stockConocido === null ? 'No disponible' : producto.stockConocido }}</p><a class="off__button" [routerLink]="['/offline/catalogo', producto.producto_id]">Ver detalle local</a></article> } @empty { <p>No hay productos en la copia local.</p> }</div>
+  }
+  <nav class="off__nav">@if (api.contexto() === 'cliente' && api.rol() === 'CLIENTE') { <a class="off__button off__button--secondary" routerLink="/offline/reservas/nueva">Solicitud de reserva offline</a> } @if (api.contexto() === 'personal' && (api.esCajero() || api.esAdministrador())) { <a class="off__button off__button--secondary" routerLink="/offline/ventas/nueva">Venta de contado offline</a> }<a class="off__button off__button--secondary" routerLink="/offline/operaciones">Pendientes</a></nav>
+</section></main>

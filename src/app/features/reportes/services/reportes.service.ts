@@ -28,6 +28,15 @@ import {
   TipoReporte,
 } from '../models/reportes-common.model';
 import { ReporteVentasResponse } from '../models/ventas-reporte.model';
+import { ReporteGenerativoResponse } from '../models/generativo-reporte.model';
+import {
+  PatronesRequest,
+  PatronesResponse,
+} from '../models/patrones-no-supervisados.model';
+import {
+  PrediccionRequest,
+  PrediccionResponse,
+} from '../models/prediccion-reporte.model';
 
 /** Archivo descargable devuelto por `GET /tenant/reportes/exportar/{tipo}`. */
 export interface ReporteExportado {
@@ -479,6 +488,34 @@ export class ReportesService {
           ),
         })),
       );
+  }
+
+  /** CU23: FastAPI interpreta la consulta y ejecuta únicamente reportes allowlist. */
+  generarReporteGenerativo(
+    consulta: string,
+  ): Observable<ReporteGenerativoResponse> {
+    return this.http.post<ReporteGenerativoResponse>(
+      `${this.reportesUrl}/generativo`,
+      { consulta },
+    );
+  }
+
+  /** CU24: estimación del backend; no se calcula ni se presenta como garantía. */
+  predecirDemanda(
+    request: PrediccionRequest,
+  ): Observable<PrediccionResponse> {
+    return this.http.post<PrediccionResponse>(
+      `${this.reportesUrl}/predicciones`,
+      request,
+    );
+  }
+
+  /** CU25: clusters calculados por el backend con datos autorizados del tenant. */
+  analizarPatrones(request: PatronesRequest): Observable<PatronesResponse> {
+    return this.http.post<PatronesResponse>(
+      `${this.reportesUrl}/patrones`,
+      request,
+    );
   }
 
   /** Query params inmutables: solo se envía lo definido. */

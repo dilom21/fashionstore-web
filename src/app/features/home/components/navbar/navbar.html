@@ -117,6 +117,16 @@
                   </svg>
                   Mis reservas
                 </a>
+                @if (clienteSaas()) {
+                  <a class="nav__account-item" role="menuitem"
+                    routerLink="/offline/preparar" (click)="closeAccount()">
+                    Preparar catálogo offline
+                  </a>
+                  <a class="nav__account-item" role="menuitem"
+                    routerLink="/offline/reservas/nueva" (click)="closeAccount()">
+                    Solicitud de reserva offline
+                  </a>
+                }
               }
 
               @if (puedeVerCompras()) {

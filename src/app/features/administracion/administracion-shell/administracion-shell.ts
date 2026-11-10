@@ -59,6 +59,10 @@ const RUTAS_ENCARGADO_SAAS = new Set([
 const RUTAS_CAJERO = new Set([
   '/personal/reservas/atencion',
   '/personal/ventas/presencial',
+  '/offline/preparar',
+  '/offline/catalogo',
+  '/offline/ventas/nueva',
+  '/offline/operaciones',
 ]);
 
 /**

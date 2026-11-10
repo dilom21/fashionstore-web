@@ -172,9 +172,17 @@ describe('AdministracionShell con sesión empresarial', () => {
   it('un CAJERO empresarial no recibe los módulos administrativos', async () => {
     await setup('CAJERO');
 
-    const ids = fixture.componentInstance.navItems().map((item) => item.id);
+    const items = fixture.componentInstance.navItems();
+    const ids = items.map((item) => item.id);
+    const rutas = items.flatMap((item) =>
+      item.children?.map((child) => child.route).filter(Boolean) ?? [],
+    );
 
-    expect(ids).toEqual(['reservas', 'ventas']);
+    expect(ids).toEqual(['inventario', 'reservas', 'ventas']);
+    expect(rutas).toContain('/offline/preparar');
+    expect(rutas).toContain('/offline/catalogo');
+    expect(rutas).toContain('/offline/ventas/nueva');
+    expect(rutas).toContain('/offline/operaciones');
     expect(enlaces()).not.toContain('/saas/empresa');
     expect(enlaces()).not.toContain('/admin/usuarios');
   });

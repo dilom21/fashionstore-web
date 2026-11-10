@@ -1,0 +1,11 @@
+<main class="off"><section class="off__panel">
+  <header class="off__head"><div><p class="off__muted">CU17 · Preparar datos offline</p><h1>Descargar catálogo local</h1></div><a class="off__button off__button--secondary" routerLink="/">Volver</a></header>
+  <p>Ámbito: {{ api.identidad()?.empresa_nombre }} · {{ api.identidad()?.rol }} · usuario {{ api.identidad()?.usuario_id }}.</p>
+  <p class="off__notice">La descarga conserva la copia anterior hasta confirmar la nueva instantánea completa. El stock guardado es una referencia histórica, no disponibilidad garantizada.</p>
+  @if (api.contexto() === 'cliente') { <p class="off__notice">La copia local incluye catálogo y sucursales. CU19 registrará reservas provisionales con <code>variante_id</code> y <code>cantidad</code>; FastAPI resolverá y revalidará el inventario al sincronizar.</p> }
+  <progress max="100" [value]="offline.progreso()"></progress>
+  <p>Estado: <strong>{{ offline.estado() }}</strong> · {{ offline.progreso() }}%</p>
+  @if (offline.error()) { <p class="off__error" role="alert">{{ offline.error() }}</p> }
+  @if (offline.snapshot(); as snapshot) { <p>Última copia: {{ snapshot.generado_en }} · {{ snapshot.counts.productos }} productos · {{ snapshot.counts.variantes }} variantes · {{ snapshot.counts.disponibilidad }} referencias de inventario.</p> }
+  <div class="off__nav"><button class="off__button" type="button" (click)="descargar()" [disabled]="offline.estado() === 'DESCARGANDO'">{{ offline.estado() === 'DESCARGANDO' ? 'Descargando…' : 'Descargar datos' }}</button><a class="off__button off__button--secondary" routerLink="/offline/catalogo">Consultar catálogo</a><a class="off__button off__button--secondary" routerLink="/offline/operaciones">Operaciones pendientes</a></div>
+</section></main>
