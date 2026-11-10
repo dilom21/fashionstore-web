@@ -124,6 +124,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'saas/offline-operaciones',
+    title: 'Operaciones locales · FashionStore',
+    canActivate: [personalSaasAuthGuard],
+    loadComponent: () => import('./features/saas/pages/offline-operations.page').then((m) => m.OfflineOperationsPage),
+  },
+  {
     path: 'saas/catalogo-offline',
     title: 'Catálogo offline · FashionStore',
     canActivate: [personalSaasAuthGuard],
