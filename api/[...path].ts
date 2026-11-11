@@ -1,82 +1,113 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-const ALLOWED_PREFIX = '/api/plataforma/';
-const HOP_BY_HOP = new Set([
-  'connection',
-  'content-length',
-  'host',
-  'keep-alive',
-  'transfer-encoding',
-  'upgrade',
-]);
-const FORWARDED_REQUEST_HEADERS = [
-  'accept',
-  'accept-language',
-  'authorization',
-  'cookie',
-  'content-type',
-  'origin',
-  'referer',
-  'user-agent',
-  'x-csrf-token',
-];
-
 type VercelRequest = IncomingMessage & {
   query?: Record<string, string | string[] | undefined>;
   body?: unknown;
 };
+type VercelResponse = ServerResponse;
 
-type VercelResponse = ServerResponse & {
-  status: (code: number) => VercelResponse;
-  json: (value: unknown) => void;
+const PREFIX = '/api/plataforma';
+const BACKEND_PREFIX = '/saas/superadmin';
+
+// Allowlist por metodo y ruta: no abre rutas del backend ajenas al SUPERADMIN.
+const ALLOW: Readonly<Record<string, readonly RegExp[]>> = {
+  GET: [
+    /^\/auth\/me$/,
+    /^\/empresas$/,
+    /^\/planes$/,
+    /^\/empresas\/[1-9][0-9]*\/suscripciones$/,
+  ],
+  POST: [
+    /^\/auth\/login$/,
+    /^\/auth\/logout$/,
+    /^\/empresas$/,
+    /^\/planes$/,
+    /^\/empresas\/[1-9][0-9]*\/suscripciones$/,
+    /^\/empresas\/[1-9][0-9]*\/administrador-inicial$/,
+  ],
+  PATCH: [
+    /^\/empresas\/[1-9][0-9]*\/estado$/,
+    /^\/planes\/[1-9][0-9]*\/estado$/,
+    /^\/empresas\/[1-9][0-9]*\/suscripciones\/[1-9][0-9]*\/estado$/,
+  ],
 };
 
-function json(res: VercelResponse, status: number, value: unknown): void {
-  const body = JSON.stringify(value);
-  res.statusCode = status;
+const REQUEST_HEADERS = [
+  'accept', 'accept-language', 'content-type',
+  'cookie', 'origin', 'referer', 'x-csrf-token',
+] as const;
+const SKIP_RESPONSE_HEADERS = new Set([
+  'connection', 'content-length', 'content-encoding', 'keep-alive',
+  'transfer-encoding', 'upgrade', 'set-cookie',
+]);
+
+function respondJson(res: VercelResponse, code: number, detail: string): void {
+  res.statusCode = code;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  res.end(body);
+  res.setHeader('Pragma', 'no-cache');
+  res.end(JSON.stringify({ detail }));
 }
 
-function pathFromRequest(req: VercelRequest): string {
+function pathForRequest(req: VercelRequest, url: URL): string {
+  if (url.pathname.startsWith(`${PREFIX}/`)) return url.pathname;
+
+  // Vercel catch-all facilita los segmentos como query.path.
   const queryPath = req.query?.path;
-  const segments = Array.isArray(queryPath)
+  const parts = Array.isArray(queryPath)
     ? queryPath
     : typeof queryPath === 'string'
       ? [queryPath]
       : [];
-  return `/api/${segments.map((part) => encodeURIComponent(part)).join('/')}`;
+  if (!parts.length || parts.some(x => !/^[a-zA-Z0-9_-]+$/.test(x))) return '';
+  return `/api/${parts.join('/')}`;
 }
 
-async function readBody(req: IncomingMessage): Promise<Buffer | undefined> {
-  if (req.method === 'GET' || req.method === 'HEAD') return undefined;
+async function bodyBytes(req: VercelRequest): Promise<Buffer | undefined> {
+  if (!['POST', 'PATCH'].includes(req.method ?? '')) return undefined;
+
+  // Vercel puede entregar el cuerpo ya parseado: leer nuevamente el stream
+  // resultaria en un POST vacio, rompiendo login y CSRF.
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') return Buffer.from(req.body);
+  if (req.body !== null && req.body !== undefined) {
+    return Buffer.from(JSON.stringify(req.body));
+  }
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
-  return chunks.length ? Buffer.concat(chunks) : undefined;
+  return Buffer.concat(chunks);
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<void> {
-  const path = pathFromRequest(req);
-  if (!path.startsWith(ALLOWED_PREFIX)) {
-    json(res, 404, { detail: 'Ruta API no permitida' });
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const requestUrl = new URL(req.url ?? '/', 'https://vercel.invalid');
+  const path = pathForRequest(req, requestUrl);
+  if (!path.startsWith(`${PREFIX}/`)) {
+    respondJson(res, 404, 'Ruta API no permitida');
+    return;
+  }
+  const suffix = path.slice(PREFIX.length);
+  const method = (req.method ?? '').toUpperCase();
+  if (!(ALLOW[method] ?? []).some(rule => rule.test(suffix))) {
+    respondJson(res, 404, 'Ruta o metodo no disponible');
     return;
   }
 
   const origin = process.env['SAAS_BACKEND_ORIGIN']?.replace(/\/$/, '');
-  if (!origin) {
-    json(res, 503, { detail: 'BFF sin origen de backend configurado' });
+  if (!origin || !/^https:\/\/[^/]+$/.test(origin)) {
+    respondJson(res, 503, 'BFF sin origen HTTPS configurado');
     return;
   }
 
-  const query = new URL(req.url ?? '', 'https://vercel.invalid').search;
+  // El parametro interno `path` de la ruta dinamica no se reenvia al backend.
+  const search = new URLSearchParams(requestUrl.searchParams);
+  search.delete('path');
+  const query = search.toString();
+  const upstreamUrl = `${origin}${BACKEND_PREFIX}${suffix}${query ? `?${query}` : ''}`;
+
   const headers = new Headers();
-  for (const name of FORWARDED_REQUEST_HEADERS) {
+  for (const name of REQUEST_HEADERS) {
     const value = req.headers[name];
     if (typeof value === 'string') headers.set(name, value);
   }
@@ -84,19 +115,21 @@ export default async function handler(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8_000);
   try {
-    const requestBody = await readBody(req);
-    const upstream = await fetch(`${origin}${path}${query}`, {
-      method: req.method ?? 'GET',
+    const body = await bodyBytes(req);
+    if (body && !headers.has('content-type')) headers.set('content-type', 'application/json');
+    const upstream = await fetch(upstreamUrl, {
+      method,
       headers,
-      body: requestBody ? (requestBody as unknown as BodyInit) : undefined,
+      body: body as BodyInit | undefined,
       signal: controller.signal,
       redirect: 'manual',
     });
 
     res.statusCode = upstream.status;
     res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
     upstream.headers.forEach((value, name) => {
-      if (!HOP_BY_HOP.has(name) && name !== 'set-cookie') {
+      if (!SKIP_RESPONSE_HEADERS.has(name.toLowerCase())) {
         res.setHeader(name, value);
       }
     });
@@ -107,7 +140,7 @@ export default async function handler(
     const detail = error instanceof Error && error.name === 'AbortError'
       ? 'Tiempo de espera agotado al contactar el backend'
       : 'Backend no disponible';
-    json(res, 503, { detail });
+    respondJson(res, 503, detail);
   } finally {
     clearTimeout(timeout);
   }
