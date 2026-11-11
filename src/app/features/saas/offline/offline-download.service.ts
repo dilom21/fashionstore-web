@@ -78,6 +78,11 @@ export class OfflineDownloadService {
   }
 
   async descargar(): Promise<void> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      this.estado.set('ERROR');
+      this.error.set('Conéctate a Internet para descargar o actualizar el catálogo.');
+      throw new Error('Sin conexión: la primera descarga necesita Internet.');
+    }
     const identity = this.api.identidad();
     if (!identity) {
       throw new Error('La sesión empresarial no está confirmada.');

@@ -1,0 +1,2 @@
+import { Component, inject } from '@angular/core'; import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'; import { PlataformaSaasService } from '../services/plataforma-saas.service';
+@Component({standalone:true,imports:[RouterLink,RouterLinkActive,RouterOutlet],templateUrl:'./shell.page.html',styleUrl:'./plataforma.css'}) export class PlataformaShellPage {api=inject(PlataformaSaasService);router=inject(Router); logout(){this.api.logout().subscribe(()=>this.router.navigateByUrl('/plataforma/ingresar'));}}

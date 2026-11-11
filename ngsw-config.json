@@ -39,6 +39,7 @@
     "!/checkout/**",
     "!/pagos/**",
     "!/ventas/**",
-    "!/offline/**"
+        "!/offline/**",
+        "!/plataforma/**"
   ]
 }

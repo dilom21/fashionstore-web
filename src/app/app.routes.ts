@@ -4,6 +4,7 @@ import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 import { personalAuthGuard } from './core/guards/personal-auth.guard';
 import { personalSaasAuthGuard } from './core/guards/personal-saas-auth.guard';
 import { tenantAdminAuthGuard } from './core/guards/tenant-admin-auth.guard';
+import { plataformaAuthGuard } from './core/guards/plataforma-auth.guard';
 import {
   offlineReservaGuard,
   offlineTenantAuthGuard,
@@ -21,6 +22,24 @@ import {
  *  - dashboard            -> Zona del personal (protegida)
  */
 export const routes: Routes = [
+  {
+    path: 'plataforma/ingresar',
+    title: 'Acceso plataforma · FashionStore',
+    loadComponent: () => import('./features/plataforma-saas/pages/login.page').then((m) => m.PlataformaLoginPage),
+  },
+  {
+    path: 'plataforma',
+    canActivate: [plataformaAuthGuard],
+    loadComponent: () => import('./features/plataforma-saas/pages/shell.page').then((m) => m.PlataformaShellPage),
+    children: [
+      { path: '', pathMatch: 'full', loadComponent: () => import('./features/plataforma-saas/pages/dashboard.page').then((m) => m.PlataformaDashboardPage) },
+      { path: 'empresas', loadComponent: () => import('./features/plataforma-saas/pages/empresas.page').then((m) => m.EmpresasPage) },
+      { path: 'empresas/nueva', loadComponent: () => import('./features/plataforma-saas/pages/nueva-empresa.page').then((m) => m.NuevaEmpresaPage) },
+      { path: 'empresas/:id/administrador-inicial', loadComponent: () => import('./features/plataforma-saas/pages/primer-administrador.page').then((m) => m.PrimerAdministradorPage) },
+      { path: 'planes', loadComponent: () => import('./features/plataforma-saas/pages/planes.page').then((m) => m.PlanesPage) },
+      { path: 'suscripciones', loadComponent: () => import('./features/plataforma-saas/pages/suscripciones.page').then((m) => m.SuscripcionesPage) },
+    ],
+  },
   // SaaS multitenant: sesión/JWT empresarial independiente del login legacy.
   // La seguridad de permisos está en el backend; estas rutas no abren SaaS.
   {

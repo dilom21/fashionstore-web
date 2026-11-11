@@ -10,6 +10,10 @@ export const serverRoutes: ServerRoute[] = [
     path: 'admin/**',
     renderMode: RenderMode.Server,
   },
+  {
+    path: 'plataforma/**',
+    renderMode: RenderMode.Server,
+  },
   // PWA local: el shell se sirve en cliente y no prerenderiza datos privados.
   { path: 'offline/**', renderMode: RenderMode.Client },
   { path: 'saas/ingresar', renderMode: RenderMode.Server },
