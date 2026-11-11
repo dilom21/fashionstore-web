@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/plataforma/:path*",
+      "destination": "/api/plataforma?path=:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/plataforma/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0"
+        }
+      ]
+    }
+  ]
+}
