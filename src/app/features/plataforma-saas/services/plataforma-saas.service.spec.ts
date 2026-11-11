@@ -1,13 +1,12 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { environment } from '../../../../environments/environment';
 import { PlataformaSaasService } from './plataforma-saas.service';
 
 describe('PlataformaSaasService', () => {
   let service: PlataformaSaasService;
   let http: HttpTestingController;
-  const api = `${environment.apiUrl.replace(/\/+$/, '')}/saas/superadmin`;
+  const api = '/api/plataforma';
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
@@ -17,10 +16,12 @@ describe('PlataformaSaasService', () => {
 
   afterEach(() => http.verify());
 
-  it('bloquea login web sin emitir credenciales ni solicitud', () => {
-    let message = '';
-    service.login('admin@example.test', 'fixture-password').subscribe({ error: error => message = error.message });
-    expect(message).toContain('no está habilitada');
+  it('envía login al BFF same-origin sin API key', () => {
+    service.login('admin@example.test', 'fixture-password').subscribe();
+    const request = http.expectOne(`${api}/auth/login`);
+    expect(request.request.withCredentials).toBe(true);
+    expect(request.request.headers.has('X-SaaS-Admin-Key')).toBe(false);
+    request.flush({ autenticado: true, usuario: 'admin@example.test', rol: 'SUPERADMIN' });
   });
 
   it('usa el contrato real para crear el administrador inicial', () => {
@@ -36,7 +37,10 @@ describe('PlataformaSaasService', () => {
     document.cookie = 'fashionstore_platform_csrf=; Max-Age=0';
   });
 
-  it('logout local no toca almacenamiento', () => {
-    service.logout().subscribe(value => expect(value).toBeNull());
+  it('solicita revocación al servidor', () => {
+    service.logout().subscribe();
+    const request = http.expectOne(`${api}/auth/logout`);
+    expect(request.request.method).toBe('POST');
+    request.flush({ ok: true });
   });
 });

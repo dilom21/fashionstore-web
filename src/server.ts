@@ -12,6 +12,33 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
+/** BFF same-origin para la administración de plataforma. Nunca reenvía una
+ * API key al navegador: solo conserva cookies y un allowlist de rutas. */
+app.use('/api/plataforma', express.json({ limit: '32kb' }), async (req, res, next) => {
+  const allowed = /^(GET|POST|PATCH) \/(auth\/(login|me|logout)|empresas(?:\/[^/]+(?:\/estado|\/suscripciones|\/administrador-inicial)?)?|planes(?:\/[^/]+\/estado)?)$/;
+  if (!allowed.test(`${req.method} ${req.path}`)) { res.status(404).json({ detail: 'Ruta no disponible' }); return; }
+  const origin = process.env['SAAS_BACKEND_ORIGIN']?.replace(/\/$/, '');
+  if (!origin || !/^https:\/\//.test(origin) && process.env['NODE_ENV'] === 'production') {
+    res.status(503).json({ detail: 'Proxy de plataforma no configurado' }); return;
+  }
+  const target = `${origin || 'http://127.0.0.1:8000'}/saas/superadmin${req.path}`;
+  try {
+    const headers: Record<string, string> = { accept: 'application/json' };
+    if (req.headers['cookie']) headers['cookie'] = String(req.headers['cookie']);
+    if (req.headers['x-csrf-token']) headers['x-csrf-token'] = String(req.headers['x-csrf-token']);
+    if (req.headers['origin']) headers['origin'] = String(req.headers['origin']);
+    if (req.body && ['POST', 'PATCH'].includes(req.method)) headers['content-type'] = 'application/json';
+    const upstream = await fetch(target, { method: req.method, headers, body: ['POST', 'PATCH'].includes(req.method) ? JSON.stringify(req.body ?? {}) : undefined });
+    res.status(upstream.status);
+    const setCookies = upstream.headers.getSetCookie?.() ?? [];
+    if (setCookies.length) res.setHeader('set-cookie', setCookies);
+    res.setHeader('cache-control', 'no-store');
+    res.setHeader('pragma', 'no-cache');
+    const body = await upstream.text();
+    res.type('application/json').send(body);
+  } catch { res.status(503).json({ detail: 'Backend de plataforma no disponible' }); }
+});
+
 /**
  * Example Express Rest API endpoints can be defined here.
  * Uncomment and define endpoints as necessary.
