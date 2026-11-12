@@ -1,1 +1,15 @@
-<div class="hero"><span class="eyebrow">VISIÓN GLOBAL</span><h1>Resumen de la plataforma</h1><p>Indicadores calculados con los datos autorizados de CU01 y CU02.</p></div><div class="metrics" *ngIf="!loading"><article><span>Empresas registradas</span><b>{{empresas}}</b></article><article><span>Empresas activas</span><b>{{activas}}</b></article><article><span>Planes disponibles</span><b>{{planesActivos}}</b><small>{{planes}} en total</small></article></div><div class="panel" *ngIf="loading">Cargando métricas globales…</div>
+<div class="hero">
+  <span class="eyebrow">VISIÓN GLOBAL</span>
+  <h1>Resumen de la plataforma</h1>
+  <p>Indicadores calculados con los datos autorizados de CU01 y CU02.</p>
+</div>
+<div class="panel" *ngIf="loading()" role="status">Cargando métricas globales…</div>
+<div class="panel" *ngIf="error() && !loading()">
+  <p class="error" role="alert">{{ error() }}</p>
+  <button class="secondary" type="button" (click)="load()">Reintentar</button>
+</div>
+<div class="metrics" *ngIf="!loading() && !error()">
+  <article><span>Empresas registradas</span><b>{{ empresasTotal() }}</b></article>
+  <article><span>Empresas activas</span><b>{{ empresasActivas() }}</b></article>
+  <article><span>Planes disponibles</span><b>{{ planesActivos() }}</b><small>{{ planesTotal() }} en total</small></article>
+</div>
