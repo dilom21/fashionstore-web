@@ -55,7 +55,7 @@ function pathForRequest(req: VercelRequest, url: URL): string {
 
   // vercel.json reescribe /api/plataforma/auth/me a
   // /api/plataforma?path=auth/me. No dependemos del catch-all Next.js.
-  const rawPath = req.query?.path ?? url.searchParams.get('path');
+  const rawPath = req.query?.['path'] ?? url.searchParams.get('path');
   const rest = (Array.isArray(rawPath) ? rawPath.join('/') : rawPath ?? '')
     .replace(/^\/+/, '');
   if (!rest || !/^[a-zA-Z0-9_/-]+$/.test(rest) || rest.includes('//')) return '';
