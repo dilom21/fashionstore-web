@@ -1,1 +1,28 @@
-<div class="page-title"><div><span class="eyebrow">CU02</span><h1>Suscripciones</h1><p>Consulta el historial por empresa. Reactivar requiere una nueva asignación.</p></div></div><div class="panel selector"><label>Empresa<select [(ngModel)]="id" (ngModelChange)="select()"><option [ngValue]="0">Selecciona una empresa</option><option *ngFor="let e of empresas" [ngValue]="e.id">{{e.nombre_comercial}} · {{e.slug}}</option></select></label></div><p class="error" *ngIf="error">{{error}}</p><div class="table-wrap" *ngIf="id"><table><thead><tr><th>ID</th><th>Plan</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody><tr *ngFor="let s of items"><td>#{{s.id}}</td><td>#{{s.plan_saas_id}}</td><td>{{s.fecha_inicio}}</td><td>{{s.fecha_vencimiento}}</td><td><span class="badge">{{s.estado}}</span></td></tr><tr *ngIf="!items.length"><td colspan="5" class="empty">No hay historial para esta empresa.</td></tr></tbody></table></div>
+<div class="page-title">
+  <div><span class="eyebrow">CU02</span><h1>Suscripciones</h1><p>Consulta el historial por empresa. Reactivar requiere una nueva asignación.</p></div>
+</div>
+<div class="panel" *ngIf="loadingEmpresas()" role="status">Cargando empresas…</div>
+<p class="error" role="alert" *ngIf="errorEmpresas()">{{ errorEmpresas() }} <button type="button" class="text-button" (click)="loadEmpresas()">Reintentar</button></p>
+<div class="panel selector" *ngIf="!loadingEmpresas() && !errorEmpresas()">
+  <label>Empresa
+    <select [ngModel]="id()" (ngModelChange)="select($event)">
+      <option [ngValue]="0">Selecciona una empresa</option>
+      <option *ngFor="let e of empresas()" [ngValue]="e.id">{{ e.nombre_comercial }} · {{ e.slug }}</option>
+    </select>
+  </label>
+  <p class="empty" *ngIf="!empresas().length">No hay empresas disponibles.</p>
+</div>
+<div class="panel" *ngIf="loadingHistorial()" role="status">Cargando suscripciones…</div>
+<p class="error" role="alert" *ngIf="error()">{{ error() }} <button class="text-button" type="button" (click)="select(id())">Reintentar</button></p>
+<div class="table-wrap" *ngIf="id() && !loadingHistorial() && !error()">
+  <table>
+    <thead><tr><th>ID</th><th>Plan</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let s of items()">
+        <td>#{{ s.id }}</td><td>#{{ s.plan_saas_id }}</td><td>{{ s.fecha_inicio }}</td><td>{{ s.fecha_vencimiento }}</td>
+        <td><span class="badge">{{ s.estado }}</span></td>
+      </tr>
+      <tr *ngIf="!items().length"><td colspan="5" class="empty">No hay historial para esta empresa.</td></tr>
+    </tbody>
+  </table>
+</div>

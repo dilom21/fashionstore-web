@@ -1,1 +1,21 @@
-<div class="page-title"><div><span class="eyebrow">CU02</span><h1>Planes SaaS</h1><p>Capacidades efectivas. No se muestran precios porque no existen en el contrato.</p></div></div><p class="error" *ngIf="error">{{error}}</p><div class="cards"><article class="plan-card" *ngFor="let p of items"><span class="badge" [class.off]="!p.estado">{{p.estado?'Activo':'Inactivo'}}</span><h2>{{p.nombre}}</h2><small>{{p.codigo}}</small><strong>{{p.max_sucursales_activas}} <small>sucursales activas</small></strong><ul><li>Productos: {{p.permite_productos?'Sí':'No'}}</li><li>Ventas: {{p.permite_ventas?'Sí':'No'}}</li><li>Reportes IA: {{p.permite_reportes_ia?'Sí':'No'}}</li></ul><button class="text-button" (click)="toggle(p)">{{p.estado?'Desactivar':'Activar'}}</button></article></div>
+<div class="page-title">
+  <div><span class="eyebrow">CU02</span><h1>Planes SaaS</h1><p>Capacidades efectivas. No se muestran precios porque no existen en el contrato.</p></div>
+</div>
+<div class="panel" *ngIf="loading()" role="status">Cargando planes SaaS…</div>
+<p class="error" role="alert" *ngIf="error()">{{ error() }} <button type="button" class="text-button" *ngIf="!loading()" (click)="load()">Reintentar carga</button></p>
+<div class="cards" *ngIf="!loading() && (!error() || items().length > 0)">
+  <article class="plan-card" *ngFor="let p of items()">
+    <span class="badge" [class.off]="!p.estado">{{ p.estado ? 'Activo' : 'Inactivo' }}</span>
+    <h2>{{ p.nombre }}</h2><small>{{ p.codigo }}</small>
+    <strong>{{ p.max_sucursales_activas }} <small>sucursales activas</small></strong>
+    <ul>
+      <li>Productos: {{ p.permite_productos ? 'Sí' : 'No' }}</li>
+      <li>Ventas: {{ p.permite_ventas ? 'Sí' : 'No' }}</li>
+      <li>Reportes IA: {{ p.permite_reportes_ia ? 'Sí' : 'No' }}</li>
+    </ul>
+    <button type="button" class="text-button" [disabled]="changingId() !== null" (click)="toggle(p)">
+      {{ changingId() === p.id ? 'Actualizando…' : (p.estado ? 'Desactivar' : 'Activar') }}
+    </button>
+  </article>
+  <div class="panel empty" *ngIf="!items().length">No hay planes SaaS disponibles.</div>
+</div>
