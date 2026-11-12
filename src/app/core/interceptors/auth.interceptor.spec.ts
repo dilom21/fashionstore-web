@@ -117,6 +117,27 @@ describe('authInterceptor (JWT legacy vs JWT empresarial)', () => {
     peticion.flush({});
   });
 
+  it('catálogo SaaS público no envía JWT legacy aunque exista sesión anterior', () => {
+    configurar(LEGACY);
+    httpClient.get(`${API}/catalogo/public/vanter-men/productos?limit=10`).subscribe();
+    const request = http.expectOne(`${API}/catalogo/public/vanter-men/productos?limit=10`);
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush([]);
+  });
+
+  it('filtros públicos SaaS nunca reciben el JWT empresarial o legacy', () => {
+    configurar(LEGACY);
+    sessionStorage.setItem('fashionstore_saas_tenant_access_token', TENANT);
+    try {
+      httpClient.get(`${API}/catalogo/public/vanter-men/filtros`).subscribe();
+      const request = http.expectOne(`${API}/catalogo/public/vanter-men/filtros`);
+      expect(request.request.headers.has('Authorization')).toBe(false);
+      request.flush({ categorias: [], tallas: [], colores: [], temporadas: [], colecciones: [], sucursales: [] });
+    } finally {
+      sessionStorage.removeItem('fashionstore_saas_tenant_access_token');
+    }
+  });
+
   it('no añade tokens a dominios externos', () => {
     configurar(LEGACY);
 
