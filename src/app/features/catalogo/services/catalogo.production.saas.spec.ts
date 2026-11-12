@@ -10,7 +10,9 @@ import { ProductosDestacados } from '../../home/components/productos-destacados/
 import { CatalogoService } from './catalogo.service';
 
 const BASE = 'https://fashionstore-api.duckdns.org';
-const PUBLICO = `${BASE}/catalogo/public/vanter-men`;
+// La suite usa environment.ts (localhost); el build PRODUCCION reemplaza
+// ese archivo por environment.production.ts y utiliza AWS HTTPS.
+const PUBLICO = `${legacy.apiUrl}/catalogo/public/vanter-men`;
 const productoApi = (id: number) => ({
   id, nombre: `Producto ${id}`, descripcion: null,
   categoria: { id: 1, nombre: 'Polos' }, precio: '149.90',
@@ -47,8 +49,7 @@ describe('Catálogo público SaaS — HTTP real de la fachada, sin endpoints leg
   });
 
   afterEach(() => {
-    http.verify();
-    TestBed.resetTestingModule();
+    try { http.verify(); } finally { TestBed.resetTestingModule(); }
   });
 
   it('consulta listado SaaS con limit/offset y normaliza precios sin /productos legacy', () => {
@@ -61,7 +62,7 @@ describe('Catálogo público SaaS — HTTP real de la fachada, sin endpoints leg
     expect(request.request.params.get('limit')).toBe('10');
     expect(request.request.params.get('offset')).toBe('0');
     expect(request.request.params.get('disponibilidad')).toBe('TODOS');
-    expect(request.request.url).not.toBe(`${BASE}/productos`);
+    expect(request.request.url).not.toBe(`${legacy.apiUrl}/productos`);
     request.flush(Array.from({ length: 10 }, (_, i) => productoApi(i + 1)));
     expect(productos).toHaveLength(10);
     expect(productos[0]).toMatchObject({ id: 1, precio: 149.9, precio_definitivo: 139.9 });
@@ -100,7 +101,7 @@ describe('Catálogo público SaaS — HTTP real de la fachada, sin endpoints leg
     expect(recibido.imagen_principal_url).toContain('/7.jpg');
     expect(recibido.variantes[0].id).toBe(91);
     expect(recibido.disponibilidad[0].stock_disponible).toBe(4);
-    expect(http.match(`${BASE}/productos/7/disponibilidad`)).toHaveLength(0);
+    expect(http.match(`${legacy.apiUrl}/productos/7/disponibilidad`)).toHaveLength(0);
   });
 
   it('bloquea cualquier consulta accidental a disponibilidad legacy en SaaS', () => {
