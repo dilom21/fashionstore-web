@@ -1,0 +1,48 @@
+name: Production SaaS public catalog regression
+
+on:
+  pull_request:
+    paths:
+      - 'src/environments/environment.production.ts'
+      - 'src/app/features/catalogo/**'
+      - 'src/app/core/interceptors/auth.interceptor*'
+      - '.github/workflows/saas-public-catalog.yml'
+  push:
+    branches:
+      - fix/saas-production-public-catalog-20261112
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci
+      - name: SaaS production catalog HTTP tests
+        run: npm run test -- --no-watch --no-progress --include=app/features/catalogo/services/catalogo.production.saas.spec.ts
+      - name: Interceptor and auth tests
+        run: npm run test -- --no-watch --no-progress --include=app/core/interceptors/auth.interceptor.spec.ts
+      - name: Full Angular suite
+        run: npm run test -- --no-watch --no-progress
+      - name: Production build
+        run: npm run build
+      - name: Verify production replacement and compiled AWS origin
+        run: |
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const angular = JSON.parse(fs.readFileSync("angular.json","utf8"));
+            const prod = angular.projects["fashionstore-web"].architect.build.configurations.production;
+            if (!prod.fileReplacements?.some(x => x.replace === "src/environments/environment.ts" && x.with === "src/environments/environment.production.ts")) throw Error("Production file replacement absent");
+            const base = "dist/fashionstore-web/browser";
+            const files = fs.readdirSync(base).filter(x => x.endsWith(".js"));
+            if (!files.some(f => fs.readFileSync(base + "/" + f, "utf8").includes("fashionstore-api.duckdns.org"))) throw Error("AWS HTTPS backend not in browser bundle");
+          '

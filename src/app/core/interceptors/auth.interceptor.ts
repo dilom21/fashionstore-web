@@ -61,6 +61,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  // Catálogo público SaaS: nunca anexar JWT legacy o tenant a un endpoint
+  // anónimo; los permisos y aislamiento se validan en FastAPI.
+  if (ruta.startsWith('/catalogo/public/')) {
+    return next(req);
+  }
+
   // Endpoints de login: no enviar un token viejo.
   if (RUTAS_LOGIN_SIN_TOKEN.has(ruta)) {
     return next(req);

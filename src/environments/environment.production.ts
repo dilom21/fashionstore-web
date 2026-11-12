@@ -5,20 +5,21 @@
  * Todos los servicios construyen sus peticiones como `environment.apiUrl` +
  * ruta del endpoint; ningún servicio escribe el host directamente.
  *
- * PRODUCCIÓN: backend FastAPI público en AWS EC2 mediante HTTPS
+ * PRODUCCIÓN SaaS: FastAPI público en AWS EC2 mediante HTTPS.
+ * Las funciones del cliente que dependan de autorizaciones/flags siguen
+ * sujetas al backend: este modo no habilita reservas, pagos ni offline.
  */
 export const environment = {
   apiUrl: 'https://fashionstore-api.duckdns.org',
-  saasMode: false,
-  saasNombreEntorno: 'legacy',
+  saasMode: true,
+  saasNombreEntorno: 'saas-produccion',
   /**
    * Identificador público (slug) de la EMPRESA que representa esta tienda.
    *
-   * Lo usa el login de CLIENTES para enviar `empresa_slug` a
-   * `POST /auth/tenant/login` (contexto "cliente"). Es configuración pública y
-   * explícita de la tienda: no es un secreto, no autoriza nada por sí sola (el
-   * backend comprueba la membresía y la suscripción de la empresa) y no debe
-   * escribirse en otros servicios.
+   * Selecciona el catálogo público de Vanter Men en
+   * `/catalogo/public/vanter-men/{productos,filtros}`. La autenticación de
+   * clientes sigue utilizando la empresa seleccionada en el formulario y
+   * verificada por FastAPI; este slug no concede ningún permiso.
    *
    * Valor real del tenant sembrado por las migraciones SaaS del backend
    * (`database/saas/preparacion_pg17/010_saas_core_vanter.sql`).
