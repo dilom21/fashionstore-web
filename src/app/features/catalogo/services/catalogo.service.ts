@@ -1,8 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map, Observable, throwError } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { SAAS_MODE } from '../../../core/config/app-mode';
 import { obtenerEmpresaSlugPublica } from '../../../core/config/empresa-publica';
 import {
   CatalogoFiltros,
@@ -143,7 +144,7 @@ export function construirParamsListadoLegacy(
 export class CatalogoService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl.replace(/\/+$/, '');
-  private readonly saasMode = environment.saasMode;
+  private readonly saasMode = inject(SAAS_MODE);
 
   private slug(): string | null {
     return obtenerEmpresaSlugPublica();
@@ -196,6 +197,11 @@ export class CatalogoService {
    * del detalle (`ProductoPublicoDetalle.disponibilidad`).
    */
   obtenerDisponibilidad(id: number): Observable<DisponibilidadFila[]> {
+    if (this.saasMode) {
+      // El contrato SaaS incluye disponibilidad en el detalle público;
+      // jamás invocar el endpoint legacy bloqueado en producción.
+      return throwError(() => new Error('La disponibilidad SaaS se obtiene del detalle de producto.'));
+    }
     return this.http
       .get<unknown>(`${this.apiUrl}/productos/${id}/disponibilidad`)
       .pipe(map(normalizarDisponibilidadLegacy));
