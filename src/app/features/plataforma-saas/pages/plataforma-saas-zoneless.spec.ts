@@ -37,10 +37,6 @@ describe('Plataforma SaaS — detección de cambios zoneless tras HTTP asíncron
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: '8' }) } },
-        },
       ],
     });
   });
@@ -218,6 +214,9 @@ describe('Plataforma SaaS — detección de cambios zoneless tras HTTP asíncron
   });
 
   it('formulario de administrador inicial resuelve empresa o muestra error terminal', async () => {
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: { snapshot: { paramMap: convertToParamMap({ id: '8' }) } },
+    });
     const fixture = TestBed.createComponent(PrimerAdministradorPage);
     fixture.detectChanges();
     TestBed.inject(HttpTestingController).expectOne('/api/plataforma/empresas').flush([EMPRESA]);
