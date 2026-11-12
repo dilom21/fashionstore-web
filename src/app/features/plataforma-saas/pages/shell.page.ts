@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -5,7 +6,7 @@ import { PlataformaSaasService } from '../services/plataforma-saas.service';
 
 @Component({
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './shell.page.html',
   styleUrl: './plataforma.css',
 })
