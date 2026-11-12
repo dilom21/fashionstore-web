@@ -4,7 +4,7 @@
 </div>
 <div class="panel" *ngIf="loading()" role="status">Cargando empresas…</div>
 <p class="error" *ngIf="error()" role="alert">{{ error() }} <button *ngIf="!loading()" type="button" class="text-button" (click)="load()">Reintentar carga</button></p>
-<div class="table-wrap" *ngIf="!loading() && !error()">
+<div class="table-wrap" *ngIf="!loading() && (!error() || items().length > 0)">
   <table><thead><tr><th>Empresa</th><th>Slug</th><th>NIT</th><th>Estado</th><th>Acción</th></tr></thead>
     <tbody>
       <tr *ngFor="let x of items()">
